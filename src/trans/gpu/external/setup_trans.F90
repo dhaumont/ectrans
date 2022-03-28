@@ -463,16 +463,18 @@ ENDIF
 
 iunit=300+myproc
 
-#ifdef _OPENACC
-!!idevtype=acc_device_nvidia
-idevtype=acc_get_device_type()
-inumdevs = acc_get_num_devices(idevtype)
-mygpu = mod(MYPROC-1,inumdevs)
-CALL acc_set_device_num(mygpu, idevtype)
-mygpu = acc_get_device_num(idevtype)
-istat  = cuda_GetDevice(idev)
-WRITE(iunit,*) '===now going to allocate GPU arrays on processor: ', myproc, ' device = ', mygpu, ' ',idev, ' of ', inumdevs
-#endif
+! daand: removed this entirely
+!#ifdef _OPENACC
+!!!idevtype=acc_device_nvidia
+!idevtype=acc_get_device_type()
+!inumdevs = acc_get_num_devices(idevtype)
+!mygpu = mod(MYPROC-1,inumdevs)
+!CALL acc_set_device_num(mygpu, idevtype)
+!mygpu = acc_get_device_num(idevtype)
+!istat  = cuda_GetDevice(idev)
+!write (0,*) 'cuda_getdevice returned code ',istat
+!WRITE(0,*) '===now going to allocate GPU arrays on processor: ', myproc, ' device = ', mygpu, ' ',idev, ' of ', inumdevs
+!#endif
 
 !dimensions of matrices for Legendre Transforms for RAPS ?
 !IF_OUT_LT = 5*NFLEV0+2

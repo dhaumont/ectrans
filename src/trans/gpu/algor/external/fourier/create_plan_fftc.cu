@@ -40,8 +40,9 @@ static int planWorkspaceSize=100*1024*1024; //100MB
 extern "C"
 void
 //create_plan_fftc_(cufftHandle *PLANp, int *ISIGNp, int *Np, int *LOTp, int *STRIDEp, int *DISTp)
-create_plan_fftc_(cufftHandle *PLANp, int *Np, int *ISTRIDEp, int *IDISTp, int *OSTRIDEp, int *ODISTp, int *ISIGNp, int *LOTp)
+create_plan_fftc_(cufftHandle *PLANp, int *ISIGNp, int *Np, int *LOTp, int *ISTRIDEp, int *IDISTp, int *OSTRIDEp, int *ODISTp)
 {
+
   int ISIGN = *ISIGNp;
   int N = *Np;
   int LOT = *LOTp;
@@ -124,5 +125,6 @@ create_plan_fftc_(cufftHandle *PLANp, int *Np, int *ISTRIDEp, int *IDISTp, int *
   
   
   return;
+
 }
 
