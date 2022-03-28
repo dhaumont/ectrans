@@ -70,7 +70,7 @@ int LOT = *LOTp;
 cufftHandle plan;
 
 if (cudaDeviceSynchronize() != cudaSuccess){
-	fprintf(stderr, "Cuda error: Failed to synchronize\n");
+	fprintf(stderr, "Cuda error: Failed to synchronize at %s: line %i\n",__FILE__,__LINE__);
 	return;	
 }
 
@@ -103,11 +103,11 @@ dist     = 1;
 
 cufftSafeCall(cufftCreate(&plan));
 
-//printf("CreatePlan cuFFT\n","N=",N);
-//printf("%s %d \n","plan=",plan);
-//printf("%s %d \n","LOT=",LOT);
-//printf("%s %d \n","ISIGN=",ISIGN);
-//printf("%s %d \n","Np=",*Np);
+fprintf(stderr,"CreatePlan cuFFT\n","N=",N);
+fprintf(stderr,"%s %d \n","plan=",plan);
+fprintf(stderr,"%s %d \n","LOT=",LOT);
+fprintf(stderr,"%s %d \n","ISIGN=",ISIGN);
+fprintf(stderr,"%s %d \n","Np=",*Np);
 
 if( ISIGN== -1 ){
   cufftSafeCall(cufftPlanMany(&plan, 1, &N,
@@ -148,6 +148,9 @@ if (cudaDeviceSynchronize() != cudaSuccess){
 }
 
 *PLANp=plan;
+
+fprintf(stderr,"Successfully created plan %d \n",*PLANp);
+fflush(stderr);
 
 // // get size used by this plan
 // size_t workSize;

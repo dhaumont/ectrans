@@ -82,6 +82,9 @@ use openacc
 #endif
 use ec_env_mod, only : ec_getenv
 
+! daand: added this to enable synchronization status
+use cudafor
+
 !endif INTERFACE
 
 IMPLICIT NONE
@@ -100,7 +103,7 @@ INTEGER(KIND=JPIM) ,OPTIONAL,INTENT(OUT) :: K_REGIONS_EW
 
 INTEGER(KIND=JPIM) :: MYPROC
 INTEGER :: IDEVICE_NUM,IDEVICE_TYPE, IPROC_PERNODE
-integer :: idevtype, numdevs, mygpu, IERROR
+integer :: idevtype, numdevs, mygpu, IERROR, istat
 CHARACTER(LEN=2)  :: CL_NPROC_PERNODE
 
 !ifndef INTERFACE
@@ -110,6 +113,9 @@ LOGICAL :: LLP1,LLP2
 !     ------------------------------------------------------------------
 
 MYPROC = MPL_MYRANK()
+
+
+#ifdef gnarls
 
 #ifdef _OPENACC
 idevtype=acc_get_device_type()
@@ -139,6 +145,13 @@ IF( CL_NPROC_PERNODE /= ' ')THEN
   CALL ACC_INIT(idevtype)
 !$OMP END PARALLEL
 ENDIF
+#endif
+
+
+
+istat = cudaDeviceSynchronize()
+write (*,*) "cudaDeviceSynchronize returned code ",istat
+
 
 IF(MSETUP0 /= 0) THEN
 !gr  CALL ABORT_TRANS('SETUP_TRANS0: SETUP_TRANS0 MAY ONLY BE CALLED ONCE')
