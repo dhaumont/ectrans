@@ -105,6 +105,19 @@ foreach( prec sp dp )
       MODULE_DIRECTORY  ${PROJECT_BINARY_DIR}/module/trans_gpu_static_CA_${prec}
       INSTALL_DIRECTORY module/trans_gpu_static_CA_${prec}
     )
+	
+	# nvtx
+	message("NVTX_ROOT = ${NVTX_ROOT}")
+	if ( NVTX_ROOT )
+		message("NVTX_ROOT = ${NVTX_ROOT}")
+		target_link_libraries( trans_gpu_${prec} PRIVATE "${NVTX_ROOT}/lib/libnvtx.a" )
+		target_link_libraries( trans_gpu_static_${prec} PRIVATE "${NVTX_ROOT}/lib/libnvtx.a" )
+		target_link_libraries( trans_gpu_static_CA_${prec} PRIVATE "-L${NVTX_ROOT}/lib/libnvtx.a" )
+		target_include_directories( trans_gpu_${prec} PRIVATE "${NVTX_ROOT}/include" )
+		target_include_directories( trans_gpu_static_${prec} PRIVATE "${NVTX_ROOT}/include" )
+		target_include_directories( trans_gpu_static_CA_${prec} PRIVATE "${NVTX_ROOT}/include" )
+	endif()
+	
 
     if( HAVE_FFTW )
       target_link_libraries( trans_gpu_${prec} PRIVATE ${FFTW_LIBRARIES} )

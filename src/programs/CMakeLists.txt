@@ -51,7 +51,8 @@ if( HAVE_GPU )
                                   gpu
                                   OpenACC::OpenACC_Fortran 
                                   ${LAPACK_LIBRARIES}
-                                  nvhpcwrapnvtx
+                                  nvToolsExt
+								  
                           )
 	ecbuild_add_executable(TARGET  driver-spectrans-CA-${prec}
                              SOURCES driver-spectraltransform.F90
@@ -66,7 +67,7 @@ if( HAVE_GPU )
                                   gpu
                                   OpenACC::OpenACC_Fortran 
                                   ${LAPACK_LIBRARIES}
-                                  nvhpcwrapnvtx
+                                  nvToolsExt
                           )
 		  #trans_gpu_static_${prec}
 		  #gpu
@@ -79,6 +80,11 @@ if( HAVE_GPU )
       target_compile_options( driver-spectrans-CA-${prec} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:-g -acc -Minfo=acc -gpu=cc70,lineinfo,deepcopy,fastmath,nordc -cudalib=cufft,cublas -fpic>  )
       set_target_properties(driver-spectrans-${prec} PROPERTIES LINK_FLAGS "-acc -cudalib=cufft,cublas -fpic")
       set_target_properties(driver-spectrans-CA-${prec} PROPERTIES LINK_FLAGS "-acc -cudalib=cufft,cublas -fpic")
+      message("NVTX_ROOT = ${NVTX_ROOT}")
+	  if ( NVTX_ROOT )
+		target_link_libraries( driver-spectrans-${prec} "${NVTX_ROOT}/lib/libnvtx.a" )
+		target_link_libraries( driver-spectrans-CA-${prec} "${NVTX_ROOT}/lib/libnvtx.a" )
+	  endif()
       message("Building ${prec} GPU driver")
     endif()
   endforeach()
