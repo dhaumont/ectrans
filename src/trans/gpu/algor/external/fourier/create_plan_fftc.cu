@@ -102,13 +102,13 @@ stride   = LOT;
 dist     = 1;
 
 cufftSafeCall(cufftCreate(&plan));
-
+/*
 fprintf(stderr,"CreatePlan cuFFT\n","N=",N);
 fprintf(stderr,"%s %d \n","plan=",plan);
 fprintf(stderr,"%s %d \n","LOT=",LOT);
 fprintf(stderr,"%s %d \n","ISIGN=",ISIGN);
 fprintf(stderr,"%s %d \n","Np=",*Np);
-
+*/
 if( ISIGN== -1 ){
   cufftSafeCall(cufftPlanMany(&plan, 1, &N,
                  embed, stride, dist, 
@@ -149,8 +149,10 @@ if (cudaDeviceSynchronize() != cudaSuccess){
 
 *PLANp=plan;
 
+/*
 fprintf(stderr,"Successfully created plan %d \n",*PLANp);
 fflush(stderr);
+*/
 
 // // get size used by this plan
 // size_t workSize;

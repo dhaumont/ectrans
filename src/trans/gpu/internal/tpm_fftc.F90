@@ -136,9 +136,9 @@ IF( .NOT.LLFOUND )THEN
 !     WRITE(*,'("CREATE_PLAN_FFT: END: DESTROYING A PLAN AT THE START OF THE LIST")')
     ENDIF
   ENDIF
-  write (0,*) 'calling create_plan_fftc'; call flush(0)
+
   CALL CREATE_PLAN_FFTC(IPLAN,KTYPE,KN,KLOT)
-  write (0,*) 'create_plan_fftc call complete'; call flush(0)
+
   KPLAN=IPLAN
   TC%N_PLANS(KN)=TC%N_PLANS(KN)+1
   IF( TC%N_PLANS(KN) /= 1 )THEN
