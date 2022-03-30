@@ -454,7 +454,7 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   
   ! Copy local contribution
   !$ACC DATA PRESENT(PGLAT) COPYIN(KPTRGP,INDOFF,KINDEX)
-  !$ACC DATA IF(PRESENT(PGP))   PRESENT(PGP)   COPYIN(IGPTROFF)
+  !$ACC DATA IF(PRESENT(PGP))   PRESENT(PGP)
   !$ACC DATA IF(PRESENT(PGPUV)) PRESENT(PGPUV) COPYIN(IUVLEVS,IUVPARS)
   !$ACC DATA IF(PRESENT(PGP2))  PRESENT(PGP2)  COPYIN(IGP2PARS)
   !$ACC DATA IF(PRESENT(PGP3A)) PRESENT(PGP3A) COPYIN(IGP3ALEVS,IGP3APARS)
@@ -507,18 +507,16 @@ write (0,*) __FILE__, __LINE__; call flush(0)
           JK = JKL+IFIRST-1
           IF(IFIRST > 0 .AND. JK <= ILAST) THEN
             IPOS = INDOFF(MYPROC)+IGPTROFF(JBLK)+JK-IFIRST+1
-			IF ( IPOS >= 1 .and. IPOS <= UBOUND(KINDEX,1) ) THEN
-			  !IF ( JFLD < UBOUND(IFLDOFF,1) ) THEN
+			!IF ( IPOS >= 1 .and. IPOS <= UBOUND(KINDEX,1) ) THEN
               IFLD = IFLDOFF(JFLD)
-			  !IF ( KINDEX(IPOS) >= LBOUND(PGLAT,1) .and. KINDEX(IPOS) <= UBOUND(PGLAT,1) ) THEN
               IF ( LLGW ) THEN
 			    !write (*,*) '(KINDEX(IPOS),JFLD) = (',KINDEX(IPOS),',',JFLD,')'
-			    !write (*,*) '  (JK,IFLD,JBLK) = (',JK,',',IFLD,',',JBLK,')'
+			    !write (*,*) '     (JK,IFLD,JBLK) = (',JK,',',IFLD,',',JBLK,')'
                 PGLAT(KINDEX(IPOS),JFLD) = PGP(JK,IFLD,JBLK)
               ELSE
                 PGLAT(JFLD,KINDEX(IPOS)) = PGP(JK,IFLD,JBLK)
               ENDIF
-			ENDIF
+			!ENDIF
           ENDIF
         ENDDO
       ENDDO
