@@ -27,9 +27,14 @@ inline void __cufftSafeCall(cufftResult err, const char *file, const int line)
   if (CUFFT_SUCCESS != err) 
     {
       fprintf(stderr, "CUFFT at '%s:%d'\n", file, line);
-      fprintf(stderr, "CUFFT error %d: %s\nterminating!\n", err, _cudaGetErrorEnum (err)); 
+      fprintf(stderr, "CUFFT error %d: %s\nterminating!\n", err, _cudaGetErrorEnum (err));
+	  fflush(stderr);
       cudaDeviceReset(); 
-   }
+    } /*else {
+		fprintf(stderr, "CUFFT call at %s, %i returned code %s\n",file,line,_cudaGetErrorEnum(err));
+		fflush(stderr);
+	}*/
+
 }
 
 
@@ -51,7 +56,7 @@ create_plan_fftc_(cufftHandle *PLANp, int *ISIGNp, int *Np, int *LOTp, int *ISTR
   
   if (cudaDeviceSynchronize() != cudaSuccess)
     {
-      fprintf(stderr, "Cuda error: Failed to synchronize\n");
+      fprintf(stderr, "%s, %i :Cuda error: Failed to synchronize\n",__FILE__,__LINE__);
       return;	
     }
   
@@ -87,19 +92,20 @@ create_plan_fftc_(cufftHandle *PLANp, int *ISIGNp, int *Np, int *LOTp, int *ISTR
   
   cufftSafeCall (cufftCreate (&plan));
   
+/*
   if(0){
-    printf("CreatePlan cuFFT\n","N=",N);
-    printf("%s %d \n","plan=",plan);
-    printf("%s %d \n","LOT=",LOT);
-    printf("%s %d \n","ISIGN=",ISIGN);
-    printf("%s %d \n","Np=",*Np);
-    printf("%s %d \n","ISTRIDEp=",*ISTRIDEp);
-    printf("%s %d \n","IDISTp=",*IDISTp);
-    printf("%s %d \n","OSTRIDEp=",*OSTRIDEp);
-    printf("%s %d \n","ODISTp=",*ODISTp);
-    fflush (stdout);
+    fprintf(stderr,"CreatePlan cuFFT\n","N=",N);
+    fprintf(stderr,"%s %d \n","plan=",plan);
+    fprintf(stderr,"%s %d \n","LOT=",LOT);
+    fprintf(stderr,"%s %d \n","ISIGN=",ISIGN);
+    fprintf(stderr,"%s %d \n","Np=",*Np);
+    fprintf(stderr,"%s %d \n","ISTRIDEp=",*ISTRIDEp);
+    fprintf(stderr,"%s %d \n","IDISTp=",*IDISTp);
+    fprintf(stderr,"%s %d \n","OSTRIDEp=",*OSTRIDEp);
+    fprintf(stderr,"%s %d \n","ODISTp=",*ODISTp);
+    fflush (stderr);
   }
-  
+*/ 
   
   cufftType type = ISIGN < 0 ? cufft_1 : cufft_2;
   
@@ -107,12 +113,17 @@ create_plan_fftc_(cufftHandle *PLANp, int *ISIGNp, int *Np, int *LOTp, int *ISTR
   
   if (cudaDeviceSynchronize() != cudaSuccess)
     {
-      fprintf(stderr, "Cuda error: Failed to synchronize\n");
+      fprintf(stderr, "%s, %i :Cuda error: Failed to synchronize\n",__FILE__,__LINE__);
+	  fflush(stderr);
       return;	
     }
   
   *PLANp=plan;
   
+/*
+  fprintf(stderr,"cuFFT plan %i created succesfully\n",plan);
+  fflush(stderr);
+*/  
   // // get size used by this plan
   // size_t workSize;
   // cufftGetSize(plan,&workSize);

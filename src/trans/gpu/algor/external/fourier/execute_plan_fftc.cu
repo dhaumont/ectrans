@@ -51,7 +51,9 @@
     _cudaGetErrorEnum(err)); \*/
     fprintf(stderr, "CUFFT error %d: %s\nterminating!\n",err,_cudaGetErrorEnum(err)); \
     cudaDeviceReset(); return; \
-    }
+    } /*else {
+		fprintf(stderr, "CUFFT call at %s, %i returned code %s\n",file,line,_cudaGetErrorEnum(err));
+	}*/
     }
 
 extern "C"
@@ -111,6 +113,12 @@ execute_plan_fftc_inplace_ (cufftHandle * PLANp, int * ISIGNp, cufftDoubleComple
   cufftHandle plan = *PLANp;
   int ISIGN = *ISIGNp;
   
+/*
+	fprintf(stderr,"%s, %i : executing plan %i\n",__FILE__,__LINE__,*PLANp);
+	
+  fprintf(stderr,"%s, %i : cudaDeviceSynchronize returns code %i\n",__FILE__,__LINE__,cudaDeviceSynchronize());
+*/
+  
 /*if (cudaDeviceSynchronize() != cudaSuccess){
   	fprintf(stderr, "Cuda error: Failed to synchronize\n");
   	return;	
@@ -121,7 +129,10 @@ execute_plan_fftc_inplace_ (cufftHandle * PLANp, int * ISIGNp, cufftDoubleComple
 #ifdef TRANS_SINGLE
     cufftSafeCall(cufftExecR2C(plan, (cufftReal*)data, data));
 #else
+//fprintf(stderr,"%s, %i : cudaDeviceSynchronize returns code %i\n",__FILE__,__LINE__,cudaDeviceSynchronize());
     cufftSafeCall(cufftExecD2Z(plan, (cufftDoubleReal*)data, data));
+//fprintf(stderr,"%s, %i : cudaDeviceSynchronize returns code %i\n",__FILE__,__LINE__,cudaDeviceSynchronize());
+	
 #endif
     }
   else if (ISIGN== 1)
