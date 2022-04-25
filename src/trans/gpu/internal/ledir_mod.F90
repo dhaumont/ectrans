@@ -67,8 +67,10 @@ USE TPM_DISTR
 USE TPM_GEN, ONLY: NOUT
 USE TPM_FLT
 USE BUTTERFLY_ALG_MOD
+#ifdef gnarls
 USE CUDA_GEMM_BATCHED_MOD!!, ONLY: CUDA_TCGEMM_BATCHED, CUDA_GEMM_BATCHED
 USE CUBLAS_MOD, ONLY : CUDA_DGEMM_BATCHED
+#endif
 USE, INTRINSIC :: ISO_C_BINDING
 USE IEEE_ARITHMETIC
 
@@ -124,7 +126,7 @@ KIFC = KFC
 
 IF ( KMODE == -1 ) THEN
 
-!$ACC PARALLEL LOOP COLLAPSE(3) PRIVATE(KM,KDGLU,ISL,ISKIP) DEFAULT(NONE)
+!$ACC PARALLEL LOOP COLLAPSE(3) PRIVATE(KM,KDGLU,ISL,ISKIP) 
 DO KMLOC=1,D_NUMP
    DO J=1,R_NDGNH   
       DO JK=1,KFC
@@ -152,6 +154,7 @@ END DO
 ! Get C in transpose format to get better memory access patterns later
 !C=A*B =>
 ! C^T=B^T*A^T
+#ifdef gnarls
 !$ACC HOST_DATA USE_DEVICE(ZAA,DZBST,DZCAT)
 CALL CUDA_GEMM_BATCHED( &
   & 'N', 'N', &
@@ -163,8 +166,9 @@ CALL CUDA_GEMM_BATCHED( &
   & DZCAT, DTDZCA, DLDZCA, &
   & D_NUMP)
 !$ACC END HOST_DATA
+#endif
 
-!$ACC PARALLEL LOOP COLLAPSE(3) PRIVATE(KM,ISKIP,ILA,IA,ILS) DEFAULT(NONE)
+!$ACC PARALLEL LOOP COLLAPSE(3) PRIVATE(KM,ISKIP,ILA,IA,ILS) 
 DO KMLOC=1,D_NUMP
    DO J=1,(R_NTMAX+2)/2
       DO JK=1,KFC
@@ -192,7 +196,7 @@ IF(KMLOC0 > 0) THEN
    print*,'computing m=0 in double precision'
    ISKIP = 2
 
-  !$ACC PARALLEL LOOP COLLAPSE(2) PRIVATE(KM,KDGLU,ISL,ISKIP) DEFAULT(NONE)
+  !$ACC PARALLEL LOOP COLLAPSE(2) PRIVATE(KM,KDGLU,ISL,ISKIP) 
   DO J=1,R_NDGNH
     DO JK=1,KFC
 
@@ -211,6 +215,7 @@ IF(KMLOC0 > 0) THEN
   !C=A*B =>
   ! C^T=B^T*A^T
 
+#ifdef gnarls
   !$ACC HOST_DATA USE_DEVICE(ZAA0,DZBST0,DZCAT0)
   CALL CUDA_DGEMM_BATCHED('N','N',DTDZBA,int(TDZAA,kind=jpim),int(DLDZBA,kind=jpim), &
         & 1.0_JPRD,DZBST0,DTDZBA,int(DLDZBA,kind=jpim),&
@@ -218,8 +223,8 @@ IF(KMLOC0 > 0) THEN
   !call CUDA_DGEMM('N','N',DTDZBA,TDZAA,DLDZBA,1.0_JPRD,DZBST0,DTDZBA,&
   !      &ZAA0,LDZAA,0._JPRD,DZCAT0,DTDZCA)
   !$ACC END HOST_DATA
-
-   !$ACC PARALLEL LOOP COLLAPSE(2) PRIVATE(ILA,IA,ILS) DEFAULT(NONE)
+#endif
+   !$ACC PARALLEL LOOP COLLAPSE(2) PRIVATE(ILA,IA,ILS) 
    DO J=1,(R_NTMAX+2)/2
    DO JK=1,KFC
          IF (MOD((JK-1),ISKIP) .EQ. 0) THEN
@@ -237,7 +242,7 @@ ELSE
 
 ! symmetric
 
-!$acc parallel loop collapse(3) private(KM,KDGLU,ISL,ISKIP) DEFAULT(NONE)
+!$acc parallel loop collapse(3) private(KM,KDGLU,ISL,ISKIP) 
 DO KMLOC=1,D_NUMP
    DO J=1,R_NDGNH   
       DO JK=1,KFC
@@ -263,6 +268,7 @@ END DO
 ! Get C in transpose format to get better memory access patterns later
 !C=A*B =>
 ! C^T=B^T*A^T
+#ifdef gnarls
 !$ACC HOST_DATA USE_DEVICE(ZAS,DZBST,DZCST)
 CALL CUDA_GEMM_BATCHED( &
   & 'N', 'N', &
@@ -274,8 +280,9 @@ CALL CUDA_GEMM_BATCHED( &
   & DZCST, DTDZCS, DLDZCS, &
   & D_NUMP)
 !$ACC END HOST_DATA
+#endif
 
-!$ACC PARALLEL LOOP COLLAPSE(3) PRIVATE(KM,ISKIP,ILA,IA,ILS,IS) DEFAULT(NONE)
+!$ACC PARALLEL LOOP COLLAPSE(3) PRIVATE(KM,ISKIP,ILA,IA,ILS,IS) 
 DO KMLOC=1,D_NUMP
    DO J=1,(R_NTMAX+3)/2
       DO JK=1,KFC
@@ -299,7 +306,7 @@ DO KMLOC=1,D_NUMP
 ENDDO
 
 IF(KMLOC0 > 0) THEN
-   !$ACC PARALLEL LOOP COLLAPSE(2) PRIVATE(KDGLU,ISL) DEFAULT(NONE)
+   !$ACC PARALLEL LOOP COLLAPSE(2) PRIVATE(KDGLU,ISL) 
    DO J=1,R_NDGNH   
       DO JK=1,KFC
          KDGLU = MIN(R_NDGNH,G_NDGLU(0))
@@ -316,6 +323,7 @@ IF(KMLOC0 > 0) THEN
       !C=A*B =>
       ! C^T=B^T*A^T
 
+#ifdef gnarls
       !$ACC host_data use_device(ZAS0,DZBST0,DZCST0)
       call CUDA_DGEMM_BATCHED('N','N',&
  &                            DTDZBS,TDZAS,DLDZBS,&
@@ -323,8 +331,9 @@ IF(KMLOC0 > 0) THEN
  &                            ZAS0,LDZAS,TDZAS,&
  &                            0._JPRD,DZCST0,DTDZCS,DLDZCS,1)
       !$ACC end host_data
+#endif
 
-   !$ACC parallel loop collapse(2) private(ILA,IA,ILS,IS) DEFAULT(NONE)
+   !$ACC parallel loop collapse(2) private(ILA,IA,ILS,IS) 
    DO J=1,(R_NTMAX+3)/2
       DO JK=1,KFC
          if (MOD((JK-1),ISKIP) .eq. 0) then

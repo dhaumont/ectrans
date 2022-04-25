@@ -1,4 +1,5 @@
 module cuda_device_mod
+#ifdef gnarls
 
 interface cuda_sync
 
@@ -36,5 +37,6 @@ integer(c_int) :: devnum
 end function cuda_GetDeviceCount
 
 end interface cuda_device
+#endif
 
 end module cuda_device_mod

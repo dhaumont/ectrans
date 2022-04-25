@@ -52,9 +52,10 @@ USE TPM_FFT         ,ONLY : T
 #ifdef WITH_FFTW
 USE TPM_FFTW        ,ONLY : TW, EXEC_FFTW
 #endif
-USE TPM_FFTC        ,ONLY : CREATE_PLAN_FFT, destroy_plan_fft
+USE TPM_FFTR        ,ONLY : CREATE_PLAN_FFTR, DESTROY_PLAN_FFTR, EXECUTE_PLAN_FFTR
 USE TPM_DIM         ,ONLY : R
-USE CUDA_DEVICE_MOD
+!USE CUDA_DEVICE_MOD
+USE , INTRINSIC :: ISO_C_BINDING
 
 IMPLICIT NONE
 
@@ -66,6 +67,8 @@ INTEGER(KIND=JPIM) :: IGLG,IST,ILEN,IJUMP,JJ,JF,IST1
 INTEGER(KIND=JPIM) :: IOFF,IRLEN,ICLEN, ITYPE
 LOGICAL :: LL_ALL=.FALSE. ! T=do kfields ffts in one batch, F=do kfields ffts one at a time
 INTEGER(KIND=JPIM) :: IPLAN_C2R
+TYPE(C_PTR) :: PLAN_C2R_PTR
+
 INTEGER(KIND=JPIM) :: IBEG,IEND,IINC,ISIZE
 integer :: istat,idev
 
@@ -90,7 +93,7 @@ ISIZE=size(PREEL,1)
 !$ACC DATA &
 !$ACC& PRESENT(PREEL)
 
-!$ACC PARALLEL LOOP DEFAULT(NONE)
+!$ACC PARALLEL LOOP
 DO KGL=IBEG,IEND,IINC
 
   IOFF  = D%NSTAGTF(KGL)+1
@@ -122,15 +125,14 @@ DO KGL=IBEG,IEND,IINC
   !IF (G%NLOEN(IGLG)>1) THEN
 !call cudaProfilerStop()
      !istat=cuda_SetDevice(idev)
-     CALL CREATE_PLAN_FFT(IPLAN_C2R,1,G%NLOEN(IGLG),KFIELDS)
-     !$ACC host_data use_device(PREEL,PREEL2)
-     CALL EXECUTE_PLAN_FFTC(IPLAN_C2R,1,PREEL(1, ioff),PREEL2(1, ioff))
-     !$ACC end host_data
+     CALL CREATE_PLAN_FFTR(PLAN_C2R_PTR,1,G%NLOEN(IGLG),KFIELDS)
+     !**$ACC host_data use_device(PREEL,PREEL2)
+     CALL EXECUTE_PLAN_FFTR(PLAN_C2R_PTR,PREEL(1, ioff),PREEL2(1, ioff))
+     !**$ACC end host_data
 !call cudaProfilerStart()
   !ENDIF
 END DO
 !!$OMP END PARALLEL DO
-istat = cuda_Synchronize()      
 
 
 !$acc kernels

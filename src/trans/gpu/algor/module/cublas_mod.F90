@@ -1,4 +1,5 @@
 MODULE CUBLAS_MOD
+#ifdef gnarls
 !
 ! Define the interfaces to the NVIDIA C code
 !
@@ -154,5 +155,6 @@ END INTERFACE
 
 
 
+#endif
 
 END MODULE CUBLAS_MOD

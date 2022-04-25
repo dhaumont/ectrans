@@ -156,11 +156,11 @@ MODULE TRLTOG_MOD
   REAL(KIND=JPRBT) :: TIMEF, Tc
   LOGICAL :: LLGW
 
-  #ifdef PARKINDTRANS_SINGLE
-  #define TRLTOG_DTYPE MPI_REAL
-  #else
-  #define TRLTOG_DTYPE MPI_DOUBLE_PRECISION
-  #endif
+#ifdef PARKINDTRANS_SINGLE
+#define TRLTOG_DTYPE MPI_REAL
+#else
+#define TRLTOG_DTYPE MPI_DOUBLE_PRECISION
+#endif
 
   
   !     ------------------------------------------------------------------
@@ -422,7 +422,7 @@ MODULE TRLTOG_MOD
   !$ACC DATA IF(IBUFLENS > 0) CREATE(ZCOMBUFS)
   !$ACC DATA IF(IBUFLENR > 0) CREATE(ZCOMBUFR)
 
-  !$ACC KERNELS DEFAULT(NONE)
+  !$ACC KERNELS 
   IF (IBUFLENS > 0) ZCOMBUFS(:,:) =  0
   IF (IBUFLENR > 0) ZCOMBUFR(:,:) =  0
   !$ACC END KERNELS
@@ -467,7 +467,7 @@ MODULE TRLTOG_MOD
     CALL GSTATS(1604,0)
 
     IF (LLPGPONLY) THEN
-      !$ACC PARALLEL LOOP DEFAULT(NONE) PRIVATE(IPOS,IFIRST,ILAST,IFLD,JK) &
+      !$ACC PARALLEL LOOP  PRIVATE(IPOS,IFIRST,ILAST,IFLD,JK) &
       !$ACC     COPYIN(IGPTROFF,IFLDOFF,JK_MAX) COLLAPSE(3)
       DO JBLK=1,NGPBLKS
         DO JFLD=1,IFLDS
@@ -497,7 +497,7 @@ MODULE TRLTOG_MOD
         ENDDO
       ENDDO
     ELSE
-      !$ACC PARALLEL LOOP DEFAULT(NONE) PRIVATE(IPOS,IFIRST,ILAST,IFLD,JK) &
+      !$ACC PARALLEL LOOP  PRIVATE(IPOS,IFIRST,ILAST,IFLD,JK) &
       !$ACC     COPYIN(IGPTROFF,IFLDOFF,JK_MAX) COLLAPSE(3)
       DO JBLK=1,NGPBLKS
         DO JFLD=1,IFLDS
@@ -540,10 +540,10 @@ MODULE TRLTOG_MOD
 
   ENDIF
   
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=TIMEF()
-  #endif
+#endif
   !
   ! loop over the number of processors we need to communicate with.
   ! NOT MYPROC
@@ -555,7 +555,7 @@ MODULE TRLTOG_MOD
     DO INS=1,INSEND
       ISEND=JSEND(INS)
       ILEN = ISENDTOT(ISEND)/KF_FS
-      !$ACC PARALLEL LOOP DEFAULT(NONE) PRIVATE(II) COPYIN(ILEN) COLLAPSE(2)
+      !$ACC PARALLEL LOOP  PRIVATE(II) COPYIN(ILEN) COLLAPSE(2)
       DO JL=1,ILEN
         DO JFLD=1,KF_FS
           II = KINDEX(INDOFF(ISEND)+JL)
@@ -570,11 +570,11 @@ MODULE TRLTOG_MOD
     ENDDO
 
   
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=(TIMEF()-Tc)/1000.0_JPRBT
     !IF(MPL_MYRANK==1) WRITE(*,*) "packing (trltog) in sec: ", Tc
-  #endif
+#endif
   
   CALL GSTATS(1605,1)
   
@@ -584,10 +584,10 @@ MODULE TRLTOG_MOD
   IF (LHOOK) CALL DR_HOOK('TRLTOG_BAR',1,ZHOOK_HANDLE_BAR)
   CALL GSTATS(805,0)
   
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=TIMEF()
-  #endif
+#endif
   
   IF (LSYNC_TRANS) THEN
     CALL GSTATS(422,0)
@@ -636,19 +636,19 @@ MODULE TRLTOG_MOD
   ENDIF
     
   CALL GSTATS(412,1)
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=(TIMEF()-Tc)/1000.0_JPRBT
     !IF(MPL_MYRANK==1) WRITE(*,*) "CUDA-aware isend/irecv (trltog) in sec: ", Tc
-  #endif
+#endif
   
   CALL GSTATS(805,1)
   CALL GSTATS_BARRIER2(762)
   
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=TIMEF()
-  #endif
+#endif
   !  Unpack loop.........................................................
   
   CALL GSTATS(1606,0)
@@ -678,7 +678,7 @@ MODULE TRLTOG_MOD
         ENDIF
       ENDDO
   
-      !$ACC PARALLEL LOOP DEFAULT(NONE) PRIVATE(IFIRST,ILAST,JI,JK,IFLDT) &
+      !$ACC PARALLEL LOOP  PRIVATE(IFIRST,ILAST,JI,JK,IFLDT) &
       !$ACC     COPYIN(INR,KF_FS,IPOS,JPOS,IFLD,IFLDA,JK_MAX,IRECV_FLD_END) COLLAPSE(3)
       DO JBLK=1,NGPBLKS
         DO JJ=1,IRECV_FLD_END
@@ -721,11 +721,11 @@ MODULE TRLTOG_MOD
     !$ACC END DATA   !! CREATE ZCOMBUFS
     CALL GSTATS(431,1)
 
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=(TIMEF()-Tc)/1000.0_JPRBT
     !IF(MPL_MYRANK==1) WRITE(*,*) "unpacking (trltog) in sec: ", Tc
-  #endif
+#endif
   
   CALL GSTATS(1606,1)
   IF (IBUFLENS > 0) DEALLOCATE(ZCOMBUFS)
@@ -1161,11 +1161,11 @@ MODULE TRLTOG_MOD
     ENDDO
   
     CALL GSTATS(1604,0)
-  #ifdef NECSX
+#ifdef NECSX
   !$OMP PARALLEL DO SCHEDULE(DYNAMIC) PRIVATE(JFLD,JBLK,JK,IFLD,IPOS,IFIRST,ILAST)
-  #else
+#else
   !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JFLD,JBLK,JK,IFLD,IPOS,IFIRST,ILAST)
-  #endif
+#endif
 
     DO JBLK=1,NGPBLKS
       IFIRST = IGPTRSEND(1,JBLK,MYSETW)
@@ -1249,10 +1249,10 @@ MODULE TRLTOG_MOD
   
   ENDIF
   
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=TIMEF()
-  #endif
+#endif
   !
   ! loop over the number of processors we need to communicate with.
   ! NOT MYPROC
@@ -1267,15 +1267,15 @@ MODULE TRLTOG_MOD
       ISEND_FLD_START(ISEND)= 1
       ILEN = ISENDTOT(ISEND)/KF_FS
       ISEND_FLD_END = KF_FS
-  #ifdef NECSX
+#ifdef NECSX
       DO JFLD=ISEND_FLD_START(ISEND),ISEND_FLD_END
         DO JL=1,ILEN
         II = INDEX(INDOFF(ISEND)+JL)
-  #else
+#else
       DO JL=1,ILEN
         II = INDEX(INDOFF(ISEND)+JL)
         DO JFLD=ISEND_FLD_START(ISEND),ISEND_FLD_END
-  #endif
+#endif
           IF ( LLGW ) THEN
 			ZCOMBUFS((JFLD-ISEND_FLD_START(ISEND))*ILEN+JL,INS) = PGLAT(II,JFLD)
 		  ELSE
@@ -1287,11 +1287,11 @@ MODULE TRLTOG_MOD
       ZCOMBUFS(0,INS)  = KF_FS
     ENDDO
   !$OMP END PARALLEL DO
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=(TIMEF()-Tc)/1000.0_JPRBT
     !IF(MPL_MYRANK==1) WRITE(*,*) "packing (trltog) in sec: ", Tc
-  #endif
+#endif
   
   CALL GSTATS(1605,1)
   
@@ -1301,10 +1301,10 @@ MODULE TRLTOG_MOD
   IF (LHOOK) CALL DR_HOOK('TRLTOG_BAR',1,ZHOOK_HANDLE_BAR)
   CALL GSTATS(805,0)
   
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=TIMEF()
-  #endif
+#endif
   !...Receive loop.........................................................
   DO INR=1,INRECV
     IR=IR+1
@@ -1329,19 +1329,19 @@ MODULE TRLTOG_MOD
     & CDSTRING='TRLTOG: WAIT FOR SENDS AND RECEIVES')
   ENDIF
   
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=(TIMEF()-Tc)/1000.0_JPRBT
     !IF(MPL_MYRANK==1) WRITE(*,*) "non-CUDA-aware isend/irecv (trltog) in sec: ", Tc
-  #endif
+#endif
   
   CALL GSTATS(805,1)
   CALL GSTATS_BARRIER2(762)
   
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=TIMEF()
-  #endif
+#endif
   !  Unpack loop.........................................................
   
   CALL GSTATS(1606,0)
@@ -1418,11 +1418,11 @@ MODULE TRLTOG_MOD
     ENDDO
     !$OMP END PARALLEL DO
 
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=(TIMEF()-Tc)/1000.0_JPRBT
     !IF(MPL_MYRANK==1) WRITE(*,*) "unpacking (trltog) in sec: ", Tc
-  #endif
+#endif
   
   CALL GSTATS(1606,1)
   IF (IBUFLENS > 0) DEALLOCATE(ZCOMBUFS)

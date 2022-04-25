@@ -9,7 +9,7 @@
 cmake_minimum_required( VERSION 3.12 FATAL_ERROR )
 find_package( ecbuild 3.4 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild )
 
-project( ectrans LANGUAGES C Fortran )
+project( ectrans LANGUAGES C Fortran CXX)
 include( ectrans_macros )
 
 ecbuild_enable_fortran( REQUIRED NO_MODULE_DIRECTORY )
@@ -54,7 +54,7 @@ if( NOT HAVE_MKL )
 endif()
 
 ecbuild_add_option( FEATURE FFTW
-                    DEFAULT ON
+                    DEFAULT OFF
                     DESCRIPTION "Support for fftw"
                     REQUIRED_PACKAGES "FFTW COMPONENTS double ${single}" )
 
@@ -64,19 +64,26 @@ ecbuild_add_option( FEATURE TRANSI
                     CONDITION HAVE_DOUBLE_PRECISION )
 
 ## olivier
-find_package(OpenACC REQUIRED)
-ecbuild_add_option( FEATURE ACC  
-                    REQUIRED_PACKAGES "OpenACC COMPONENTS Fortran" 
-                    DEFAULT OFF )
-enable_language( CUDA )
+## daand: openacc enabled by default with Cray compiler
+
+#find_package(OpenACC REQUIRED)
+#ecbuild_add_option( FEATURE ACC  
+#                    REQUIRED_PACKAGES "OpenACC COMPONENTS Fortran" 
+#                    DEFAULT OFF )
+#enable_language( CUDA )
+
 ##find_package(CUDAToolkit REQUIRED)
 ecbuild_add_option( FEATURE GPU
                     DEFAULT ON
                     DESCRIPTION "Compile GPU version of ectrans" )
 ##                    CONDITION HAVE_DOUBLE_PRECISION )
-set( OpenACC_Fortran_FLAGS "-acc" )
-set( OpenACC_Fortran_FLAGS "${OpenACC_Fortran_FLAGS} -ta=tesla:lineinfo,deepcopy,fastmath" )
-set( OpenACC_Fortran_FLAGS "${OpenACC_Fortran_FLAGS} -Mcuda" )
+
+## daand: don't know about openacc switches yet
+set( OpenACC_Fortran_FLAGS "" )
+
+#set( OpenACC_Fortran_FLAGS "-acc" )
+#set( OpenACC_Fortran_FLAGS "${OpenACC_Fortran_FLAGS} -ta=tesla:lineinfo,deepcopy,fastmath" )
+#set( OpenACC_Fortran_FLAGS "${OpenACC_Fortran_FLAGS} -Mcuda" )
 # For debugging accelerator compilation
 # set( OpenACC_Fortran_FLAGS "${OpenACC_Fortran_FLAGS} -Minfo=accel" )
 

@@ -103,7 +103,11 @@ ISMAX = R%NSMAX
 !loop over wavenumber
 DO KMLOC=1,D%NUMP
   KM = D%MYMS(KMLOC)
-  !$ACC PARALLEL LOOP DEFAULT(NONE) PRIVATE(IJ)
+
+#ifdef gnarls
+
+
+  !$ACC PARALLEL LOOP  PRIVATE(IJ)
   DO JN=KM-1,ISMAX+2
    IJ = ISMAX+3-JN
    ZN(IJ) = F%RN(JN)
@@ -114,12 +118,13 @@ DO KMLOC=1,D%NUMP
    ENDIF
    !write(nout,*) 'deriv dy debug in ; ',JN, IJ, ZN(IJ),ZZEPSNM(IJ),PEPSNM(KMLOC,JN)
   ENDDO
-  !$ACC KERNELS DEFAULT(NONE)
+  
+  !$ACC KERNELS 
   ZN(0) = F%RN(ISMAX+3)
   !$ACC END KERNELS
 
   IF(KM == 0) THEN
-      !$ACC PARALLEL LOOP DEFAULT(NONE) PRIVATE(IR)
+      !$ACC PARALLEL LOOP  PRIVATE(IR)
       DO J=1,KF_SCALARS
         IR = 2*J-1
         DO JI=2,ISMAX+3
@@ -129,7 +134,7 @@ DO KMLOC=1,D%NUMP
       ENDDO
   ELSE  
 
-    !$ACC PARALLEL LOOP COLLAPSE(2) DEFAULT(NONE) PRIVATE(IR,II)
+    !$ACC PARALLEL LOOP COLLAPSE(2)  PRIVATE(IR,II)
     DO J=1,KF_SCALARS
       DO JI=2,ISMAX+3-KM
         IR = 2*J-1
@@ -145,6 +150,10 @@ DO KMLOC=1,D%NUMP
     !write(301,*) 'deriv dy debug 2nd; ',KMLOC,maxval(PNSD(1,:,KMLOC)),maxval(PNSD(2,:,KMLOC))
     !call flush(301)
   ENDIF
+
+
+#endif
+
 
 !end loop over wavenumber
 END DO

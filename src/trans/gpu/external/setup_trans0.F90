@@ -83,7 +83,7 @@ use openacc
 use ec_env_mod, only : ec_getenv
 
 ! daand: added this to enable synchronization status
-use cudafor
+!use cudafor
 
 !endif INTERFACE
 
@@ -150,8 +150,8 @@ ENDIF
 
 
 
-istat = cudaDeviceSynchronize()
-write (*,*) "cudaDeviceSynchronize returned code ",istat
+!istat = cudaDeviceSynchronize()
+!write (*,*) "cudaDeviceSynchronize returned code ",istat
 
 
 IF(MSETUP0 /= 0) THEN

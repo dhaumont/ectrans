@@ -145,7 +145,7 @@ USE YOMHOOK           ,ONLY : LHOOK,   DR_HOOK,  JPHOOK
 
 #ifdef _OPENACC
 use openacc
-use accel_lib
+!use accel_lib
 #endif
 
 !endif INTERFACE

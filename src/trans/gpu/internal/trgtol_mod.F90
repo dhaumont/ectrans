@@ -89,7 +89,7 @@ MODULE TRGTOL_MOD
   USE ABORT_TRANS_MOD ,ONLY : ABORT_TRANS
   !
   USE MPI
-  use cudafor
+  !use cudafor
   
   IMPLICIT NONE
   
@@ -152,11 +152,11 @@ MODULE TRGTOL_MOD
   REAL(KIND=JPRBT) :: TIMEF, tc
   LOGICAL :: LLGW
   
-  #ifdef PARKINDTRANS_SINGLE
-  #define TRGTOL_DTYPE MPI_REAL
-  #else
-  #define TRGTOL_DTYPE MPI_DOUBLE_PRECISION
-  #endif
+#ifdef PARKINDTRANS_SINGLE
+#define TRGTOL_DTYPE MPI_REAL
+#else
+#define TRGTOL_DTYPE MPI_DOUBLE_PRECISION
+#endif
 
   !     ------------------------------------------------------------------
   
@@ -443,7 +443,7 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   !$ACC DATA IF(IBUFLENS > 0) CREATE(ZCOMBUFS)
   !$ACC DATA IF(IBUFLENR > 0) CREATE(ZCOMBUFR)
 
-  !$ACC KERNELS DEFAULT(NONE)
+  !$ACC KERNELS 
   IF (IBUFLENS > 0) ZCOMBUFS(:,:) =  0.
   IF (IBUFLENR > 0) ZCOMBUFR(:,:) =  0.
   !$ACC END KERNELS
@@ -498,7 +498,7 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   CALL GSTATS(1601,0)
   IF(LLPGPONLY) THEN
 #ifndef gnarls
-    !$ACC PARALLEL LOOP COLLAPSE(3) DEFAULT(NONE) PRIVATE(IPOS,IFIRST,ILAST,IFLD,JK)
+    !$ACC PARALLEL LOOP COLLAPSE(3)  PRIVATE(IPOS,IFIRST,ILAST,IFLD,JK)
     DO JBLK=1,NGPBLKS
       DO JFLD=1,IFLDS
         DO JKL=1, JK_MAX
@@ -542,7 +542,7 @@ write (0,*) __FILE__, __LINE__; call flush(0)
     ENDDO
 #endif
   ELSE
-    !$ACC PARALLEL LOOP COLLAPSE(3) DEFAULT(NONE) PRIVATE(IPOS,IFIRST,ILAST,IFLD,JK)
+    !$ACC PARALLEL LOOP COLLAPSE(3)  PRIVATE(IPOS,IFIRST,ILAST,IFLD,JK)
     DO JBLK=1,NGPBLKS
       DO JFLD=1,IFLDS
         DO JKL=1, JK_MAX
@@ -588,10 +588,10 @@ write (0,*) __FILE__, __LINE__; call flush(0)
 
   ENDIF
 
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=TIMEF()
-  #endif
+#endif
   !....Pack loop.........................................................
   
   CALL GSTATS(1602,0)
@@ -621,7 +621,7 @@ write (0,*) __FILE__, __LINE__; call flush(0)
       ENDDO
   
   
-      !$ACC PARALLEL LOOP COLLAPSE(3) DEFAULT(NONE) PRIVATE(JK,JI,IFLDT,IFIRST,ILAST) COPYIN(INS,JK_MAX,IJPOS,IFLDA)
+      !$ACC PARALLEL LOOP COLLAPSE(3)  PRIVATE(JK,JI,IFLDT,IFIRST,ILAST) COPYIN(INS,JK_MAX,IJPOS,IFLDA)
       DO JJ=1,ISEND_FLD_END
         DO JBLK=1,NGPBLKS
           DO JKL=1, JK_MAX
@@ -653,12 +653,12 @@ write (0,*) __FILE__, __LINE__; call flush(0)
     ENDDO
 
 
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=(TIMEF()-Tc)/1000.0_JPRBT
     CALL MPI_COMM_RANK(MPI_COMM_WORLD, IRANK, IERROR)
     !IF(irank==0) WRITE(*,*) "packing (trgtol) in sec: ", Tc
-  #endif
+#endif
   
   CALL GSTATS(1602,1)
   
@@ -673,10 +673,10 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   ENDIF
   IR=0
   
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=TIMEF()
-  #endif
+#endif
   IF (LSYNC_TRANS) THEN
     CALL GSTATS(423,0)
     CALL MPL_BARRIER(CDSTRING='TRGTOL BARRIER')
@@ -740,7 +740,7 @@ write (0,*) __FILE__, __LINE__; call flush(0)
       IRECV=JRECV(INR)
       ILEN = IRECVTOT(IRECV)/KF_FS
       IRECV_FLD_END   = ICOMBUFR_FLD(INR)
-      !$ACC PARALLEL LOOP COLLAPSE(2) DEFAULT(NONE) PRIVATE(II) COPYIN(IRECV,ILEN,IRECV_FLD_END)
+      !$ACC PARALLEL LOOP COLLAPSE(2)  PRIVATE(II) COPYIN(IRECV,ILEN,IRECV_FLD_END)
       DO JFLD=1,IRECV_FLD_END
         DO JL=1,ILEN
           II = KINDEX(INDOFF(IRECV)+JL)
@@ -1210,11 +1210,11 @@ write (0,*) __FILE__, __LINE__; call flush(0)
     ENDDO
 
     CALL GSTATS(1601,0)
-  #ifdef NECSX
+#ifdef NECSX
   !$OMP PARALLEL DO SCHEDULE(DYNAMIC) PRIVATE(JFLD,JBLK,JK,IFLD,IPOS,IFIRST,ILAST)
-  #else
+#else
   !$OMP PARALLEL DO SCHEDULE(STATIC) PRIVATE(JFLD,JBLK,JK,IFLD,IPOS,IFIRST,ILAST)
-  #endif
+#endif
   DO JBLK=1,NGPBLKS
       IFIRST = IGPTRSEND(1,JBLK,MYSETW)
       IF(IFIRST > 0) THEN
@@ -1285,10 +1285,10 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   
   ENDIF
 
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=TIMEF()
-  #endif
+#endif
   !....Pack loop.........................................................
   
   ISEND_FLD_START=1
@@ -1368,12 +1368,12 @@ write (0,*) __FILE__, __LINE__; call flush(0)
       ZCOMBUFS(0,INS) = IFLD
     ENDDO
   !$OMP END PARALLEL DO
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=(TIMEF()-Tc)/1000.0_JPRBT
     CALL MPI_COMM_RANK(MPI_COMM_WORLD, IRANK, IERROR)
     !IF(irank==0) WRITE(*,*) "packing (trgtol) in sec: ", Tc
-  #endif
+#endif
   
   CALL GSTATS(1602,1)
   
@@ -1388,10 +1388,10 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   ENDIF
   IR=0
   
-  #ifdef COMVERBOSE
+#ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     Tc=TIMEF()
-  #endif
+#endif
   !  Receive loop.........................................................
   DO INR=1,INRECV
     IR=IR+1

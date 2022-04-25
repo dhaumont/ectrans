@@ -104,8 +104,11 @@ REAL(KIND=JPRBT) :: ZEPSNM(-1:R%NSMAX+4)
 ISMAX = R%NSMAX
 DO KMLOC=1,D%NUMP
   ZKM = D%MYMS(KMLOC)
-  !$ACC PARALLEL LOOP DEFAULT(NONE)
-  DO JN=ZKM-1,ISMAX+2
+
+#ifdef gnarls
+
+  !$ACC PARALLEL LOOP 
+  DO JN=INT(ZKM-1),ISMAX+2
     IJ = ISMAX+3-JN
     ZN(IJ) = F%RN(JN)
     ZLAPIN(IJ) = F%RLAPIN(JN)
@@ -115,14 +118,14 @@ DO KMLOC=1,D%NUMP
         ZEPSNM(IJ) = 0
     ENDIF
   ENDDO
-  !$ACC KERNELS DEFAULT(NONE)
+  !$ACC KERNELS 
   ZN(0) = F%RN(ISMAX+3)
   !$ACC END KERNELS
 
 !*       1.1      U AND V (KM=0) .
 
 IF(ZKM == 0) THEN
-  !$ACC PARALLEL LOOP DEFAULT(NONE)
+  !$ACC PARALLEL LOOP 
   DO J=1,KFIELD
     IR = 2*J-1
     DO JI=2,ISMAX+3
@@ -137,9 +140,9 @@ IF(ZKM == 0) THEN
 ELSE
 !*       1.2      U AND V (KM!=0) .
 
-    !$ACC PARALLEL LOOP COLLAPSE(2) DEFAULT(NONE)
+    !$ACC PARALLEL LOOP COLLAPSE(2) 
     DO J=1,KFIELD
-      DO JI=2,ISMAX+3-ZKM
+      DO JI=2,ISMAX+3-INT(ZKM)
         !ZKM = D_MYMS(KMLOC)
         IR = 2*J-1
         II = IR+1
@@ -160,7 +163,11 @@ ELSE
       ENDDO
     ENDDO
   ENDIF
+
+#endif
+
 ENDDO
+
 
 !$ACC END DATA
 !     ------------------------------------------------------------------

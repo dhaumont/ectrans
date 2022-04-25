@@ -94,8 +94,8 @@ USE PARKIND_ECTRANS  ,ONLY : JPIM     ,JPRB,  JPRBT
   !              -----------------------
 
   !loop over wavenumber
-  !$ACC DATA PRESENT(PSPEC,POA,R,D)
-  !$ACC PARALLEL LOOP COLLAPSE(3) PRIVATE(KM,IASM0,INM,IR,II) DEFAULT(NONE)
+!$ACC DATA PRESENT(PSPEC,POA,R,D)
+!$ACC PARALLEL LOOP COLLAPSE(3) PRIVATE(KM,IASM0,INM,IR,II) 
   DO KMLOC=1,D%NUMP     
        DO JN=R%NTMAX+2-R%NSMAX,R%NTMAX+2
           DO JFLD=1,KFIELD
@@ -130,7 +130,7 @@ USE PARKIND_ECTRANS  ,ONLY : JPIM     ,JPRB,  JPRBT
           ENDDO
        ENDDO
     ENDDO
-!$ACC END PARALLEL
+!$ACC END PARALLEL LOOP
 !$ACC END DATA
     
   !     ------------------------------------------------------------------

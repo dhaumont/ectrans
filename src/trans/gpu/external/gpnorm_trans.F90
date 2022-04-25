@@ -109,6 +109,8 @@ INTEGER(KIND=JPIM) :: IPROC,ITAG,ILEN,ILENR,IBEG,IEND,IND
 !     ------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('GPNORM_TRANS',0,ZHOOK_HANDLE)
 
+#ifdef gnarls
+
 ! Set current resolution
 CALL SET_RESOL(KRESOL)
 
@@ -472,5 +474,6 @@ IF (LHOOK) CALL DR_HOOK('GPNORM_TRANS',1,ZHOOK_HANDLE)
 
 !endif INTERFACE
 
+#endif
 
 END SUBROUTINE GPNORM_TRANS
