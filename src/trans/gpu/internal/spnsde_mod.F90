@@ -86,6 +86,8 @@ INTEGER(KIND=JPIM) :: IJ, ISKIP, J, JN,JI,ISMAX, IR, II
 REAL(KIND=JPRBT) :: ZZEPSNM(-1:R%NSMAX+4)
 REAL(KIND=JPRBT) :: ZN(-1:R%NTMAX+4)
 
+call abor1('subroutine ignored because of internal compiler error')
+
 !$ACC DATA                             &
 !$ACC      CREATE (ZN,ZZEPSNM)         &
 !$ACC      PRESENT (F,F%RN)   &

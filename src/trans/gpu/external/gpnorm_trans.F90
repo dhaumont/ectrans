@@ -109,6 +109,9 @@ INTEGER(KIND=JPIM) :: IPROC,ITAG,ILEN,ILENR,IBEG,IEND,IND
 !     ------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('GPNORM_TRANS',0,ZHOOK_HANDLE)
 
+
+call abor1('subroutine ignored because of internal compiler error')
+
 #ifdef gnarls
 
 ! Set current resolution

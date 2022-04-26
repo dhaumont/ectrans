@@ -89,6 +89,9 @@ REAL(KIND=JPRBT) :: ZN(-1:R%NTMAX+4)
 REAL(KIND=JPRBT) :: ZLAPIN(-1:R%NSMAX+4)
 REAL(KIND=JPRBT) :: ZEPSNM(-1:R%NSMAX+4)
 
+
+call abor1('subroutine ignored because of internal compiler error')
+
 !$ACC DATA                                     &
 !$ACC      CREATE (ZEPSNM, ZN, ZLAPIN)         &
 !$ACC      COPYIN (D,D%MYMS,F,F%RLAPIN,F%RN)   &

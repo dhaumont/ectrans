@@ -52,6 +52,7 @@ create_plan_fftr_c_(rocfft_plan *PLANp, int *ISIGNp, int *Np, int *LOTp, int *IS
 		fprintf(stderr,"%s %d \n","IDISTp=",*IDISTp);
 		fprintf(stderr,"%s %d \n","OSTRIDEp=",*OSTRIDEp);
 		fprintf(stderr,"%s %d \n","ODISTp=",*ODISTp);
+		fprintf(stderr,"%s %d \n","INPLACEp=",*INPLACEp);
 		fflush (stderr);
 	}
 
@@ -100,10 +101,10 @@ create_plan_fftr_c_(rocfft_plan *PLANp, int *ISIGNp, int *Np, int *LOTp, int *IS
 	rocfft_precision prec = rocfft_precision_double;
 	#endif
 	
-	rocfft_result_placement plac = *INPLACEp ? rocfft_placement_inplace : rocfft_placement_notinplace;
+	rocfft_result_placement plac = ( *INPLACEp == 1 ) ? rocfft_placement_inplace : rocfft_placement_notinplace;
 	
 	rocfftSafeCall( rocfft_plan_create(PLANp,
-								rocfft_placement_notinplace,
+								plac,
 								transform_type,
 								prec,
 								1, // Number of dimensions
