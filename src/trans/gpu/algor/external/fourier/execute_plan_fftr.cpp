@@ -42,30 +42,29 @@ execute_plan_fftr_c_(rocfft_plan *PLANp, double *data_in, double *data_out)
 #endif
 {
 	
-#ifdef TRANS_SINGLE
-	fprintf(stderr, "\n\n(single precision)\n");
-#else
-	fprintf(stderr, "\n\n(double precision)\n");
-#endif
-	fprintf(stderr, "using plan at %p\n", PLANp);
-	fprintf(stderr, "input data: %f, %f, ...\n\n", data_in[0],data_in[1]);
-	fflush (stderr);
+// #ifdef TRANS_SINGLE
+	// fprintf(stderr, "\n\n(single precision)\n");
+// #else
+	// fprintf(stderr, "\n\n(double precision)\n");
+// #endif
+	// fprintf(stderr, "executing plan at %p\n", PLANp);
+	// fflush (stderr);
 
 	rocfft_execution_info info = NULL;
 	rocfftSafeCall( rocfft_execution_info_create(&info) );
 	
 	rocfftSafeCall( rocfft_plan_get_print(* PLANp ) );
 
-//#pragma omp target data use_device_ptr(data_in,data_out)
+#pragma omp target data use_device_ptr(data_in,data_out)
 {
 	rocfftSafeCall( rocfft_execute(*PLANp, // plan
 										(void**)&data_in, // in_buffer
 										(void**)&data_out, // out_buffer
 										info // execution info
 									) );
+	// fprintf(stderr, "plan at %p executed.\n", PLANp);
+	// fflush (stderr);
 									
-	fprintf(stderr, "(modified?) input data: %f, %f, ...\n\n", data_in[0],data_in[1]);
-	fflush (stderr);
 }
 
 }
@@ -80,32 +79,30 @@ execute_plan_fftr_inplace_c_(rocfft_plan *PLANp, double *data_in)
 #endif
 {
 	
-#ifdef TRANS_SINGLE
-	fprintf(stderr, "\n\n(single precision)\n");
-#else
-	fprintf(stderr, "\n\n(double precision)\n");
-#endif
-	fprintf(stderr, "using plan at %p\n", PLANp);
-	fprintf(stderr, "input data: %f, %f, ...\n\n", data_in[0],data_in[1]);
-	fflush (stderr);
+	
+// #ifdef TRANS_SINGLE
+	// fprintf(stderr, "\n\n(single precision)\n");
+// #else
+	// fprintf(stderr, "\n\n(double precision)\n");
+// #endif
+	// fprintf(stderr, "using plan at %p\n", PLANp);
+	// fflush (stderr);
 
 	rocfft_execution_info info = NULL;
 	rocfftSafeCall( rocfft_execution_info_create(&info) );
 	
 	rocfftSafeCall( rocfft_plan_get_print(* PLANp ) );
 
-#pragma omp target data use_device_ptr(data_in)
+//#pragma omp target data use_device_ptr(data_in)
 {
 	rocfftSafeCall( rocfft_execute(*PLANp, // plan
 										(void**)&data_in, // in_buffer
 										(void**)&data_in, // out_buffer
 										info // execution info
 									) );
-									
-#pragma acc update host(data_in[2])
 
-	fprintf(stderr, "(modified?) input data: %f, %f, ...\n\n", data_in[0],data_in[1]);
-	fflush (stderr);
+	// fprintf(stderr, "plan at %p executed.\n", PLANp);
+	// fflush (stderr);
 }
 
 }

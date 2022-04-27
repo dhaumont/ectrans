@@ -42,7 +42,7 @@ void
 create_plan_fftr_c_(rocfft_plan * *PLANp, int *ISIGNp, int *Np, int *LOTp, int *ISTRIDEp, int *IDISTp, int *OSTRIDEp, int *ODISTp, int *INPLACEp)
 {
 
-	if(1) {
+	if(0) {
 		fprintf(stderr,"Creating rocFFT plan\n");
 		fprintf(stderr,"%s %d \n","N=",*Np);
 		fprintf(stderr,"%s %d \n","LOT=",*LOTp);
@@ -70,7 +70,7 @@ create_plan_fftr_c_(rocfft_plan * *PLANp, int *ISIGNp, int *Np, int *LOTp, int *
 	in_distance=*IDISTp;
 	out_distance=*ODISTp;
 	
-	fprintf(stderr,"Make sure out_distance (%zu) is NX/2+1 !!!!\n",out_distance);
+	// fprintf(stderr,"Make sure out_distance (%zu) is NX/2+1 !!!!\n",out_distance);
 	
 	rocfft_array_type intype = ISIGN < 0 ? rocfft_array_type_real : rocfft_array_type_hermitian_interleaved;
 	rocfft_array_type outtype = ISIGN < 0 ? rocfft_array_type_hermitian_interleaved : rocfft_array_type_real;
@@ -115,8 +115,8 @@ create_plan_fftr_c_(rocfft_plan * *PLANp, int *ISIGNp, int *Np, int *LOTp, int *
 
 	rocfftSafeCall( rocfft_plan_description_destroy(plan_description) );
 	
-	fprintf(stderr, "\ncreated plan at %p\n\n", *PLANp);
-	fflush (stderr);
+	// fprintf(stderr, "\ncreated plan at %p\n\n", *PLANp);
+	// fflush (stderr);
 
 }
 
