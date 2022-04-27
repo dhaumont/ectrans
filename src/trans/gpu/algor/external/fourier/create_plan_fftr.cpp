@@ -39,9 +39,8 @@ static int planWorkspaceSize=100*1024*1024; //100MB
  
 extern "C"
 void
-create_plan_fftr_c_(rocfft_plan *PLANp, int *ISIGNp, int *Np, int *LOTp, int *ISTRIDEp, int *IDISTp, int *OSTRIDEp, int *ODISTp, int *INPLACEp)
+create_plan_fftr_c_(rocfft_plan * *PLANp, int *ISIGNp, int *Np, int *LOTp, int *ISTRIDEp, int *IDISTp, int *OSTRIDEp, int *ODISTp, int *INPLACEp)
 {
-
 
 	if(1) {
 		fprintf(stderr,"Creating rocFFT plan\n");
@@ -92,7 +91,7 @@ create_plan_fftr_c_(rocfft_plan *PLANp, int *ISIGNp, int *Np, int *LOTp, int *IS
 			) );
 
 	// plan
-	PLANp = new rocfft_plan;
+	*PLANp = new rocfft_plan;
 	rocfft_transform_type transform_type = ISIGN < 0 ? rocfft_transform_type_real_forward : rocfft_transform_type_real_inverse;
 	
 	#ifdef TRANS_SINGLE
@@ -103,7 +102,7 @@ create_plan_fftr_c_(rocfft_plan *PLANp, int *ISIGNp, int *Np, int *LOTp, int *IS
 	
 	rocfft_result_placement plac = ( *INPLACEp == 1 ) ? rocfft_placement_inplace : rocfft_placement_notinplace;
 	
-	rocfftSafeCall( rocfft_plan_create(PLANp,
+	rocfftSafeCall( rocfft_plan_create(*PLANp,
 								plac,
 								transform_type,
 								prec,
@@ -115,6 +114,9 @@ create_plan_fftr_c_(rocfft_plan *PLANp, int *ISIGNp, int *Np, int *LOTp, int *IS
 
 
 	rocfftSafeCall( rocfft_plan_description_destroy(plan_description) );
+	
+	fprintf(stderr, "\ncreated plan at %p\n\n", *PLANp);
+	fflush (stderr);
 
 }
 

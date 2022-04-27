@@ -104,5 +104,7 @@ endif()
 
 ecbuild_install_project( NAME ${PROJECT_NAME} )
 
+message("CMAKE_Fortran_FLAGS = ${CMAKE_Fortran_FLAGS}")
+
 ecbuild_print_summary()
 
