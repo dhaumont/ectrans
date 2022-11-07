@@ -597,7 +597,8 @@ MODULE TRLTOG_MOD
   CALL GSTATS(412,0)
 
   !...Receive loop.........................................................
-  !$ACC HOST_DATA USE_DEVICE(ZCOMBUFS,ZCOMBUFR)
+  !**$ACC HOST_DATA USE_DEVICE(ZCOMBUFS,ZCOMBUFR)
+  !$omp target data use_device_ptr(zcombufs,zcombufr)
   DO INR=1,INRECV
     IR=IR+1
     IRECV=JRECV(INR)
@@ -628,7 +629,8 @@ MODULE TRLTOG_MOD
          & MPL_COMM_OML(OML_MY_THREAD()),IREQ(IR), &
          & IERROR)
   ENDDO
-  !$ACC END HOST_DATA
+  !**$ACC END HOST_DATA
+  !$omp end target data
 
   IF(IR > 0) THEN
     CALL MPL_WAIT(KREQUEST=IREQ(1:IR), &

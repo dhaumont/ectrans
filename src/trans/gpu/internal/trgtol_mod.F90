@@ -152,6 +152,40 @@ MODULE TRGTOL_MOD
   REAL(KIND=JPRBT) :: TIMEF, tc
   LOGICAL :: LLGW
   
+  ! variables for testing
+  integer :: ierr
+  integer :: status(MPI_STATUS_SIZE,2) 
+  real :: x(32)
+  integer :: jreq     (2)
+  integer :: jjfld
+
+#ifdef gnarls
+! === begin test ===
+!$acc data copyout(x)
+! initialize data on rank 0
+if ( myproc == 1 ) then
+!$acc parallel loop
+	do jgl=1, 32
+	  x(jgl) = jgl
+	enddo
+!$acc end parallel loop
+    jjfld=321
+endif
+!$omp target data use_device_ptr(x)
+if ( myproc == 1 ) then 
+    CALL MPI_ISEND(x,32,MPI_REAL,1,123456,mpi_comm_world,jreq(1),ierr)
+    CALL MPI_ISEND(jjfld,1,MPI_INTEGER,1,123456,mpi_comm_world,jreq(2),ierr)
+else if (myproc .eq. 2) then 
+    CALL MPI_IRECV(x,32,MPI_REAL,0,123456,mpi_comm_world,jreq(1),ierr)
+	CALL MPI_IRECV(jjfld,1,MPI_INTEGER,0,123456,mpi_comm_world,jreq(2),ierr)
+endif
+!$omp end target data
+call mpi_waitall(2,jreq,status,ierr)
+!$acc end data
+write (*,*) 'after openmp data region: x = ',x,'; jjfld = ',jjfld
+! === end test ===
+#endif
+
 #ifdef PARKINDTRANS_SINGLE
 #define TRGTOL_DTYPE MPI_REAL
 #else
@@ -170,19 +204,8 @@ MODULE TRGTOL_MOD
   LLGW = .FALSE.
   IF (PRESENT (LDGW)) LLGW = LDGW
 
-#ifdef gnarls
-write (0,*) __FILE__, __LINE__; call flush(0)
-write (0,*) 'shape(pglat) = ',shape(pglat); call flush(0)
-!$acc data present(pglat)
-!$acc parallel loop collapse(2) default(none)
-do jk=lbound(pglat,2),ubound(pglat,2)
-  do jgl=lbound(pglat,1),ubound(pglat,1)
-    pglat(jgl,jk)=0._jprbt
-  enddo
-enddo
-!$acc end data
-write (0,*) __FILE__, __LINE__; call flush(0)
-#endif
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
   
   iunit=300+myproc
 
@@ -356,6 +379,8 @@ write (0,*) __FILE__, __LINE__; call flush(0)
       IOFFEW=IOFFEW+IGP3BPAR*IGP3BLEV
     ENDIF
   ENDIF
+
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
   
   
   CALL INIGPTR(IGPTRSEND,IGPTRRECV)
@@ -414,6 +439,8 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   
     IF( JROC /= MYPROC) IBUFLENR = MAX(IBUFLENR,IRECVTOT(JROC))
   
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
     IF(IPOS > 0) THEN
       INDOFF(JROC) = INDOFFX
       INDOFFX = INDOFFX+IPOS
@@ -431,6 +458,8 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   
   ENDDO
   
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
   ISENDCOUNT=0
   IRECVCOUNT=0
   DO J=1,NPROC
@@ -448,6 +477,9 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   IF (IBUFLENR > 0) ZCOMBUFR(:,:) =  0.
   !$ACC END KERNELS
 
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
+
   CALL GSTATS(1805,1)
  
   ! Send loop.............................................................
@@ -460,6 +492,8 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   !$ACC DATA IF(PRESENT(PGP3A)) PRESENT(PGP3A) COPYIN(IGP3ALEVS,IGP3APARS)
   !$ACC DATA IF(PRESENT(PGP3B)) PRESENT(PGP3B) COPYIN(IGP3BLEVS,IGP3BPARS)
   
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
   IF(ISENDTOT(MYPROC) > 0 )THEN
     IFLDS = 0
     DO JFLD=1,KF_GP
@@ -485,6 +519,8 @@ write (0,*) __FILE__, __LINE__; call flush(0)
       ENDIF
     ENDDO
 
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
   !$ACC DATA COPYIN(IFLDOFF,IGPTROFF)
   
   !write (*,*) __FILE__, __LINE__; call flush(6)
@@ -497,6 +533,9 @@ write (0,*) __FILE__, __LINE__; call flush(0)
 
   CALL GSTATS(1601,0)
   IF(LLPGPONLY) THEN
+
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
 #ifndef gnarls
     !$ACC PARALLEL LOOP COLLAPSE(3)  PRIVATE(IPOS,IFIRST,ILAST,IFLD,JK)
     DO JBLK=1,NGPBLKS
@@ -541,7 +580,13 @@ write (0,*) __FILE__, __LINE__; call flush(0)
       ENDIF
     ENDDO
 #endif
+
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
   ELSE
+
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
     !$ACC PARALLEL LOOP COLLAPSE(3)  PRIVATE(IPOS,IFIRST,ILAST,IFLD,JK)
     DO JBLK=1,NGPBLKS
       DO JFLD=1,IFLDS
@@ -581,12 +626,16 @@ write (0,*) __FILE__, __LINE__; call flush(0)
         ENDDO
       ENDDO
     ENDDO
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
    ENDIF
    CALL GSTATS(1601,1)
 
    !$ACC END DATA
 
   ENDIF
+
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
 
 #ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
@@ -652,6 +701,7 @@ write (0,*) __FILE__, __LINE__; call flush(0)
       ICOMBUFS_FLD(INS) = IFLD
     ENDDO
 
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
 
 #ifdef COMVERBOSE
     call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
@@ -666,6 +716,8 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   CALL GSTATS_BARRIER(761)
   IF (LHOOK) CALL DR_HOOK('TRGTOL_BAR',1,ZHOOK_HANDLE_BAR)
   
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
   IF(.NOT.LGPNORM)THEN
     CALL GSTATS(803,0)
   ELSE
@@ -684,29 +736,42 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   ENDIF
   CALL GSTATS(413,0)
 
-  !$ACC HOST_DATA USE_DEVICE(ZCOMBUFR,ZCOMBUFS)
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
+  !**$ACC HOST_DATA USE_DEVICE(ZCOMBUFR,ZCOMBUFS)
+  !$omp target data use_device_ptr(zcombufr,zcombufs)
   !  Receive loop.........................................................
   DO INR=1,INRECV
     IR=IR+1
     IRECV=JRECV(INR)
+	
+	!write (5+MYPROC,*) 'receiving message with length ',irecvtot(irecv),' from processor ',nprcids(irecv); call flush(5+MYPROC)
     CALL MPI_IRECV(ZCOMBUFR(1:IRECVTOT(IRECV),INR),IRECVTOT(IRECV), &
       & TRGTOL_DTYPE,NPRCIDS(IRECV)-1,ITAG,MPL_COMM_OML(OML_MY_THREAD()),IREQ(IR),IERROR)
     IR=IR+1
+	!write (5+MYPROC,*) 'receiving message with length 1 from processor ',nprcids(irecv); call flush(5+MYPROC)
     CALL MPI_IRECV(ICOMBUFR_FLD(INR),1, &
-      & MPI_INTEGER,NPRCIDS(IRECV)-1,ITAG,MPL_COMM_OML(OML_MY_THREAD()),IREQ(IR),IERROR)
+      & MPI_INTEGER,NPRCIDS(IRECV)-1,ITAG+1,MPL_COMM_OML(OML_MY_THREAD()),IREQ(IR),IERROR)
   ENDDO
+
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
   
   !....Send loop.........................................................
   DO INS=1,INSEND
     IR=IR+1
     ISEND=JSEND(INS)
+	!write (5+MYPROC,*) 'sending message with length ',isendtot(isend),' to processor ',nprcids(isend); call flush(5+MYPROC)
     CALL MPI_ISEND(ZCOMBUFS(1:ISENDTOT(ISEND),INS),ISENDTOT(ISEND), &
      & TRGTOL_DTYPE,NPRCIDS(ISEND)-1,ITAG,MPL_COMM_OML(OML_MY_THREAD()),IREQ(IR),IERROR)
     IR=IR+1
+	!write (5+MYPROC,*) 'sending message with length 1 to processor ',nprcids(isend); call flush(5+MYPROC)
     CALL MPI_ISEND(ICOMBUFS_FLD(INS),1, &
-    & MPI_INTEGER,NPRCIDS(ISEND)-1,ITAG,MPL_COMM_OML(OML_MY_THREAD()),IREQ(IR),IERROR)
+    & MPI_INTEGER,NPRCIDS(ISEND)-1,ITAG+1,MPL_COMM_OML(OML_MY_THREAD()),IREQ(IR),IERROR)
   ENDDO
-  !$ACC END HOST_DATA
+  !**$ACC END HOST_DATA
+  !$omp end target data
+
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
   
   IF(IR > 0) THEN
     CALL MPL_WAIT(KREQUEST=IREQ(1:IR), &
@@ -714,6 +779,8 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   ENDIF
   CALL GSTATS(413,1)
   
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
   !#ifdef COMVERBOSE
   !  call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
   !  Tc=(TIMEF()-Tc)/1000.0_JPRBT
@@ -736,6 +803,8 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   CALL GSTATS(1603,0)
 
 
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
   DO INR=1,INRECV
       IRECV=JRECV(INR)
       ILEN = IRECVTOT(IRECV)/KF_FS
@@ -753,6 +822,8 @@ write (0,*) __FILE__, __LINE__; call flush(0)
       ENDDO
   ENDDO
   !$ACC END DATA
+
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
   
   !#ifdef COMVERBOSE
   !  call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
@@ -775,7 +846,10 @@ write (0,*) __FILE__, __LINE__; call flush(0)
   IF (IBUFLENS > 0) DEALLOCATE(ZCOMBUFS)
   IF (IBUFLENR > 0) DEALLOCATE(ZCOMBUFR)
 
+!write (5+MYPROC,*) __FILE__, __LINE__; call flush(5+MYPROC)
+
   IF (LHOOK) CALL DR_HOOK('TRGTOL_CUDAAWARE',1,ZHOOK_HANDLE)
+
   
   END SUBROUTINE TRGTOL_CUDAAWARE
 

@@ -119,6 +119,14 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE_BAR2
 
   IF (LHOOK) CALL DR_HOOK('TRLTOM_CUDAAWARE',0,ZHOOK_HANDLE)
 
+write (77+MYPROC,*)  __FILE__, __LINE__,': entered trltom'; call flush(77+MYPROC)
+
+#ifndef gnarls
+
+!$acc data present(pfbuf, pfbuf_in)
+
+!write (77+MYPROC,*) __FILE__, __LINE__; call flush(77+MYPROC)
+
 #ifdef PARKINDTRANS_SINGLE
 #define TRLTOM_DTYPE MPI_REAL
 #else
@@ -135,6 +143,7 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE_BAR2
   ENDDO
   
   IF(NPROC > 1) THEN
+!write (77+MYPROC,*) __FILE__, __LINE__; call flush(77+MYPROC)
     CALL GSTATS(806,0)
     IF (LSYNC_TRANS) THEN
       CALL GSTATS(420,0)
@@ -142,7 +151,9 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE_BAR2
       CALL GSTATS(420,1)
     ENDIF
 
-    ! copy to self workaround
+!daand: not sure this workaround is needed for AMD GPU's
+#ifdef gnarls
+	! copy to self workaround
     IRANK = MPL_MYRANK(MPL_ALL_MS_COMM)
     IF (ILENS(IRANK) .ne. ILENR(IRANK)) THEN
         PRINT *, "ERROR", ILENS(IRANK), ILENR(IRANK)
@@ -159,18 +170,49 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE_BAR2
         ILENS(IRANK) = 0
         ILENR(IRANK) = 0
     ENDIF
+#endif
   
     CALL GSTATS(411,0)
-    !$ACC HOST_DATA USE_DEVICE(PFBUF_IN, PFBUF)
+	
+	
+
+write (77+MYPROC,*) __FILE__, __LINE__; call flush(77+MYPROC)
+write (77+MYPROC,*) 'ILENS = ',ILENS
+write (77+MYPROC,*) 'IOFFS = ',IOFFS
+write (77+MYPROC,*) 'ILENR = ',ILENR
+write (77+MYPROC,*) 'IOFFR = ',IOFFR
+write (77+MYPROC,*) 'shape(PFBUF_IN) = ',shape(PFBUF_IN)
+write (77+MYPROC,*) 'shape(PFBUF) = ',shape(PFBUF)
+call flush(77+MYPROC)
+    !**$ACC HOST_DATA USE_DEVICE(PFBUF_IN, PFBUF)
+
+write (77+MYPROC,*)  __FILE__, __LINE__,': calling mpi_alltoallv'; call flush(77+MYPROC)
+	
+#undef MPI_HOST
+
+#ifdef MPI_HOST
+!$acc update host(PFBUF_IN)
+#else
+!$omp target data use_device_ptr(pfbuf_in, pfbuf)
+#endif
 
     CALL MPI_ALLTOALLV(PFBUF_IN,ILENS,IOFFS,TRLTOM_DTYPE,&
      & PFBUF,ILENR,IOFFR, TRLTOM_DTYPE, &
      & MPL_ALL_MS_COMM, IERROR)
 
-    !$ACC END HOST_DATA
-    CALL GSTATS(411,1)
-    !$ACC WAIT(1)
+#ifdef MPI_HOST
+!$acc update device(PFBUF)
+#else
+!$omp end target data	
+#endif	
 
+write (77+MYPROC,*)  __FILE__, __LINE__,': mpi_alltoallv call complete'; call flush(77+MYPROC)
+
+    !**$ACC END HOST_DATA
+
+	
+    CALL GSTATS(411,1)
+!write (77+MYPROC,*) __FILE__, __LINE__; call flush(77+MYPROC)
     CALL MPI_BARRIER(MPI_COMM_WORLD,IERROR)
     CALL GSTATS(806,1)
   ELSE
@@ -184,6 +226,14 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE_BAR2
     CALL GSTATS(1607,1)
   ENDIF
   
+!write (77+MYPROC,*) __FILE__, __LINE__; call flush(77+MYPROC)
+
+!$acc end data
+
+#endif
+
+write (77+MYPROC,*)  __FILE__, __LINE__,': leaving trltom'; call flush(77+MYPROC)
+
   IF (LHOOK) CALL DR_HOOK('TRLTOM_CUDAAWARE',1,ZHOOK_HANDLE)
   !     ------------------------------------------------------------------
   END SUBROUTINE TRLTOM_CUDAAWARE
