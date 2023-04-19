@@ -11,7 +11,7 @@ endif()
 ecbuild_list_add_pattern( LIST etrans_src
                           GLOB
                                 external/*.F90
-								internal/*.F90
+								module/*.F90
 								aux/*.F90
                           QUIET
                         )#

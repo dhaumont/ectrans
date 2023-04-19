@@ -1,0 +1,303 @@
+MODULE EFTINV_CTL_MOD
+CONTAINS
+SUBROUTINE EFTINV_CTL(KF_UV_G,KF_SCALARS_G,&
+ & KF_UV,KF_SCALARS,KF_SCDERS,KF_GP,KF_FS,KF_OUT_LT,KVSETUV,KVSETSC,KPTRGP, &
+ & KVSETSC3A,KVSETSC3B,KVSETSC2,&
+ & PGP,PGPUV,PGP3A,PGP3B,PGP2)
+
+!**** *EFTINV_CTL - Inverse Fourier transform control
+
+!     Purpose. Control routine for Fourier to Gridpoint transform
+!     --------
+
+!**   Interface.
+!     ----------
+!        CALL EFTINV_CTL(..)
+
+!        Explicit arguments :
+!        --------------------
+!        PGP     -  gridpoint array
+!        KF_UV_G      - global number of spectral u-v fields
+!        KF_SCALARS_G - global number of scalar spectral fields
+!        KF_UV        - local number of spectral u-v fields
+!        KF_SCALARS   - local number of scalar spectral fields
+!        KF_SCDERS    - local number of derivatives of scalar spectral fields
+!        KF_GP        - total number of output gridpoint fields
+!        KF_FS        - total number of fields in fourier space
+!        KF_OUT_LT    - total number of fields coming out from inverse LT
+!        KVSETUV - "B"  set in spectral/fourier space for
+!                   u and v variables
+!        KVSETSC - "B" set in spectral/fourier space for
+!                  scalar variables
+!        KPTRGP - pointer array to fi3elds in gridpoint space
+
+!     Method.
+!     -------
+
+!     Externals.  TRLTOG      - transposition routine
+!     ----------  FOURIER_IN  - copy fourier data from Fourier buffer
+!                 FTINV       - fourier transform
+!                 FSC         - Fourier space computations
+
+!     Author.
+!     -------
+!        Mats Hamrud *ECMWF*
+
+!     Modifications.
+!     --------------
+!        Original : 00-03-03
+!        G. Hello : 03-10-14  old way of calling
+!        M.Hamrud      01-Oct-2003 CY28 Cleaning
+!        O.Spaniel     Oct-2004 phasing for AL29
+!        D. Degrauwe  (Feb 2012): Alternative extension zone (E')
+!     ------------------------------------------------------------------
+
+USE PARKIND1  ,ONLY : JPIM     ,JPRB
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+
+USE TPM_GEN         ,ONLY : NERR, LALLOPERM
+USE TPM_TRANS       ,ONLY : LDIVGP, LSCDERS, LUVDER, LVORGP, FOUBUF
+USE TPM_DISTR       ,ONLY : D
+USE TPM_GEN          ,ONLY : LALLOPERM2
+USE EFTDATA_MOD      ,ONLY : ZGTF_PERM
+
+
+USE EFOURIER_IN_MOD ,ONLY : EFOURIER_IN
+USE EFSC_MOD        ,ONLY : EFSC
+USE EFTINV_MOD      ,ONLY : EFTINV
+USE TRLTOG_MOD      ,ONLY : TRLTOG, TRLTOG_CUDAAWARE
+USE ABORT_TRANS_MOD ,ONLY : ABORT_TRANS
+!
+
+IMPLICIT NONE
+
+INTEGER(KIND=JPIM) ,INTENT(IN) :: KF_UV_G
+INTEGER(KIND=JPIM) ,INTENT(IN) :: KF_SCALARS_G
+INTEGER(KIND=JPIM) ,INTENT(IN) :: KF_UV
+INTEGER(KIND=JPIM) ,INTENT(IN) :: KF_SCALARS
+INTEGER(KIND=JPIM) ,INTENT(IN) :: KF_SCDERS
+INTEGER(KIND=JPIM) ,INTENT(IN) :: KF_GP
+INTEGER(KIND=JPIM) ,INTENT(IN) :: KF_FS
+INTEGER(KIND=JPIM) ,INTENT(IN) :: KF_OUT_LT
+INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KVSETUV(:)
+INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KVSETSC(:)
+INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KVSETSC3A(:)
+INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KVSETSC3B(:)
+INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KVSETSC2(:)
+INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KPTRGP(:)
+REAL(KIND=JPRB)    ,OPTIONAL, INTENT(OUT) :: PGP(:,:,:)
+REAL(KIND=JPRB)    ,OPTIONAL, INTENT(OUT) :: PGPUV(:,:,:,:)
+REAL(KIND=JPRB)    ,OPTIONAL, INTENT(OUT) :: PGP3A(:,:,:,:)
+REAL(KIND=JPRB)    ,OPTIONAL, INTENT(OUT) :: PGP3B(:,:,:,:)
+REAL(KIND=JPRB)    ,OPTIONAL, INTENT(OUT) :: PGP2(:,:,:)
+
+REAL(KIND=JPRB),TARGET  :: ZDUM(D%NLENGTF,1)
+REAL(KIND=JPRB),POINTER :: ZUV(:,:)
+REAL(KIND=JPRB),POINTER :: ZSCALAR(:,:)
+REAL(KIND=JPRB),POINTER :: ZNSDERS(:,:)
+REAL(KIND=JPRB),POINTER :: ZEWDERS(:,:)
+REAL(KIND=JPRB),POINTER :: ZUVDERS(:,:)
+REAL(KIND=JPRB), POINTER :: ZGTF (:,:)
+
+INTEGER(KIND=JPIM) :: IST
+INTEGER(KIND=JPIM) :: IVSETUV(KF_UV_G)
+INTEGER(KIND=JPIM) :: IVSETSC(KF_SCALARS_G)
+INTEGER(KIND=JPIM) :: IVSET(KF_GP)
+INTEGER(KIND=JPIM) :: J3,JGL,IGL,IOFF,IFGP2,IFGP3A,IFGP3B,IGP3APAR,IGP3BPAR
+INTEGER(KIND=JPIM) :: JF_FS
+REAL(KIND=JPHOOK) :: ZHOOK_HANDLE, ZHOOK_HANDLE_BAR
+
+
+!     ------------------------------------------------------------------
+
+!    1.  Copy Fourier data to local array
+
+IF (LHOOK) CALL DR_HOOK('EFTINV_CTL_MOD:EFTINV_CTL',0,ZHOOK_HANDLE)
+
+
+IF (ALLOCATED (ZGTF_PERM)) THEN
+  IF ((UBOUND (ZGTF_PERM, 1) /= D%NLENGTF) .OR. (UBOUND (ZGTF_PERM, 2) < KF_FS)) THEN
+    !$acc exit data delete (ZGTF_PERM)
+    DEALLOCATE (ZGTF_PERM)
+  ENDIF
+ENDIF
+
+IF (.NOT. ALLOCATED (ZGTF_PERM)) THEN
+  ALLOCATE (ZGTF_PERM (D%NLENGTF,KF_FS))
+  !$acc enter data create (ZGTF_PERM)
+ENDIF
+
+ZGTF => ZGTF_PERM (:, 1:KF_FS)
+
+CALL GSTATS(107,0)
+
+IF(KF_UV > 0 .OR. KF_SCDERS > 0) THEN
+  IST = 1
+  IF(LVORGP) THEN
+    IST = IST+KF_UV
+  ENDIF
+  IF(LDIVGP) THEN
+    IST = IST+KF_UV
+  ENDIF
+  ZUV => ZGTF(:,IST:IST+2*KF_UV-1)
+  IST = IST+2*KF_UV
+  ZSCALAR => ZGTF(:,IST:IST+KF_SCALARS-1)
+  IST = IST+KF_SCALARS
+  ZNSDERS => ZGTF(:,IST:IST+KF_SCDERS-1)
+  IST = IST+KF_SCDERS
+  IF(LUVDER) THEN
+    ZUVDERS => ZGTF(:,IST:IST+2*KF_UV-1)
+    IST = IST+2*KF_UV
+  ELSE
+    ZUVDERS => ZDUM(:,1:1)
+  ENDIF
+  IF(KF_SCDERS > 0) THEN
+    ZEWDERS => ZGTF(:,IST:IST+KF_SCDERS-1)
+  ELSE
+    ZEWDERS => ZDUM(:,1:1)
+  ENDIF
+ENDIF
+
+CALL GSTATS(1639,0)
+
+CALL EFOURIER_IN(ZGTF,KF_OUT_LT) ! COPIES DATA FROM FOUBUF
+
+IF (.NOT.LALLOPERM) THEN
+!$acc exit data delete (FOUBUF)
+  DEALLOCATE (FOUBUF)
+ENDIF
+
+!    2.  Fourier space computations
+
+IF(KF_UV > 0 .OR. KF_SCDERS > 0) THEN
+  CALL EFSC(KF_UV,KF_SCALARS,KF_SCDERS,&
+   & ZUV,ZSCALAR,ZNSDERS,ZEWDERS,ZUVDERS)
+ENDIF
+
+!   3.  Fourier transform
+IF(KF_FS > 0) THEN
+  CALL EFTINV (ZGTF, KF_FS)
+  !!$acc update host (ZGTF) !THOMAS COMMENTAIRE
+ENDIF
+
+CALL GSTATS(1639,1)
+
+!THOMAS
+IF (LHOOK) CALL DR_HOOK('EFTINV_CTL_MOD_BAR',0,ZHOOK_HANDLE_BAR)
+
+
+IF(KF_UV > 0 .OR. KF_SCDERS > 0) THEN
+  NULLIFY(ZUV)
+  NULLIFY(ZSCALAR)
+  NULLIFY(ZNSDERS)
+  NULLIFY(ZUVDERS)
+  NULLIFY(ZEWDERS)
+ENDIF
+CALL GSTATS(107,1)
+
+!THOMAS
+IF (LHOOK) CALL DR_HOOK('EFTINV_CTL_MOD_BAR',1,ZHOOK_HANDLE_BAR)
+
+
+!   4.  Transposition
+
+IF(PRESENT(KVSETUV)) THEN
+  IVSETUV(:) = KVSETUV(:)
+ELSE
+  IVSETUV(:) = -1
+ENDIF
+IVSETSC(:)=-1
+IF(PRESENT(KVSETSC)) THEN
+  IVSETSC(:) = KVSETSC(:)
+ELSEIF(PRESENT(KVSETSC2).OR.PRESENT(KVSETSC3A)&
+   & .OR.PRESENT(KVSETSC3B)) THEN
+  IOFF=0
+  IF(PRESENT(KVSETSC2)) THEN
+    IFGP2=UBOUND(KVSETSC2,1)
+    IVSETSC(1:IFGP2)=KVSETSC2(:)
+    IOFF=IOFF+IFGP2
+  ENDIF
+  IF(PRESENT(KVSETSC3A)) THEN
+    IFGP3A=UBOUND(KVSETSC3A,1)
+    IGP3APAR=UBOUND(PGP3A,3)
+    IF(LSCDERS) IGP3APAR=IGP3APAR/3
+    DO J3=1,IGP3APAR
+      IVSETSC(IOFF+1:IOFF+IFGP3A)=KVSETSC3A(:)
+      IOFF=IOFF+IFGP3A
+    ENDDO
+  ENDIF
+  IF(PRESENT(KVSETSC3B)) THEN
+    IFGP3B=UBOUND(KVSETSC3B,1)
+    IGP3BPAR=UBOUND(PGP3B,3)
+    IF(LSCDERS) IGP3BPAR=IGP3BPAR/3
+    DO J3=1,IGP3BPAR
+      IVSETSC(IOFF+1:IOFF+IFGP3B)=KVSETSC3B(:)
+      IOFF=IOFF+IFGP3B
+    ENDDO
+  ENDIF
+  IF(IOFF > 0 .AND. IOFF /= KF_SCALARS_G ) THEN
+    WRITE(NERR,*)'FTINV:IOFF,KF_SCALARS_G ',IOFF,KF_SCALARS_G
+    CALL ABORT_TRANS('FTINV_CTL_MOD:IOFF /= KF_SCALARS_G')
+  ENDIF
+ENDIF
+
+IST = 1
+IF(KF_UV_G > 0) THEN
+  IF( LVORGP) THEN
+    IVSET(IST:IST+KF_UV_G-1) = IVSETUV(:)
+    IST = IST+KF_UV_G
+  ENDIF
+  IF( LDIVGP) THEN
+    IVSET(IST:IST+KF_UV_G-1) = IVSETUV(:)
+    IST = IST+KF_UV_G
+  ENDIF
+  IVSET(IST:IST+KF_UV_G-1) = IVSETUV(:)
+  IST = IST+KF_UV_G
+  IVSET(IST:IST+KF_UV_G-1) = IVSETUV(:)
+  IST = IST+KF_UV_G
+ENDIF
+IF(KF_SCALARS_G > 0) THEN
+  IVSET(IST:IST+KF_SCALARS_G-1) = IVSETSC(:)
+  IST = IST+KF_SCALARS_G
+  IF(LSCDERS) THEN
+    IVSET(IST:IST+KF_SCALARS_G-1) = IVSETSC(:)
+    IST = IST+KF_SCALARS_G
+  ENDIF
+ENDIF
+IF(KF_UV_G > 0 .AND. LUVDER) THEN
+  IVSET(IST:IST+KF_UV_G-1) = IVSETUV(:)
+  IST = IST+KF_UV_G
+  IVSET(IST:IST+KF_UV_G-1) = IVSETUV(:)
+  IST = IST+KF_UV_G
+ENDIF
+IF(KF_SCALARS_G > 0) THEN
+  IF(LSCDERS) THEN
+    IVSET(IST:IST+KF_SCALARS_G-1) = IVSETSC(:)
+    IST = IST+KF_SCALARS_G
+  ENDIF
+ENDIF
+
+CALL GSTATS(157,0)
+JF_FS=KF_FS-D%IADJUST_I
+#ifdef USE_CUDA_AWARE_MPI_EFTINV
+CALL TRLTOG_CUDAAWARE(ZGTF,JF_FS,KF_GP,KF_SCALARS_G,IVSET,KPTRGP,&
+ &PGP,PGPUV,PGP3A,PGP3B,PGP2,LDGW=.TRUE.)
+#else
+!$acc data copyin (ZGTF)
+CALL TRLTOG(ZGTF,JF_FS,KF_GP,KF_SCALARS_G,IVSET,KPTRGP,&
+ &PGP,PGPUV,PGP3A,PGP3B,PGP2,LDGW=.TRUE.)
+!$acc end data
+#endif
+CALL GSTATS(157,1)
+
+IF (.NOT. LALLOPERM2) THEN
+  !$acc exit data delete (ZGTF_PERM)
+  DEALLOCATE (ZGTF_PERM)
+ENDIF
+
+IF (LHOOK) CALL DR_HOOK('EFTINV_CTL_MOD:EFTINV_CTL',1,ZHOOK_HANDLE)
+
+!     ------------------------------------------------------------------
+
+END SUBROUTINE EFTINV_CTL
+END MODULE EFTINV_CTL_MOD
