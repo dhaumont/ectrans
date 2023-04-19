@@ -322,7 +322,7 @@ IF_GP = 2*IF_UV_G+IF_SCALARS_G
 
 ! set currently used array sizes for the GPU arrays: 
 IF_FS_DIR=2*IF_FS+2!2*(2*IF_UV+NFLEV+2+IF_PP)
-PRINT*,"dir_trans: IF_FS_DIR=",IF_FS_DIR," IF_FS_DIR0=",IF_FS_DIR0
+!PRINT*,"dir_trans: IF_FS_DIR=",IF_FS_DIR," IF_FS_DIR0=",IF_FS_DIR0
 
 DTDZBA=IF_FS_DIR
 DTDZBS=IF_FS_DIR

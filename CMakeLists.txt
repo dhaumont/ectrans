@@ -14,6 +14,17 @@ cmake_minimum_required( VERSION 3.18 FATAL_ERROR )
 find_package( ecbuild 3.4 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild )
 
 project( ectrans LANGUAGES C Fortran CXX )
+#unset( OpenACC_Fortran_FLAGS )
+
+message("")
+message("=================================" )
+message("OpenACC_Fortran_FLAGS = ${OpenACC_Fortran_FLAGS}")
+message("=================================" )
+message("")
+#message(FATAL_ERROR "grmbl.")
+
+
+
 include( ectrans_macros )
 
 ecbuild_enable_fortran( REQUIRED NO_MODULE_DIRECTORY )
@@ -80,7 +91,19 @@ if( ENABLE_GPU OR ECTRANS_ENABLE_GPU ) # must be explicitly turned ON as FEATURE
         find_package(rocblas)
         find_package(rocfft)
         #endif()
-  find_package(OpenACC COMPONENTS Fortran)
+		
+
+  find_package(OpenACC COMPONENTS Fortran C CXX)
+  
+message("")
+message("=================================" )
+message("OpenACC_Fortran_FOUND = ${OpenACC_Fortran_FOUND}")
+message("OpenACC_Fortran_FLAGS = ${OpenACC_Fortran_FLAGS}")
+message("=================================" )
+message("")
+#message(FATAL_ERROR "grmbl.")
+
+
   find_package(MPI COMPONENTS Fortran CXX)
 
   if( NOT CMAKE_HIP_COMPILER)
@@ -133,7 +156,9 @@ ecbuild_add_option( FEATURE ACCGPU
                     DEFAULT ON
                     DESCRIPTION "Support for using GPUs with OpenACC"
                     CONDITION HAVE_GPU
-                         AND TARGET OpenACC::OpenACC_Fortran)
+                         AND TARGET OpenACC::OpenACC_Fortran
+					#REQUIRED_PACKAGES OpenACC
+					)
 
 ecbuild_add_option( FEATURE OMPGPU
                     DEFAULT ON
@@ -179,6 +204,13 @@ endif()
 
 ### Add sources and tests
 include( ectrans_compile_options )
+
+#set(OpenACC_Fortran_FLAGS "-hacc")
+#set(OpenACC_C_FLAGS "-hacc")
+#set(OpenACC_CXX_FLAGS "-hacc")
+message("OpenACC_Fortran_FLAGS = ${OpenACC_Fortran_FLAGS}")
+#message(FATAL_ERROR "grmbl.")
+
 add_subdirectory( src )
 add_subdirectory( tests )
 

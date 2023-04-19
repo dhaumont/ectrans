@@ -9,6 +9,8 @@
 
 program transform_test
 
+#ifdef gnarls
+
 !
 ! Spectral transform test
 !
@@ -1360,6 +1362,8 @@ subroutine gstats_labels
   call gstats_label(400, '   ', 'GSTATS         - GSTATS itself')
 
 end subroutine gstats_labels
+
+#endif
 
 end program transform_test
 

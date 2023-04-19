@@ -193,14 +193,19 @@ INTEGER(KIND=JPIM) :: JMLOC
 INTEGER(KIND=JPIM) :: UNIT_NO,IDEVTYPE,NUMDEVS,MYGPU,MYNUM
 !     ------------------------------------------------------------------
 
+!!write (*,*) __FILE__, __LINE__; call flush(6)
+
 UNIT_NO=300+MYPROC
 CALL FLUSH(UNIT_NO)
+
 
 IF (LHOOK) CALL DR_HOOK('INV_TRANS',0,ZHOOK_HANDLE)
 CALL GSTATS(441,0)
 CALL GSTATS(1807,0)
 ! Set current resolution
 CALL SET_RESOL(KRESOL)
+
+!!write (*,*) __FILE__, __LINE__; call flush(6)
 
 ! Set defaults
 
@@ -410,6 +415,8 @@ IF(IF_UV_G > 0 .AND. LUVDER) THEN
   IF_UV_PAR = IF_UV_PAR+2
 ENDIF
 
+!write (*,*) __FILE__, __LINE__; call flush(6)
+
 ! set currently used array sizes for the GPU arrays: 
 !IF_FS_INV= 8*IF_UV + 2*IF_SCALARS + 2*IF_SCDERS
 !Andreas: we were using the previous line in setup_trans but this doesn't consider derivatives. Better:
@@ -420,12 +427,17 @@ ITDZBA=IF_FS_INV
 ITDZBS=IF_FS_INV
 ITDZCA=IF_FS_INV
 ITDZCS=IF_FS_INV
+
+!write (*,*) __FILE__, __LINE__; call flush(6)
+
 #ifdef ACCGPU
 !$ACC ENTER DATA COPYIN(ITDZBA, ITDZBS, ITDZCA, ITDZCS)
 #endif
 #ifdef OMPGPU
 !$OMP TARGET ENTER DATA MAP(TO:ITDZBA, ITDZBS, ITDZCA, ITDZCS)
 #endif
+
+!write (*,*) __FILE__, __LINE__; call flush(6)
 
 ! Consistency checks
 
@@ -644,10 +656,12 @@ CALL GSTATS(1807,1)
 
 ! Perform transform
 
+!write (*,*) __FILE__, __LINE__; call flush(6)
 CALL INV_TRANS_CTL(IF_UV_G,IF_SCALARS_G,IF_GP,IF_FS,IF_OUT_LT,&
  & IF_UV,IF_SCALARS,IF_SCDERS,&
  & PSPVOR,PSPDIV,PSPSCALAR,KVSETUV,KVSETSC,PGP,FSPGL_PROC,&
  & PSPSC3A,PSPSC3B,PSPSC2,KVSETSC3A,KVSETSC3B,KVSETSC2,PGPUV,PGP3A,PGP3B,PGP2)
+!write (*,*) __FILE__, __LINE__; call flush(6)
  
  IF (LHOOK) CALL DR_HOOK('INV_TRANS',1,ZHOOK_HANDLE)
 CALL GSTATS(441,1)

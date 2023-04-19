@@ -140,6 +140,8 @@ INTEGER(KIND=JPIM) :: IOFFD,IOFFU,IOFFV,IOFFUVD,IOFFSC,IOFFSCNS,IOFFSCEW,IOFF,IF
 
 !     ------------------------------------------------------------------
 
+!write (*,*) __FILE__, __LINE__; call flush(6)
+
 ! Perform transform
 
 IF_GPB = 2*KF_UV_G+KF_SCALARS_G
@@ -147,10 +149,14 @@ IF(NPROMATR > 0 .AND. IF_GPB > NPROMATR) THEN
 
   ! Fields to be split into packets
 
+!write (*,*) __FILE__, __LINE__; call flush(6)
+
   CALL SHUFFLE(KF_UV_G,KF_SCALARS_G,ISHFUV_G,IVSETUV,ISHFSC_G,IVSETSC,&
  & KVSETUV,KVSETSC)
 
   IBLKS=(IF_GPB-1)/NPROMATR+1
+
+!write (*,*) __FILE__, __LINE__; call flush(6)
 
   DO JBLK=1,IBLKS
   
@@ -254,9 +260,11 @@ IF(NPROMATR > 0 .AND. IF_GPB > NPROMATR) THEN
       IPTRSPSC(JFLD) = ISTSC+JFLD-1
     ENDDO
 
+!write (*,*) __FILE__, __LINE__; call flush(6)
     CALL LTINV_CTL(IF_OUT_LT,IF_UV,IF_SCALARS,IF_SCDERS, &
      & PSPVOR=PSPVOR,PSPDIV=PSPDIV,PSPSCALAR=PSPSCALAR,&
      & KFLDPTRUV=IPTRSPUV,KFLDPTRSC=IPTRSPSC,FSPGL_PROC=FSPGL_PROC)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 
     IF(IF_UV_G > 0 .AND. IF_SCALARS_G > 0) THEN
       CALL FTINV_CTL(IF_UV_G,IF_SCALARS_G,&
@@ -280,34 +288,41 @@ IF(NPROMATR > 0 .AND. IF_GPB > NPROMATR) THEN
 ELSE
   !call nvtxStartRange("INVTRANS")
 
+!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef ACCGPU
   !$ACC DATA CREATE(FOUBUF)
 #endif
 #ifdef OMPGPU
   !$OMP TARGET DATA MAP(ALLOC:FOUBUF)
 #endif
+!write (*,*) __FILE__, __LINE__; call flush(6)
   ! No splitting of fields, transform done in one go
   ! from PSPXXX to FOUBUF
   !call nvtxStartRange("LTINV")
+!write (*,*) __FILE__, __LINE__; call flush(6)
   CALL LTINV_CTL(KF_OUT_LT,KF_UV,KF_SCALARS,KF_SCDERS, &
    &PSPVOR=PSPVOR,PSPDIV=PSPDIV,PSPSCALAR=PSPSCALAR,&
    &PSPSC3A=PSPSC3A,PSPSC3B=PSPSC3B,PSPSC2=PSPSC2,&
    &FSPGL_PROC=FSPGL_PROC)
+!write (*,*) __FILE__, __LINE__; call flush(6)
   !call nvtxEndRange
 
   ! from FOUBUF to PGPXXX
   !call nvtxStartRange("FTINV")
+!write (*,*) __FILE__, __LINE__; call flush(6)
   CALL FTINV_CTL(KF_UV_G,KF_SCALARS_G,&
    & KF_UV,KF_SCALARS,KF_SCDERS,KF_GP,KF_FS,KF_OUT_LT,&
    & KVSETUV=KVSETUV,KVSETSC=KVSETSC,&
    & KVSETSC3A=KVSETSC3A,KVSETSC3B=KVSETSC3B,KVSETSC2=KVSETSC2,&
    & PGP=PGP,PGPUV=PGPUV,PGP3A=PGP3A,PGP3B=PGP3B,PGP2=PGP2)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef OMPGPU
   !$OMP END TARGET DATA
 #endif
 #ifdef ACCGPU
   !$ACC END DATA
 #endif
+!write (*,*) __FILE__, __LINE__; call flush(6)
    !call nvtxEndRange
 
    !call nvtxEndRange

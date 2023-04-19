@@ -10,6 +10,18 @@ ecbuild_info( "build type                   : [${CMAKE_BUILD_TYPE}]" )
 set( Fortran_flags_str "Fortran flags" )
 set( C_flags_str       "C flags      " )
 set( CXX_flags_str     "C++ flags    " )
+
+
+#message("")
+#message( "=================================" )
+#set( lang "Fortran" )
+#message("${CMAKE_${lang}_FLAGS}")
+#message("${CMAKE_${lang}_FLAGS_${CMAKE_BUILD_TYPE_CAPS}}")
+#message("${${PNAME}_${lang}_FLAGS}")
+#message("${${PNAME}_${lang}_FLAGS_${CMAKE_BUILD_TYPE_CAPS}}")
+#message( "=================================" )
+#message("")
+
 string( TOUPPER ${PROJECT_NAME} PNAME )
     foreach( lang Fortran C CXX )
         set( flags "${CMAKE_${lang}_FLAGS} ${CMAKE_${lang}_FLAGS_${CMAKE_BUILD_TYPE_CAPS}} ${${PNAME}_${lang}_FLAGS} ${${PNAME}_${lang}_FLAGS_${CMAKE_BUILD_TYPE_CAPS}}" )

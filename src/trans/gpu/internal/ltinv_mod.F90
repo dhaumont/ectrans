@@ -147,6 +147,8 @@ MODULE LTINV_MOD
   !*       1.       PERFORM LEGENDRE TRANFORM.
   !                 --------------------------
 
+!write (*,*) __FILE__, __LINE__; call flush(6)
+
   !WRITE(CLHOOK,FMT='(A,I4.4)') 'LTINV_',KM
   IF (LHOOK) CALL DR_HOOK('LTINV_MOD',0,ZHOOK_HANDLE)
 
@@ -189,20 +191,25 @@ MODULE LTINV_MOD
     !$OMP TARGET DATA MAP(TO:PSPVOR,PSPDIV)
 #endif
     CALL GSTATS(431,1)
+!write (*,*) __FILE__, __LINE__; call flush(6)
     CALL PRFI1B(IVORL,PSPVOR,KF_UV,IDIM2,KFLDPTRUV)
     CALL PRFI1B(IDIVL,PSPDIV,KF_UV,IDIM2,KFLDPTRUV)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef OMPGPU
     !$OMP END TARGET DATA
 #endif
 #ifdef ACCGPU
     !$ACC END DATA
 #endif
+!write (*,*) __FILE__, __LINE__; call flush(6)
 
   !     ------------------------------------------------------------------
  
     !CALL VDTUV(KF_UV,ZEPSNM,ZIA(IVORL:IVORU,:,:),ZIA(IDIVL:IDIVU,:,:),&
     !         & ZIA(IUL:IUU,:,:),ZIA(IVL:IVU,:,:))
+!write (*,*) __FILE__, __LINE__; call flush(6)
     CALL VDTUV(KF_UV)
+!write (*,*) __FILE__, __LINE__; call flush(6)
     ILAST = ILAST+8*KF_UV
  
   ENDIF
@@ -234,21 +241,26 @@ MODULE LTINV_MOD
         ILAST  = IFIRST-1+2*NF_SC2
         IDIM2=UBOUND(PSPSC2,2)
         CALL GSTATS(431,0)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef ACCGPU
         !$ACC DATA COPYIN(PSPSC2)
 #endif
 #ifdef OMPGPU
         !$OMP TARGET DATA MAP(TO:PSPSC2)
 #endif
+!write (*,*) __FILE__, __LINE__; call flush(6)
         CALL GSTATS(431,1)
         !CALL PRFI1B(ZIA(IFIRST:ILAST,:,:),PSPSC2(:,:),NF_SC2,IDIM2)
+!write (*,*) __FILE__, __LINE__; call flush(6)
         CALL PRFI1B(IFIRST,PSPSC2(:,:),NF_SC2,IDIM2)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef OMPGPU
         !$OMP END TARGET DATA
 #endif
 #ifdef ACCGPU
         !$ACC END DATA
 #endif
+!write (*,*) __FILE__, __LINE__; call flush(6)
       ENDIF
       IF(PRESENT(PSPSC3A) .AND. NF_SC3A > 0) THEN
         IDIM1=NF_SC3A
@@ -257,34 +269,40 @@ MODULE LTINV_MOD
         ILAST  = IFIRST-1+2*IDIM1
         IDIM2=UBOUND(PSPSC3A,2)
         CALL GSTATS(431,0)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef ACCGPU
         !$ACC DATA COPYIN(PSPSC3A)
 #endif
 #ifdef OMPGPU
         !$OMP TARGET DATA MAP(TO:PSPSC3A)
 #endif
+!write (*,*) __FILE__, __LINE__; call flush(6)
         CALL GSTATS(431,1)
         DO J3=1,IDIM3
         CALL PRFI1B(IFIRST,PSPSC3A(:,:,J3),IDIM1,IDIM2)
         ENDDO
+!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef OMPGPU
         !$OMP END TARGET DATA
 #endif
 #ifdef ACCGPU
         !$ACC END DATA
 #endif
+!write (*,*) __FILE__, __LINE__; call flush(6)
       ENDIF
       IF(PRESENT(PSPSC3B) .AND. NF_SC3B > 0) THEN
         IDIM1=NF_SC3B
         IDIM3=UBOUND(PSPSC3B,3)
         IDIM2=UBOUND(PSPSC3B,2)
         CALL GSTATS(431,0)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef ACCGPU
         !$ACC DATA COPYIN(PSPSC3B)
 #endif
 #ifdef OMPGPU
         !$OMP TARGET DATA MAP(TO:PSPSC3B)
 #endif
+!write (*,*) __FILE__, __LINE__; call flush(6)
         CALL GSTATS(431,1)
         DO J3=1,IDIM3
           IFIRST = ILAST+1
@@ -292,12 +310,14 @@ MODULE LTINV_MOD
  
           CALL PRFI1B(IFIRST,PSPSC3B(:,:,J3),IDIM1,IDIM2)
         ENDDO
+!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef OMPGPU
         !$OMP END TARGET DATA
 #endif
 #ifdef ACCGPU
         !$ACC END DATA
 #endif
+!write (*,*) __FILE__, __LINE__; call flush(6)
       ENDIF
     ENDIF
     IF(ILAST /= 8*KF_UV+2*KF_SCALARS) THEN
@@ -336,7 +356,9 @@ MODULE LTINV_MOD
   IF( KF_OUT_LT > 0 ) THEN
   !call cudaProfilerStart
   !CALL LEINV(IFC,ISTA,KF_OUT_LT,ZIA(ISTA:ISTA+IFC-1,:,:),ZAOA1,ZSOA1)
+!write (*,*) __FILE__, __LINE__; call flush(6)
   CALL LEINV(IFC,ISTA,KF_OUT_LT,ZAOA1,ZSOA1)
+!write (*,*) __FILE__, __LINE__; call flush(6)
   !call cudaProfilerStop
 
   !     ------------------------------------------------------------------
@@ -346,7 +368,9 @@ MODULE LTINV_MOD
 
   !FROM ZAOA1/ZSOA to FOUBUF_IN
  
+!write (*,*) __FILE__, __LINE__; call flush(6)
   CALL ASRE1B(KF_OUT_LT,ZAOA1,ZSOA1)
+!write (*,*) __FILE__, __LINE__; call flush(6)
   !     ------------------------------------------------------------------
  
   !     6. OPTIONAL COMPUTATIONS IN FOURIER SPACE

@@ -8,6 +8,14 @@
 
 ## Apply workarounds for some known compilers
 
+message("")
+message("=================================" )
+message("  ENTERING trans/gpu")
+message("OpenACC_Fortran_FLAGS = ${OpenACC_Fortran_FLAGS}")
+message("=================================" )
+message("")
+#message(FATAL_ERROR "grmbl.")
+
 if(CMAKE_Fortran_COMPILER_ID MATCHES "NVHPC")
 
   # Compile setup_trans with pinned memory to improve data movement performance. 
