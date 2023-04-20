@@ -52,9 +52,9 @@ INTEGER(KIND=JPIM) :: IOFF, JGL
 !$acc& present(PREEL,FOUBUF)
 
 !$acc kernels
-DO JF=1,SIZE(PREEL,2)
-  DO JGL=1,SIZE(PREEL,1)
-    PREEL(JGL,JF)=0._JPRBT
+DO JGL=1,SIZE(PREEL,2)
+  DO JF=1,SIZE(PREEL,1)
+    PREEL(JF,JGL)=0._JPRBT
   ENDDO
 ENDDO
 !$acc end kernels
@@ -68,8 +68,8 @@ DO JGL = 1, D%NDGL_FS
             IPROC = D_NPROCM(JM)
             ISTA  = (D_NSTAGT0B(D_MSTABF(IPROC))+D_NPNTGTB0(JM,JGL))*2*KFIELDS
             IOFF  = 1+D_NSTAGTF(JGL)
-            PREEL(IOFF+2*JM+0, JF) = FOUBUF(ISTA+2*JF-1) 
-            PREEL(IOFF+2*JM+1, JF) = FOUBUF(ISTA+2*JF  ) 
+            PREEL(JF,IOFF+2*JM+0) = FOUBUF(ISTA+2*JF-1) 
+            PREEL(JF,IOFF+2*JM+1) = FOUBUF(ISTA+2*JF  ) 
          END IF
       ENDDO
    ENDDO

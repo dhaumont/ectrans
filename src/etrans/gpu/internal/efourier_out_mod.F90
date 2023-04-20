@@ -63,8 +63,8 @@ DO JGL = 1, D%NDGL_FS
             IPROC = D_NPROCM(JM)
             ISTA  = (D_NSTAGT1B(D_MSTABF(IPROC))+D_NPNTGTB0(JM,JGL))*2*KFIELDS
             IOFF  = 1+D_NSTAGTF(JGL)
-            FOUBUF_IN(ISTA+2*JF-1) = PREEL(IOFF+2*JM+0, JF)
-            FOUBUF_IN(ISTA+2*JF  ) = PREEL(IOFF+2*JM+1, JF)
+            FOUBUF_IN(ISTA+2*JF-1) = PREEL(JF,IOFF+2*JM+0)
+            FOUBUF_IN(ISTA+2*JF  ) = PREEL(JF,IOFF+2*JM+1)
          END IF         
       ENDDO
    ENDDO   

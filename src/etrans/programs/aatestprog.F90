@@ -140,27 +140,20 @@ ITAG=1
 CL_CFD='inputfile'
 I_NUFD=97
 CL_CNMCA='CADRE.STANDARD0 '
-#ifdef HAVE_FA
-CALL FAITOU(IREP,I_NUFD,.TRUE.,CL_CFD,'OLD',.FALSE.,.FALSE.,1,0,I_NBI,CL_CNMCA)
-#else
 
-#endif
 ALLOCATE(INLOPA(I_DIM1))
 ALLOCATE(INZOPA(I_DIM2))
 ALLOCATE(I_ZGEOM(I_DIM1))
 ALLOCATE(Z_VALH(I_DIM1))
 ALLOCATE(Z_VBH(I_DIM1))
-#ifdef HAVE_FA
-CALL FACIES(CL_CNMCA,ITYPTR,ZSLAPO,ZCLOPO,ZSLOPO,ZCODIL,ITRUNC,&
- & I_NDGL,I_NDLON,INLOPA,INZOPA,I_ZGEOM,I_NFLEVG,Z_VP00,Z_VALH,Z_VBH,LL_LDGARD)
-#else
+
 ! manual settings
 ITRUNC=63  ! NSMAX
 ITYPTR=63  ! NMSMAX
 INLOPA(6)=112  ! NDGUX
 I_NDGL=128     ! NLAT
 I_NDLON=128    ! NLON
-#endif
+
 I_NFLEVG=5
 I_NDGUX=INLOPA(6)
 CL_CPREF(1)='S'
@@ -170,31 +163,8 @@ CL_CVARFA(1)='WIND.U.PHYS     '
 CL_CVARFA(2)='WIND.V.PHYS     '
 CL_CVARFA(3)='TEMPERATURE     '
 ALLOCATE(Z_DATA(DIM,I_NFLEVG,I_NBRART))
-ALLOCATE(Z_DATAG(DIM))
 ALLOCATE(INGRIB(I_NFLEVG,I_NBRART))
-Z_DATA=-9999.9999
-DO ILEV=1,I_NFLEVG
-  DO JC=1,I_NBRART
-#ifdef HAVE_FA
-    CALL FANION(IREP,I_NUFD,CL_CPREF(JC),ILEV,CL_CVARFA(JC),LLEXIST,LLCOSP,&
-     & INGRIB(ILEV,JC),INBITS,ISTRON,IPUILA)
-    CALL FACILE(IREP,I_NUFD,CL_CPREF(JC),ILEV,CL_CVARFA(JC),Z_DATAG,.TRUE.)
-#endif
-    Z_DATA(:,ILEV,JC)=Z_DATAG(:)
-    IF ( IREP==0. ) THEN
-      WRITE(I_NOUT,*) 'Variable ',CL_CVARFA(JC),' on the level ',&
-       & ILEV,' with prefix ',CL_CPREF(JC),' has been read'
-    ELSE
-      WRITE(I_NOUT,*) 'Variable ',CL_CVARFA(JC),' on the level ',&
-       & ILEV,' with prefix ',CL_CPREF(JC),' not found'
-    ENDIF
-  ENDDO
-ENDDO
-DEALLOCATE(Z_DATAG)
-#ifdef HAVE_FA
-CALL FAIRME(IREP,I_NUFD,'UNKNOWN')
-#endif
-WRITE(I_NOUT,*) 'reading file finished'
+Z_DATA(:,:,:)=123.456
 call flush(I_NOUT)
 DEALLOCATE(INLOPA)
 DEALLOCATE(INZOPA)
@@ -329,22 +299,6 @@ DO JC=1,3
   ENDDO
 ENDDO
 
-!rgDO JC=1,3
-!   DO jlev=1,NFLEVG
-!     II=0
-!     DO JN=0,NSMAX
-!       DO JM=0,ISMAX(JN)
-!          DO IFTM=0,3
-!            ISP=NDIM0G1(JM)+4*JN+IFTM
-!            II=II+1
-!            PSPFILE(JLEV,II)=data(II,JLEV,JC)
-!            PSPBUF(JLEV,ISP)=PSPFILE(JLEV,II)
-!          ENDDO
-!       ENDDO
-!     ENDDO
-!     DATA(1:NSPEC2G,JLEV,JC)=PSPBUF(JLEV,1:NSPEC2G)
-!   ENDDO
-!ENDDO
 IF (I_MYPROC == 1) THEN
   OPEN(UNIT=17,FILE='avant.glob')
   DO J=1,I_NSPEC2G
@@ -477,34 +431,56 @@ DO J=1,I_NFLEVG
 ENDDO
 !***********************************************
 CALL FLUSH(I_NOUT)
+write (*,*) __FILE__, __LINE__; call flush(6)
 ALLOCATE(ZG(I_NPROMA,3*I_NFLEVG,I_NGPBLKS))
+write (*,*) __FILE__, __LINE__; call flush(6)
 ALLOCATE(ZGG(I_NGPTOTG,3*I_NFLEVG))
+write (*,*) __FILE__, __LINE__; call flush(6)
 ALLOCATE(ITO(3*I_NFLEVG))
+write (*,*) __FILE__, __LINE__; call flush(6)
 ZG=0.0
+write (*,*) __FILE__, __LINE__; call flush(6)
 !write(nout,*) 'temperature avant dirtr'
 !write(nout,*) zspec(1,1:10)
 !write(nout,*) 'divergence avant dirtr'
 !write(nout,*) zdiv(1,1:10)
 !*****************************************************
 !**************************************************************
+write (*,*) __FILE__, __LINE__; call flush(6)
 IF ( NPROC>1 ) THEN
   WRITE(CLNAME1,'(a,i2.2)') 'avant.',I_MYPROC
 ELSE
   CLNAME1='avant.1'
 ENDIF
+write (*,*) __FILE__, __LINE__; call flush(6)
 OPEN(UNIT=97,FILE=CLNAME1,FORM='formatted')
 DO J=1,I_NSPEC2
   WRITE(97,FMT='(3(E20.8,2x))')ZSPEC(1,J),ZVOR(1,J),ZDIV(1,J)
 ENDDO
 CLOSE(97)
+write (*,*) __FILE__, __LINE__; call flush(6)
 !**************************************************************
+
+write (I_NOUT,*) __FILE__, __LINE__
+write (I_NOUT,*) 'calling einv_trans'
+
 CALL FLUSH(I_NOUT)
+
+
+write (*,*) __FILE__, __LINE__; call flush(6)
 CALL EINV_TRANS(PSPVOR=ZVOR,PSPDIV=ZDIV,PSPSCALAR=ZSPEC,PGP=ZG,PMEANU=ZMEANU,PMEANV=ZMEANV,&
  & KPROMA=I_NPROMA,KVSETSC=IVSET(1:I_NFLEVG), KVSETUV=IVSET(1:I_NFLEVG))
+write (*,*) __FILE__, __LINE__; call flush(6)
+
+
 ITO(:)=1
 IFGATHG=3*I_NFLEVG
 CALL EGATH_GRID(PGPG=ZGG,KPROMA=I_NPROMA,KFGATHG=IFGATHG,KTO=ITO,PGP=ZG)
+
+
 !**************************************************************
+
+
 IF (I_MYPROC == 1) THEN
   WRITE(0,*) ' after einv_trans'
   DO J=1,3*I_NFLEVG

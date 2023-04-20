@@ -1,6 +1,6 @@
 MODULE EUVTVD_COMM_MOD
 CONTAINS
-SUBROUTINE EUVTVD_COMM(KM,KMLOC,KFIELD,KFLDPTR,PU,PV,PVOR,PDIV,PSPMEANU,PSPMEANV)
+SUBROUTINE EUVTVD_COMM(KM,KMLOC,KFIELD,KFLDPTR,PU,PV,PSPMEANU,PSPMEANV)
 
 !**** *EUVTVD* - Compute vor/div from u and v in spectral space
 
@@ -66,8 +66,7 @@ USE ABORT_TRANS_MOD
 IMPLICIT NONE
 
 INTEGER(KIND=JPIM), INTENT(IN) :: KFIELD, KM, KMLOC
-REAL(KIND=JPRB), INTENT(INOUT) :: PU  (:,:),PV  (:,:)
-REAL(KIND=JPRB), INTENT(IN)   :: PVOR(:,:),PDIV(:,:)
+REAL(KIND=JPRB), INTENT(INOUT) :: PU  (:,:,:),PV  (:,:,:)
 
 INTEGER(KIND=JPIM), OPTIONAL, INTENT(IN)  :: KFLDPTR(:)
 REAL(KIND=JPRB),    OPTIONAL, INTENT(OUT) :: PSPMEANU(:),PSPMEANV(:)
@@ -88,30 +87,42 @@ IF (LHOOK) CALL DR_HOOK('EUVTVD_COMM_MOD:EUVTVD_COMM',0,ZHOOK_HANDLE)
 !*       1.    COMPUTE U V FROM VORTICITY AND DIVERGENCE.
 !              ------------------------------------------
 
+!write (*,*) 'shape(PU) = ',shape(PU)
+!write (*,*) 'lbounds(PU) = ',lbound(PU,1),lbound(PU,2)
+!write (*,*) 'km = ',KM
+
 IF (KM == 0) THEN
-!$acc data copyout (PSPMEANU, PSPMEANV) 
+
+! daand: PU,PV should be present, but cray compiler says no
+
+!$acc data present(PU,PV)
+!$acc data copyout (PSPMEANU, PSPMEANV, KMLOC) 
 !$acc data copyin (KFLDPTR) if(present (KFLDPTR))
+
   IF (PRESENT(KFLDPTR)) THEN
-!$acc parallel loop present (PU, PV)
+!$acc parallel loop private(ir,ifld)
     DO J = 1, KFIELD
       IR = 2*J-1
       IFLD=KFLDPTR(J)
-      PSPMEANU(IFLD)=PU(1,IR)
-      PSPMEANV(IFLD)=PV(1,IR)
+      PSPMEANU(IFLD)=PU(1,KMLOC,IR)
+      PSPMEANV(IFLD)=PV(1,KMLOC,IR)
     ENDDO
 !$acc end parallel loop 
   ELSE
-!$acc parallel loop present (PU, PV)
+!$acc parallel loop private(j,ir)
     DO J = 1, KFIELD
       IR = 2*J-1
-      PSPMEANU(J)=PU(1,IR)
-      PSPMEANV(J)=PV(1,IR)
+      PSPMEANU(J)=PU(1,KMLOC,IR)
+      PSPMEANV(J)=PV(1,KMLOC,IR)
     ENDDO
 !$acc end parallel loop 
   ENDIF
+
+!$acc end data
 !$acc end data
 !$acc end data
 ENDIF
+
 IF (NPRTRW > 1 .AND. KFIELD > 0) THEN
   IF (KM == 0) THEN
     IF (PRESENT(KFLDPTR)) THEN
@@ -161,6 +172,7 @@ IF (NPRTRW > 1 .AND. KFIELD > 0) THEN
     ENDIF
   ENDIF
 ENDIF
+
 IF (LHOOK) CALL DR_HOOK('EUVTVD_COMM_MOD:EUVTVD_COMM',1,ZHOOK_HANDLE)
 
 END SUBROUTINE EUVTVD_COMM

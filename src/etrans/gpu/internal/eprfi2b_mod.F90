@@ -78,7 +78,7 @@ IF (LHOOK) CALL DR_HOOK('EPRFI2B_MOD:EPRFI2B',0,ZHOOK_HANDLE)
 !$acc data &
 !$acc& present(PFFT) &
 !$acc& present(FOUBUF) &
-!$acc& copy(R_NDGL,D_NSTAGT1B,D_NPNTGTB1,D_NPROCL,D_NUMP,D_MYMS,G_NDGLU)
+!$acc& copyin(R_NDGL,D_NSTAGT1B,D_NPNTGTB1,D_NPROCL,D_NUMP,D_MYMS,G_NDGLU)
   
 !loop over wavenumber
 !$acc parallel loop collapse(3) private(ISTAN,IM,IJR,IJI,JM)
