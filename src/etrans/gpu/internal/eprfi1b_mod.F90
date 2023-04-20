@@ -100,6 +100,7 @@ ELSE
   !$ACC parallel loop collapse(3) &
   !$ACC& present(D_MYMS,DALD_NCPL2M,DALD_NESM0) &
   !$ACC& present(PFFT,PSPEC) &
+  !$ACC& copyin(KFIELDS,D_NUMP,MAX_NCPL2M)
   !$ACC& private(IR,II,IM,ILCM,IOFF,INM) default(none)
   DO JFLD=1,KFIELDS
     DO JM = 1, D_NUMP

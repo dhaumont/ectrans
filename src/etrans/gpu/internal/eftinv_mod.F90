@@ -46,9 +46,11 @@ USE TPM_FFT         ,ONLY : T !, TB
 #ifdef WITH_FFTW
 USE TPM_FFTW        ,ONLY : TW, EXEC_FFTW
 #endif
+#ifdef HAVE_CUFFT
 USE TPM_FFTC        ,ONLY : CREATE_PLAN_FFT, destroy_plan_fft
-USE TPM_DIM         ,ONLY : R
 USE CUDA_DEVICE_MOD
+#endif
+USE TPM_DIM         ,ONLY : R
 
 IMPLICIT NONE
 
@@ -67,13 +69,14 @@ IF (LHOOK) CALL DR_HOOK('EFTINV_MOD:EFTINV',0,ZHOOK_HANDLE)
 IRLEN=R%NDLON+R%NNOEXTZG
 ICLEN=D%NLENGTF/D%NDGL_FS
 
+#ifdef HAVE_CUFFT
 CALL CREATE_PLAN_FFT (IPLAN_C2R, +1, KN=IRLEN, KLOT=KFIELDS*D%NDGL_FS, &
                     & KISTRIDE=1, KIDIST=ICLEN/2, KOSTRIDE=1, KODIST=ICLEN)
 !$acc host_data use_device(PREEL)
 CALL EXECUTE_PLAN_FFTC_INPLACE (IPLAN_C2R, +1, PREEL (1, 1))
 !$acc end host_data
-
 istat = cuda_Synchronize()
+#endif
 
 IF (LHOOK) CALL DR_HOOK('EFTINV_MOD:EFTINV',1,ZHOOK_HANDLE)
 !     ------------------------------------------------------------------

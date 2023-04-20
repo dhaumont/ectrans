@@ -9,6 +9,7 @@ if( HAVE_CPU)
   add_subdirectory( cpu )
 endif()
 if( HAVE_GPU )
+  message("Entering trans/gpu")
   add_subdirectory( gpu )
 endif()
 

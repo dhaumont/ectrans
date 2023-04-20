@@ -40,10 +40,12 @@ USE PARKIND1  ,ONLY : JPIM, JPIB, JPRB
 USE PARKIND_ECTRANS, ONLY : JPRBT
 
 USE TPM_DISTR       ,ONLY : D
-USE TPM_FFTC        ,ONLY : CREATE_PLAN_FFT
 USE TPM_DIM         ,ONLY : R
+#ifdef HAVE_CUFFT
+USE TPM_FFTC        ,ONLY : CREATE_PLAN_FFT
 USE CUDA_DEVICE_MOD
 use cudafor
+#endif
 
 !
 
@@ -63,20 +65,13 @@ integer :: istat
 IRLEN=R%NDLON+R%NNOEXTZG
 ICLEN=D%NLENGTF/D%NDGL_FS
 
-!write (0,*) __FILE__, __LINE__,'; cudaDeviceSynchronize returns ',cudaDeviceSynchronize(); call flush(0)
-
+#ifdef HAVE_CUFFT
 CALL CREATE_PLAN_FFT (IPLAN_R2C, -1, KN=IRLEN, KLOT=KFIELDS*D%NDGL_FS, &
                     & KISTRIDE=1, KIDIST=ICLEN, KOSTRIDE=1, KODIST=ICLEN/2)
-
-!write (0,*) __FILE__, __LINE__,'; cudaDeviceSynchronize returns ',cudaDeviceSynchronize(); call flush(0)
-
 !$acc host_data use_device(PREEL)
-!write (0,*) __FILE__, __LINE__,'; cudaDeviceSynchronize returns ',cudaDeviceSynchronize(); call flush(0)
 CALL EXECUTE_PLAN_FFTC_INPLACE (IPLAN_R2C, -1, PREEL (1, 1))
-!write (0,*) __FILE__, __LINE__,'; cudaDeviceSynchronize returns ',cudaDeviceSynchronize(); call flush(0)
 !$acc end host_data
-
-!write (0,*) __FILE__, __LINE__,'; cudaDeviceSynchronize returns ',cudaDeviceSynchronize(); call flush(0)
+#endif
 
 ZSCAL = 1._JPRB / REAL (R%NDLON, JPRB)
 

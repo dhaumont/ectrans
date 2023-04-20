@@ -161,6 +161,9 @@ ecbuild_add_option( FEATURE GPU_REDUCED_MEMORY
                     DESCRIPTION "Use (slower) code that reduces memory requirements on GPU" )
 
 
+set( HAVE_acc ${HAVE_ACCGPU} )
+set( HAVE_omp ${HAVE_OMPGPU} )
+										
 ecbuild_add_option( FEATURE ETRANS
                     DEFAULT OFF
                     DESCRIPTION "Include Limited-Area-Model Transforms" )

@@ -492,7 +492,7 @@ CALL GSTATS(1808,1)
 
 
 !call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
-#ifdef USE_CUDA_AWARE_MPI_EFTDIR
+#ifdef USE_CUDA_AWARE_MPI_FT
 !$ACC data copyin (PGP  ) if (present (PGP  ))
 !$ACC data copyin (PGPUV) if (present (PGPUV))
 !$ACC data copyin (PGP3A) if (present (PGP3A))
@@ -517,7 +517,7 @@ CALL EDIR_TRANS_CTL(IF_UV_G,IF_SCALARS_G,IF_GP,IF_FS,IF_UV,IF_SCALARS,&
 !$ACC end data
 !$ACC end data
 !$ACC end data
-#ifdef USE_CUDA_AWARE_MPI_EFTDIR
+#ifdef USE_CUDA_AWARE_MPI_FT
 !$ACC end data
 !$ACC end data
 !$ACC end data

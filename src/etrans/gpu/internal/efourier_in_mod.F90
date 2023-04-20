@@ -54,7 +54,7 @@ INTEGER(KIND=JPIM) :: IOFF, JGL
 !$acc kernels
 DO JF=1,SIZE(PREEL,2)
   DO JGL=1,SIZE(PREEL,1)
-    PREEL(JGL,JF)=0._JPRB
+    PREEL(JGL,JF)=0._JPRBT
   ENDDO
 ENDDO
 !$acc end kernels

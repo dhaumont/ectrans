@@ -8,14 +8,6 @@
 
 ## Apply workarounds for some known compilers
 
-message("")
-message("=================================" )
-message("  ENTERING trans/gpu")
-message("OpenACC_Fortran_FLAGS = ${OpenACC_Fortran_FLAGS}")
-message("=================================" )
-message("")
-#message(FATAL_ERROR "grmbl.")
-
 if(CMAKE_Fortran_COMPILER_ID MATCHES "NVHPC")
 
   # Compile setup_trans with pinned memory to improve data movement performance. 
@@ -65,13 +57,13 @@ ecbuild_list_add_pattern( LIST trans_hip_src
                 ecbuild_warn_var(trans_hip_src)
                 set_source_files_properties( ${trans_hip_src} PROPERTIES COMPILE_FLAGS "--offload-arch=gfx90a -x hip" )
 
+
 foreach( prec sp )
   if( HAVE_${prec} )
     foreach( gpumethod acc)
       if( HAVE_${gpumethod})
 
         # We build an object library first. And then use these objects to create a shared and static library.
-
         ectrans_add_library(
           TARGET           trans_gpu_object_${prec}_${gpumethod}
           TYPE             OBJECT
