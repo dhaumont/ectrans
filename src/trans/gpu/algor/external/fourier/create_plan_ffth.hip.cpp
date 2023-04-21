@@ -80,11 +80,12 @@ static int planWorkspaceSize=100*1024*1024; //100MB
  
 extern "C"
 void
-create_plan_ffth_(hipfftHandle * *plan, int *ISIGNp, int *Np, int *LOTp)
+create_plan_ffth_(hipfftHandle * *plan, int *ISIGNp, int *Np, int *LOTp, int * NONSTRIDEDp)
 {
 int ISIGN = *ISIGNp;
 int N = *Np;
 int LOT = *LOTp;
+int NONSTRIDED = *NONSTRIDEDp;
 
 *plan = new hipfftHandle;
 //hipfftHandle plan;
@@ -107,7 +108,7 @@ if (hipDeviceSynchronize() != hipSuccess){
 
 int embed[1];
 int stride;
-int dist;
+int cdist, rdist;
 
 #ifdef TRANS_SINGLE
 hipfftType hipfft_1 = HIPFFT_R2C;
@@ -117,29 +118,41 @@ hipfftType hipfft_1 = HIPFFT_D2Z;
 hipfftType hipfft_2 = HIPFFT_Z2D;
 #endif
 
-embed[0] = 1;
-stride   = LOT;
-dist     = 1;
+embed[0] = 0;
+if (NONSTRIDED==0) {
+	// for global and LAM zonal
+	stride   = LOT;
+	cdist     = 1;
+	rdist     = 1;
+} else {
+	// for LAM meridional
+	stride=1;
+	cdist=N/2+1;
+	rdist=N+2;
+}
+
+printf("CreatePlan hipfft for %s %d \n","N=",N);
+//printf("%s %d \n","plan=",plan);
+printf("%s %d \n","LOT=",LOT);
+printf("%s %d \n","stride=",stride);
+printf("%s %d \n","rdist=",rdist);
+printf("%s %d \n","cdist=",cdist);
+printf("%s %d \n","ISIGN=",ISIGN);
+printf("%s %d \n","N=",N);
 
 hipfftSafeCall(hipfftCreate(*plan));
 
-//printf("CreatePlan hipfft\n","N=",N);
-//printf("%s %d \n","plan=",plan);
-//printf("%s %d \n","LOT=",LOT);
-//printf("%s %d \n","ISIGN=",ISIGN);
-//printf("%s %d \n","Np=",*Np);
-
 if( ISIGN== -1 ){
   hipfftSafeCall(hipfftPlanMany(*plan, 1, &N,
-                 embed, stride, dist, 
-                 embed, stride, dist, 
+                 embed, stride, rdist, 
+                 embed, stride, cdist, 
                  hipfft_1, LOT));
   //hipfftSafeCall(hipfftPlan1d(&plan, N, HIPFFT_D2Z, LOT));
 }
 else if( ISIGN== 1){
   hipfftSafeCall(hipfftPlanMany(*plan, 1, &N,
-                 embed, stride, dist, 
-                 embed, stride, dist, 
+                 embed, stride, cdist, 
+                 embed, stride, rdist, 
                  hipfft_2, LOT));
   //hipfftSafeCall(hipfftPlan1d(&plan, N, HIPFFT_Z2D, LOT));
 }

@@ -47,6 +47,9 @@ USE CUDA_DEVICE_MOD
 use cudafor
 #endif
 
+USE TPM_FFTH        ,ONLY : CREATE_PLAN_FFT, EXECUTE_PLAN_FFT
+USE ISO_C_BINDING
+
 !
 
 IMPLICIT NONE
@@ -55,8 +58,11 @@ INTEGER(KIND=JPIM),INTENT(IN)  :: KFIELDS
 REAL(KIND=JPRB), INTENT(INOUT) :: PREEL(:,:)
 
 INTEGER(KIND=JPIM) :: IRLEN,ICLEN
-INTEGER(KIND=JPIM) :: IPLAN_R2C
+!INTEGER(KIND=JPIM) :: IPLAN_R2C
+TYPE(C_PTR) :: IPLAN_R2C
 REAL(KIND=JPRBT)   :: ZSCAL
+!REAL(KIND=JPRBT), ALLOCATABLE :: ZGTF2(:,:), ZGTF3(:,:)
+!INTEGER(KIND=JPIM) :: IDIM1, IDIM2, LOT,NX
 
 integer :: istat
 
@@ -64,6 +70,35 @@ integer :: istat
 
 IRLEN=R%NDLON+R%NNOEXTZG
 ICLEN=D%NLENGTF/D%NDGL_FS
+
+!write (*,*) __FILE__, __LINE__
+!write (*,*) 'IRLEN = ',IRLEN,'; ICLEN = ',ICLEN
+!write (*,*) 'SHAPE(PREEL) = ',SHAPE(PREEL)
+!write (*,*) 'D%NLENGTF = ',D%NLENGTF,'; D%NDGL_FS = ',D%NDGL_FS
+!write (*,*) 'KFIELDS = ',KFIELDS
+!call flush(6)
+
+
+!NX=128
+!ICLEN=NX+2
+!LOT=4
+!ALLOCATE(ZGTF2(LOT,ICLEN))
+!ALLOCATE(ZGTF3(LOT,ICLEN))
+!write (*,*) __FILE__, __LINE__
+
+!!$ACC ENTER DATA CREATE(ZGTF2,ZGTF3)
+!!$ACC KERNELS
+!ZGTF2(:,:) = 0._JPRBT
+!ZGTF3(:,:) = 0._JPRBT
+!!$ACC END KERNELS
+
+write (*,*) __FILE__, __LINE__; call flush(6)
+CALL CREATE_PLAN_FFT(IPLAN_R2C,-1,IRLEN,KFIELDS*D%NDGL_FS)
+write (*,*) __FILE__, __LINE__; call flush(6)
+CALL EXECUTE_PLAN_FFT(-1,IRLEN,PREEL(1,1),PREEL(1,1),IPLAN_R2C)
+write (*,*) __FILE__, __LINE__; call flush(6)
+
+!!$ACC EXIT DATA DELETE(ZGTF2,ZGTF3)
 
 #ifdef HAVE_CUFFT
 CALL CREATE_PLAN_FFT (IPLAN_R2C, -1, KN=IRLEN, KLOT=KFIELDS*D%NDGL_FS, &
@@ -78,6 +113,8 @@ ZSCAL = 1._JPRB / REAL (R%NDLON, JPRB)
 !$acc kernels present (PREEL) copyin (ZSCAL)
 PREEL = ZSCAL * PREEL
 !$acc end kernels
+
+
 
 !write (0,*) __FILE__, __LINE__,'; cudaDeviceSynchronize returns ',cudaDeviceSynchronize(); call flush(0)
 

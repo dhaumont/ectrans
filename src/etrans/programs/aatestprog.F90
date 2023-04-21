@@ -90,7 +90,6 @@ LOGICAL   :: LLCOSP=.TRUE.
 #include "especnorm.h"
 
 !***********************************************************************
-IF (LHOOK) CALL DR_HOOK('TEST',0,ZHOOK_HANDLE)
 
 LMPOFF=.FALSE.
 
@@ -134,6 +133,7 @@ I_MYSETV=MOD(I_MYPROC-1,NPRTRV)+1
 WRITE(I_NOUT,*) 'namelist finished'
 call flush(I_NOUT)
 !***********************************************************************
+IF (LHOOK) CALL DR_HOOK('TEST',0,ZHOOK_HANDLE)
 !**********************************
 I_NPROMA=8
 ITAG=1
@@ -271,13 +271,13 @@ WRITE(I_NOUT,*) 'I_NDIM0G1: ',I_NDIM0G1
 ! Rearrange spectral data structure (see espareord)
 ALLOCATE(Z_PSPFILE(I_NFLEVG,I_NSPEC2G))
 ALLOCATE(Z_PSPBUF(I_NFLEVG,I_NSPEC2G))
-IF (I_MYPROC == 1) THEN
-  OPEN(UNIT=17,FILE='avant.glob.nonreorg')
-  DO J=1,I_NSPEC2G
-    WRITE(17,*) Z_DATA(J,1,3)
-  ENDDO
-  CLOSE(17)
-ENDIF
+! IF (I_MYPROC == 1) THEN
+  ! OPEN(UNIT=17,FILE='avant.glob.nonreorg')
+  ! DO J=1,I_NSPEC2G
+    ! WRITE(17,*) Z_DATA(J,1,3)
+  ! ENDDO
+  ! CLOSE(17)
+! ENDIF
 DO JC=1,3
   DO JLEV=1,I_NFLEVG
     IF (.NOT.(INGRIB(JLEV,JC)==-1 .OR. INGRIB(JLEV,JC)==3)) THEN
@@ -299,13 +299,13 @@ DO JC=1,3
   ENDDO
 ENDDO
 
-IF (I_MYPROC == 1) THEN
-  OPEN(UNIT=17,FILE='avant.glob')
-  DO J=1,I_NSPEC2G
-    WRITE(17,*) Z_DATA(J,1,3)
-  ENDDO
-  CLOSE(17)
-ENDIF
+! IF (I_MYPROC == 1) THEN
+  ! OPEN(UNIT=17,FILE='avant.glob')
+  ! DO J=1,I_NSPEC2G
+    ! WRITE(17,*) Z_DATA(J,1,3)
+  ! ENDDO
+  ! CLOSE(17)
+! ENDIF
 DEALLOCATE(Z_PSPFILE)
 DEALLOCATE(Z_PSPBUF)
 WRITE(I_NOUT,*) 'reorganisation finished'
@@ -415,20 +415,20 @@ DO J=1,I_NFLEVG
 ENDDO
 !***********************************************
 CALL ESPECNORM(PSPEC=ZVOR,KVSET=IVSET(1:I_NFLEVG),PNORM=ZNORM)
-WRITE(0,*) I_MYPROC,' after especnorm 2'
-WRITE(I_NOUT,*) 'znorm_avant vor '
-DO J=1,I_NFLEVG
-  ZNORM1V(J)=ZNORM(J)
-  IF (I_MYPROC == 1) WRITE(I_NOUT,*) '            ',J,'   ',ZNORM(J)
-ENDDO
+! WRITE(0,*) I_MYPROC,' after especnorm 2'
+! WRITE(I_NOUT,*) 'znorm_avant vor '
+! DO J=1,I_NFLEVG
+  ! ZNORM1V(J)=ZNORM(J)
+  ! IF (I_MYPROC == 1) WRITE(I_NOUT,*) '            ',J,'   ',ZNORM(J)
+! ENDDO
 !***********************************************
 CALL ESPECNORM(PSPEC=ZDIV,KVSET=IVSET(1:I_NFLEVG),PNORM=ZNORM)
-WRITE(0,*) I_MYPROC,' after especnorm 3'
-WRITE(I_NOUT,*) 'znorm_avant div '
-DO J=1,I_NFLEVG
-  ZNORM1D(J)=ZNORM(J)
-  IF (I_MYPROC == 1) WRITE(I_NOUT,*) '           ',J,'    ',ZNORM(J)
-ENDDO
+! WRITE(0,*) I_MYPROC,' after especnorm 3'
+! WRITE(I_NOUT,*) 'znorm_avant div '
+! DO J=1,I_NFLEVG
+  ! ZNORM1D(J)=ZNORM(J)
+  ! IF (I_MYPROC == 1) WRITE(I_NOUT,*) '           ',J,'    ',ZNORM(J)
+! ENDDO
 !***********************************************
 CALL FLUSH(I_NOUT)
 write (*,*) __FILE__, __LINE__; call flush(6)
@@ -447,17 +447,17 @@ write (*,*) __FILE__, __LINE__; call flush(6)
 !*****************************************************
 !**************************************************************
 write (*,*) __FILE__, __LINE__; call flush(6)
-IF ( NPROC>1 ) THEN
-  WRITE(CLNAME1,'(a,i2.2)') 'avant.',I_MYPROC
-ELSE
-  CLNAME1='avant.1'
-ENDIF
+! IF ( NPROC>1 ) THEN
+  ! WRITE(CLNAME1,'(a,i2.2)') 'avant.',I_MYPROC
+! ELSE
+  ! CLNAME1='avant.1'
+! ENDIF
 write (*,*) __FILE__, __LINE__; call flush(6)
-OPEN(UNIT=97,FILE=CLNAME1,FORM='formatted')
-DO J=1,I_NSPEC2
-  WRITE(97,FMT='(3(E20.8,2x))')ZSPEC(1,J),ZVOR(1,J),ZDIV(1,J)
-ENDDO
-CLOSE(97)
+! OPEN(UNIT=97,FILE=CLNAME1,FORM='formatted')
+! DO J=1,I_NSPEC2
+  ! WRITE(97,FMT='(3(E20.8,2x))')ZSPEC(1,J),ZVOR(1,J),ZDIV(1,J)
+! ENDDO
+! CLOSE(97)
 write (*,*) __FILE__, __LINE__; call flush(6)
 !**************************************************************
 
@@ -503,41 +503,41 @@ WRITE(I_NOUT,*) ZSPEC(1,1:10)
 
 !**************************************************************
 !**************************************************************
-IF ( NPROC>1 ) THEN
-  WRITE(CLNAME1,'(a,i2.2)') 'apres.',I_MYPROC
-ELSE
-  CLNAME1='apres.1'
-ENDIF
-OPEN(UNIT=97,FILE=CLNAME1,FORM='formatted')
-DO J=1,I_NSPEC2
-  WRITE(97,FMT='(3(E20.8,2x))')ZSPEC(1,J),ZVOR(1,J),ZDIV(1,J)
-ENDDO
-CLOSE(97)
+! IF ( NPROC>1 ) THEN
+  ! WRITE(CLNAME1,'(a,i2.2)') 'apres.',I_MYPROC
+! ELSE
+  ! CLNAME1='apres.1'
+! ENDIF
+! OPEN(UNIT=97,FILE=CLNAME1,FORM='formatted')
+! DO J=1,I_NSPEC2
+  ! WRITE(97,FMT='(3(E20.8,2x))')ZSPEC(1,J),ZVOR(1,J),ZDIV(1,J)
+! ENDDO
+! CLOSE(97)
 !**************************************************************
 !*************************************************************
 CALL ESPECNORM(PSPEC=ZSPEC,KVSET=IVSET(1:I_NFLEVG),PNORM=ZNORM)
-WRITE(I_NOUT,*) 'znorm_apres t'
-DO J=1,I_NFLEVG
-  ZNORM2T(J)=ZNORM(J)
-  WRITE(I_NOUT,*) '     ',J,'   ',ZNORM(J)
-ENDDO
-CALL FLUSH(I_NOUT)
+! WRITE(I_NOUT,*) 'znorm_apres t'
+! DO J=1,I_NFLEVG
+  ! ZNORM2T(J)=ZNORM(J)
+  ! WRITE(I_NOUT,*) '     ',J,'   ',ZNORM(J)
+! ENDDO
+! CALL FLUSH(I_NOUT)
 !**************************************
 CALL ESPECNORM(PSPEC=ZVOR,KVSET=IVSET(1:I_NFLEVG),PNORM=ZNORM)
-WRITE(I_NOUT,*) 'znorm_apres vor'
-DO J=1,I_NFLEVG
-  ZNORM2V(J)=ZNORM(J)
-  WRITE(I_NOUT,*) '     ',J,'   ',ZNORM(J)
-ENDDO
+! WRITE(I_NOUT,*) 'znorm_apres vor'
+! DO J=1,I_NFLEVG
+  ! ZNORM2V(J)=ZNORM(J)
+  ! WRITE(I_NOUT,*) '     ',J,'   ',ZNORM(J)
+! ENDDO
 !**************************************
 CALL ESPECNORM(PSPEC=ZDIV,KVSET=IVSET(1:I_NFLEVG),PNORM=ZNORM)
-IF(I_MYPROC == 1) THEN
-  WRITE(I_NOUT,*) 'znorm_apres div'
-  DO J=1,I_NFLEVG
-    ZNORM2D(J)=ZNORM(J)
-    WRITE(I_NOUT,*) '       ',J,'   ',ZNORM(J)
-  ENDDO
-ENDIF
+! IF(I_MYPROC == 1) THEN
+  ! WRITE(I_NOUT,*) 'znorm_apres div'
+  ! DO J=1,I_NFLEVG
+    ! ZNORM2D(J)=ZNORM(J)
+    ! WRITE(I_NOUT,*) '       ',J,'   ',ZNORM(J)
+  ! ENDDO
+! ENDIF
 DEALLOCATE(ZNORM)
 !**************************************************************
 IF ( I_MYPROC==1 ) THEN
@@ -570,6 +570,12 @@ DEALLOCATE(ZNORM2V)
 DEALLOCATE(Z_DATA)
 DEALLOCATE(INGRIB)
 
+write (*,*) __FILE__, __LINE__
+write (*,*) 'FINISHED succesfully'
+call flush(6)
+
+IF (LHOOK) CALL DR_HOOK('TEST',1,ZHOOK_HANDLE)
+
 !!**************************************
 100 CONTINUE
 IF(NPROC > 1 .OR. .NOT.LMPOFF ) THEN
@@ -577,6 +583,5 @@ IF(NPROC > 1 .OR. .NOT.LMPOFF ) THEN
   CALL MPL_END
 ENDIF
 CALL FLUSH(I_NOUT)
-IF (LHOOK) CALL DR_HOOK('TEST',1,ZHOOK_HANDLE)
 !**************************************************************
 END PROGRAM TEST
