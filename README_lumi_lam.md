@@ -3,19 +3,23 @@
 ## Usage (aka the most interesting part)
 
 ### (re)Compilation
-source ~dadegrau2/deode/ectrans/lam/sources/ectrans/ENV_lumi
-rm -rf ${BUILDDIR}/ectrans ${INSTALLDIR}/ectrans
-mkdir -p ${BUILDDIR}/ectrans
-cd ${BUILDDIR}/ectrans
-ecbuild --prefix=${INSTALLDIR}/ectrans -Dfiat_ROOT=${INSTALLDIR}/fiat -DBUILD_SHARED_LIBS=OFF -DENABLE_FFTW=OFF -DENABLE_GPU=ON -DENABLE_OMPGPU=OFF -DENABLE_ACCGPU=ON -DENABLE_TESTS=OFF -DENABLE_GPU_AWARE_MPI=ON -DENABLE_CPU=OFF -DENABLE_ETRANS=ON ${SOURCEDIR}/ectrans
-make -j16
-make install
+
+    source ~dadegrau2/deode/ectrans/lam/sources/ectrans/ENV_lumi
+    rm -rf ${BUILDDIR}/ectrans ${INSTALLDIR}/ectrans
+    mkdir -p ${BUILDDIR}/ectrans
+    cd ${BUILDDIR}/ectrans
+    ecbuild --prefix=${INSTALLDIR}/ectrans -Dfiat_ROOT=${INSTALLDIR}/fiat -DBUILD_SHARED_LIBS=OFF -DENABLE_FFTW=OFF -DENABLE_GPU=ON -DENABLE_OMPGPU=OFF -DENABLE_ACCGPU=ON -DENABLE_TESTS=OFF -DENABLE_GPU_AWARE_MPI=ON -DENABLE_CPU=OFF -DENABLE_ETRANS=ON ${SOURCEDIR}/ectrans
+    make -j16
+    make install
 
 ### test run
 
 Allocate GPU resource with
+
     salloc --nodes=1 --ntasks-per-node=1 --cpus-per-task=1 --gpus-per-node=1 --account=project_462000140 --partition=standard-g --time=04:00:00 --mem=0
+
 Recompile/run with 
+
     cd ${BASEDIR}/test/
     make -j16 -C ../build/ectrans/ install
     #srun ../install/ectrans/bin/ectrans-benchmark-gpu-sp-acc
@@ -26,6 +30,7 @@ Note: recompiling like this may not be sufficient when modifying e.g. hip.cc fil
 ## Prerequisites: ecbuild and fiat
 
 ### ecbuild installation
+
     cd ${SOURCEDIR}
     git clone https://github.com/ecmwf/ecbuild.git
     cd ecbuild
@@ -39,6 +44,7 @@ Note: recompiling like this may not be sufficient when modifying e.g. hip.cc fil
 
 ### fiat installation
 With Cray compiler on lumi, one gets into trouble with OpenMP: for some reason, during linking the openmp library isn't found... This is solved by adding `${OpenMP_C_FLAGS}` in `programs/CMakeLists.txt`: `target_link_libraries( fiat-printbinding ${OpenMP_C_FLAGS} OpenMP::OpenMP_C )`
+
     cd ${SOURCEDIR}
     git clone https://github.com/ecmwf-ifs/fiat
     cd fiat
