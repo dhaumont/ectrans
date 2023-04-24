@@ -42,6 +42,18 @@ foreach( prec sp )
                             parkind_${prec}
                             trans_${prec}
                           )
+      if ( HAVE_ETRANS )
+        ecbuild_add_executable(TARGET  ectrans-lam-benchmark-${prec}
+                            SOURCES ectrans-lam-benchmark.F90
+                            LINKER_LANGUAGE Fortran
+                            LIBS
+                              fiat
+                              parkind_${prec}
+                              trans_${prec}
+                etrans_${prec}
+                            )
+    
+      endif()
     endif()
     
     if( HAVE_GPU )
@@ -50,7 +62,7 @@ foreach( prec sp )
           if( gpumethod STREQUAL acc )
             ecbuild_add_executable(TARGET  ectrans-benchmark-gpu-${prec}-${gpumethod}
                                   SOURCES ectrans-benchmark.F90
-				                          LINKER_LANGUAGE Fortran
+                                  LINKER_LANGUAGE Fortran
                                   LIBS
                                     fiat
                                     parkind_${prec}
@@ -63,7 +75,7 @@ foreach( prec sp )
           if( gpumethod STREQUAL omp )
             ecbuild_add_executable(TARGET  ectrans-benchmark-gpu-${prec}-${gpumethod}
                                   SOURCES ectrans-benchmark.F90
-				                          LINKER_LANGUAGE Fortran
+                                  LINKER_LANGUAGE Fortran
                                   LIBS
                                     fiat
                                     parkind_${prec}
@@ -74,8 +86,44 @@ foreach( prec sp )
                     
           target_link_options   ( ectrans-benchmark-gpu-${prec}-${gpumethod} INTERFACE "$<$<LINK_LANG_AND_ID:Fortran,NVHPC>:${${gpumethod}_link_flags}>" )
           target_compile_options( ectrans-benchmark-gpu-${prec}-${gpumethod} PUBLIC $<$<COMPILE_LANGUAGE:Fortran>:${${gpumethod}_flags}>)
+      
+          if ( HAVE_ETRANS )
 
+            if( gpumethod STREQUAL acc )
+              ecbuild_add_executable(TARGET  ectrans-lam-benchmark-gpu-${prec}-${gpumethod}
+                    SOURCES ectrans-lam-benchmark.F90
+                        LINKER_LANGUAGE Fortran
+                    LIBS
+                    etrans_gpu_${prec}_${gpumethod}
+                    trans_gpu_${prec}_${gpumethod}
+                    fiat
+                    parkind_${prec}
+                    OpenACC::OpenACC_Fortran
+                    )
+              target_compile_definitions( ectrans-lam-benchmark-gpu-${prec}-${gpumethod} PRIVATE ACCGPU )
+            endif()
+
+            if( gpumethod STREQUAL omp )
+              ecbuild_add_executable(TARGET  ectrans-lam-benchmark-gpu-${prec}-${gpumethod}
+                    SOURCES ectrans-lam-benchmark.F90
+                        LINKER_LANGUAGE Fortran
+                    LIBS
+					etrans_gpu_${prec}_${gpumethod}
+                    trans_gpu_${prec}_${gpumethod}
+                    fiat
+                    parkind_${prec}
+                    )
+              target_compile_definitions( ectrans-lam-benchmark-gpu-${prec}-${gpumethod} PRIVATE OMPGPU )
+            endif()
+            
+            target_link_options   ( ectrans-lam-benchmark-gpu-${prec}-${gpumethod} INTERFACE "$<$<LINK_LANG_AND_ID:Fortran,NVHPC>:${${gpumethod}_link_flags}>" )
+            target_compile_options( ectrans-lam-benchmark-gpu-${prec}-${gpumethod} PUBLIC $<$<COMPILE_LANGUAGE:Fortran>:${${gpumethod}_flags}>)
+      
+          endif()
+      
         endif()
+
+
       endforeach()
     endif()
   endif()
