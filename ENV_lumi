@@ -7,7 +7,7 @@ BASEDIR=${HOME}/deode/ectrans/lam/
 SOURCEDIR=${BASEDIR}/sources
 BUILDDIR=${BASEDIR}/build
 INSTALLDIR=${BASEDIR}/install
-TOOLCHAIN_FILE=${BASEDIR}/toolchain.cmake
+TOOLCHAIN_FILE=${SOURCEDIR}/ectrans/toolchain_lumi.cmake
 
 mkdir -p ${BASEDIR} ${SOURCEDIR} ${BUILDDIR} ${INSTALLDIR}
 
@@ -16,8 +16,10 @@ export CXX=CC
 export FC=ftn
 export PATH=${PATH}:${INSTALLDIR}/ecbuild/bin/
 
-export ECBUILD_TOOLCHAIN="${BASEDIR}/toolchain_lumi.cmake"
+export ECBUILD_TOOLCHAIN="${TOOLCHAIN_FILE}"
+export CMAKE_BUILD_TYPE=RelWithDebInfo
 export HIP_ROOT=${ROCM_PATH}/hip
 
 cd ${BASEDIR}
+
 

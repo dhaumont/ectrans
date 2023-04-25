@@ -80,7 +80,7 @@ integer(kind=jpim) :: ja
 integer(kind=jpim) :: ib
 integer(kind=jpim) :: jprtrv
 
-integer(kind=jpim), allocatable :: nloen(:), nprcids(:)
+integer(kind=jpim), allocatable :: nprcids(:)
 integer(kind=jpim) :: myproc, jj
 integer :: jstep
 
@@ -123,7 +123,7 @@ logical :: lsyncstats = .false.
 logical :: lstatscpu = .false.
 logical :: lstats_mem = .false.
 logical :: lxml_stats = .false.
-logical :: lfftw = .true. ! Use FFTW for Fourier transforms
+logical :: lfftw = .false. ! Use FFTW for Fourier transforms
 logical :: lvordiv = .false.
 logical :: lscders = .false.
 logical :: luvders = .false.
@@ -197,7 +197,7 @@ logical :: ldump_values = .false.
 integer, external :: ec_mpirank
 logical :: luse_mpi = .true.
 
-character(len=16) :: cgrid = ''
+real(kind=jprb) :: zexwn, zeywn
 
 !===================================================================================================
 
@@ -217,7 +217,7 @@ luse_mpi = detect_mpirun()
 
 ! Setup
 call get_command_line_arguments(nlon, nlat, nsmax, nmsmax, iters, nfld, nlev, lvordiv, lscders, luvders, &
-  & luseflt, nproma, verbosity, ldump_values, lprint_norms, lmeminfo, nprgpns, nprgpew, nprtrv, nprtrw, ncheck)
+  & nproma, verbosity, ldump_values, lprint_norms, lmeminfo, nprgpns, nprgpew, nprtrv, nprtrw, ncheck)
 ! derived defaults
 if ( nsmax == 0 ) nsmax = nlat/2-1
 if ( nmsmax == 0 ) nmsmax = nlon/2-1
@@ -375,7 +375,7 @@ if (verbosity >= 1) write(nout,'(a)')'======= Setup ecTrans ======='
 
 call gstats(1, 0)
 call setup_trans0(kout=nout, kerr=nerr, kprintlev=merge(2, 0, verbosity == 1),                &
-  &               kmax_resol=nmax_resol, kpromatr=npromatr, kprgpns=nprgpns, kprgpew=nprgpew, &
+  &               kmax_resol=nmax_resol, kpromatr=4, kprgpns=nprgpns, kprgpew=nprgpew, &
   &               kprtrw=nprtrw, kcombflen=ncombflen, ldsync_trans=lsync_trans,               &
   &               ldalloperm=.true., ldmpoff=.not.luse_mpi)
 call gstats(1, 1)
@@ -383,7 +383,8 @@ call gstats(1, 1)
 call gstats(2, 0)
 zexwn=1.e-3  ! 2*pi/(nx*dx): spectral resolution
 zeywn=1.e-3  ! 2*pi/(ny*dy)
-call esetup_trans(ksmax=nsmax, kmsmax=nmsmax, kdgl=nlat, kloen=nloen, ldsplit=.true.,          &
+nloen=nlon
+call esetup_trans(ksmax=nsmax, kmsmax=nmsmax, kdgl=nlat, kdgux=nlat, kloen=nloen, ldsplit=.true.,          &
   &                 ldusefftw=lfftw,pexwn=zexwn,peywn=zeywn)
 
 call gstats(2, 1)
@@ -444,7 +445,7 @@ nullify(zspsc3a)
 allocate(sp3d(nflevl,nspec2,2+nfld))
 allocate(zspsc2(1,nspec2))
 
-call initialize_spectral_arrays(nsmax, zspsc2, sp3d)
+call initialize_spectral_arrays(nsmax, nmsmax, zspsc2, sp3d)
 
 ! Point convenience variables to storage variable sp3d
 zspvor  => sp3d(:,:,1)
@@ -1037,7 +1038,6 @@ subroutine get_command_line_arguments(nlon, nlat, nsmax, nmsmax, &
       case('--vordiv'); lvordiv = .True.
       case('--scders'); lscders = .True.
       case('--uvders'); luvders = .True.
-      case('--flt'); luseflt = .True.
       case('--nproma'); nproma = get_int_value('--nproma', iarg)
       case('--dump-values'); ldump_values = .true.
       case('--norms'); lprint_norms = .true.
@@ -1171,7 +1171,8 @@ end subroutine print_help
 
 subroutine initialize_spectral_arrays(nsmax, nmsmax, zsp, sp3d)
 
-  integer,         intent(in)    :: nsmax       ! Spectral truncation
+  integer,         intent(in)    :: nsmax     ! Spectral truncation in meridional direction
+  integer,         intent(in)    :: nmsmax    ! Spectral truncation in zonal direction
   real(kind=jprb), intent(inout) :: zsp(:,:)    ! Surface pressure
   real(kind=jprb), intent(inout) :: sp3d(:,:,:) ! 3D fields
 
@@ -1221,10 +1222,10 @@ subroutine initialize_2d_spectral_field(nsmax, nmsmax, field)
   ! If rank is responsible for the chosen zonal wavenumber...
   do ispec=1,nspec2,4
     if ( my_kn(ispec)== n_num .and. my_km(ispec) == m_num ) then
-	  field(index)=1.0 ! cos*cos
-	  !field(index+1)=1.0 ! cos*sin
-	  !field(index+2)=1.0 ! sin*cos
-	  !field(index+3)=1.0 ! sin*sin
+	  field(ispec)=1.0 ! cos*cos
+	  !field(ispec+1)=1.0 ! cos*sin
+	  !field(ispec+2)=1.0 ! sin*cos
+	  !field(ispec+3)=1.0 ! sin*sin
     end if
   enddo
 

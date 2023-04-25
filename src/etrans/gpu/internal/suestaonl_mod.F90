@@ -105,6 +105,9 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 !      -----------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('SUESTAONL_MOD:SUESTAONL',0,ZHOOK_HANDLE)
+
+  
+
 IXPTLAT  (:)=999999
 ILSTPTLAT(:)=999999
 LLP1 = NPRINTLEV>0
@@ -121,6 +124,7 @@ ILEN = D%NLSTLAT(MY_REGION_NS) - D%NFRSTLAT(MY_REGION_NS)+1
 
 IGPTPRSETS = SUM(G%NLOEN(1:D%NFRSTLAT(MY_REGION_NS)-1))
 
+  
 
 IF (D%LSPLIT) THEN
   IF( LEQ_REGIONS )THEN
@@ -152,6 +156,7 @@ ELSE
   IGPTA = IGPTPRSETS
   IGPTS = SUM(G%NLOEN(D%NFRSTLAT(MY_REGION_NS):D%NLSTLAT(MY_REGION_NS)))
 ENDIF
+  
 IGPTSP = IGPTS/N_REGIONS(MY_REGION_NS)
 IREST = IGPTS-N_REGIONS(MY_REGION_NS)*IGPTSP
 IXPTLAT(1) = IGPTA-IGPTPRSETS+1
@@ -268,11 +273,13 @@ DO JB=1,N_REGIONS(MY_REGION_NS)
 
 ENDDO
 
+  
 IF( LDWEIGHTED_DISTR )THEN
   DEALLOCATE(ZWEIGHT)
 ENDIF
 ! Exchange local partitioning info to produce global view
 
+  
 IF( NPROC > 1 )THEN
   IF( LEQ_REGIONS )THEN
 
@@ -373,6 +380,7 @@ ENDIF
 ! Confirm consistency of global partitioning, specifically testing for
 ! multiple assignments of same grid point and unassigned grid points
 
+  
 LLABORT = .FALSE.
 DO JGL=1,R%NDGL
   DO JL=1,G%NLOEN(JGL)
@@ -401,6 +409,7 @@ DO JA=1,N_REGIONS_NS
     ENDDO
   ENDDO
 ENDDO
+  
 DO JGL=1,R%NDGL
   DO JL=1,G%NLOEN(JGL)
     IF( ICHK(JL,JGL) /= 2 )THEN
@@ -415,6 +424,7 @@ IF( LLABORT )THEN
   CALL ABORT_TRANS(' SUESTAONL: inconsistent partitioning')
 ENDIF
 
+  
 IF (LLP1) THEN
   WRITE(UNIT=NOUT,FMT='('' OUTPUT FROM ROUTINE SUESTAONL '')')
   WRITE(UNIT=NOUT,FMT='('' '')')
@@ -441,6 +451,9 @@ IF (LLP1) THEN
   WRITE(UNIT=NOUT,FMT='('' '')')
   WRITE(UNIT=NOUT,FMT='('' '')')
 ENDIF
+
+  
+
 IF (LHOOK) CALL DR_HOOK('SUESTAONL_MOD:SUESTAONL',1,ZHOOK_HANDLE)
 
 !     ------------------------------------------------------------------

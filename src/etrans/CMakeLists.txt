@@ -14,4 +14,4 @@ install(
   DESTINATION  include/etrans
 )
 
-#add_subdirectory( programs )
+add_subdirectory( programs )

@@ -9,7 +9,8 @@
     mkdir -p ${BUILDDIR}/ectrans
     cd ${BUILDDIR}/ectrans
     ecbuild --prefix=${INSTALLDIR}/ectrans -Dfiat_ROOT=${INSTALLDIR}/fiat -DBUILD_SHARED_LIBS=OFF -DENABLE_FFTW=OFF -DENABLE_GPU=ON -DENABLE_OMPGPU=OFF -DENABLE_ACCGPU=ON -DENABLE_TESTS=OFF -DENABLE_GPU_AWARE_MPI=ON -DENABLE_CPU=OFF -DENABLE_ETRANS=ON ${SOURCEDIR}/ectrans
-    make -j16
+    make -j32
+	make -j32   # note: dependencies aren't worked out entirely correctly by cmake, therefore a second make is necessary.
     make install
 
 ### test run
