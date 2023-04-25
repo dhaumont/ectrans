@@ -103,11 +103,20 @@ IF(PRESENT(KFLDPTR)) THEN
   ENDDO
 ELSE
   MAX_NCPL2M = MAXVAL (DALD_NCPL2M)
-write (*,*) __FILE__, __LINE__; call flush(6)
+write (*,*) __FILE__, __LINE__;
+write (*,*) 'shape(PSPEC) = ',shape(PSPEC)
+write (*,*) 'shape(PFFT) = ',shape(PFFT)
+write (*,*) 'KFIELDS = ',KFIELDS
+write (*,*) 'D_NUMP = ',D_NUMP
+write (*,*) 'MAX_NCPL2M = ',MAX_NCPL2M
+write (*,*) 'D_MYMS = ',D_MYMS
+write (*,*) 'DALD_NCPL2M = ',DALD_NCPL2M
+write (*,*) 'DALD_NESM0 = ',DALD_NESM0
+call flush(6)
   !$ACC parallel loop collapse(3) &
-  !$ACC& copyin(D_MYMS,DALD_NCPL2M,DALD_NESM0) &
+  !$ACC& present(D_MYMS,DALD_NCPL2M,DALD_NESM0,D_NUMP) &
   !$ACC& present(PFFT,PSPEC) &
-  !$ACC& copyin(KFIELDS,D_NUMP,MAX_NCPL2M) &
+  !$ACC& copyin(KFIELDS,MAX_NCPL2M) &
   !$ACC& private(IR,II,IM,ILCM,IOFF,INM) default(none)
   DO JFLD=1,KFIELDS
     DO JM = 1, D_NUMP
@@ -116,13 +125,14 @@ write (*,*) __FILE__, __LINE__; call flush(6)
        II = IR+1
        IM   = D_MYMS(JM)
        ILCM = DALD_NCPL2M(IM)
-       if (J > ILCM) CYCLE
-       IOFF = DALD_NESM0(IM)
-       INM = IOFF+(J-1)*2
-       PFFT(J  ,JM,IR) = PSPEC(JFLD,INM  )
-       PFFT(J+1,JM,IR) = PSPEC(JFLD,INM+1)
-       PFFT(J  ,JM,II) = PSPEC(JFLD,INM+2)
-       PFFT(J+1,JM,II) = PSPEC(JFLD,INM+3)
+       if (J .LE. ILCM) then
+		   IOFF = DALD_NESM0(IM)
+		   INM = IOFF+(J-1)*2
+		   PFFT(J  ,JM,IR) = PSPEC(JFLD,INM  )
+		   PFFT(J+1,JM,IR) = PSPEC(JFLD,INM+1)
+		   PFFT(J  ,JM,II) = PSPEC(JFLD,INM+2)
+		   PFFT(J+1,JM,II) = PSPEC(JFLD,INM+3)
+	   endif
       ENDDO
     ENDDO
   ENDDO

@@ -330,6 +330,8 @@ if (.not. lmpoff) then
   call mpl_buffer_method(kmp_type=mp_type, kmbx_size=mbx_size, kprocids=nprcids, ldinfo=(verbosity>=1))
 endif
 #endif
+mysetv=mod(myproc-1,nprtrv)+1
+
 ! Determine number of local levels for zonal and meridional fourier calculations
 ! based on the values of nflevg and nprtrv
 allocate(numll(nprtrv+1))
@@ -349,6 +351,11 @@ numll(iprused+1:nprtrv+1) = 0
 
 nflevl = numll(mysetv)
 
+write (*,*) 'mysetv = ',mysetv
+write (*,*) 'numll = ',numll
+write (*,*) 'nflevl = ',nflevl
+call flush(6)
+!call abort()
 ivsetsc(1) = iprused
 ifld = 0
 
@@ -421,6 +428,7 @@ if (verbosity >= 0) then
   write(nout,'("ngptotg   ",i0)') ngptotg
   write(nout,'("nfld      ",i0)') nfld
   write(nout,'("nlev      ",i0)') nlev
+  write(nout,'("nflevl    ",i0)') nflevl
   write(nout,'("nproma    ",i0)') nproma
   write(nout,'("ngpblks   ",i0)') ngpblks
   write(nout,'("nspec2    ",i0)') nspec2

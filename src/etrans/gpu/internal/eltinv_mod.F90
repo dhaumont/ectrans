@@ -179,7 +179,15 @@ write (*,*) __FILE__, __LINE__; call flush(6)
       DO J3=1,IDIM3
         IFIRST = ILAST+1
         ILAST  = IFIRST-1+2*IDIM1
-write (*,*) __FILE__, __LINE__; call flush(6)
+write (*,*) __FILE__, __LINE__
+write (*,*) 'IFIRST = ',IFIRST
+write (*,*) 'ILAST = ',ILAST
+write (*,*) 'J3 = ',J3
+write (*,*) 'IDIM1 = ',IDIM1
+write (*,*) 'IDIM3 = ',IDIM3
+write (*,*) 'shape(ZFFT) = ',shape(ZFFT)
+write (*,*) 'shape(PSPSC3A) = ',shape(PSPSC3A)
+call flush(6)
         CALL EPRFI1B(ZFFT(:,:,IFIRST:ILAST),PSPSC3A(:,:,J3),IDIM1)
 write (*,*) __FILE__, __LINE__; call flush(6)
       ENDDO
