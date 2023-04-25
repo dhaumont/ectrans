@@ -60,7 +60,7 @@ ecbuild_list_add_pattern( LIST trans_hip_src
 
 foreach( prec sp )
   if( HAVE_${prec} )
-    foreach( gpumethod acc)
+    foreach( gpumethod acc omp)
       if( HAVE_${gpumethod})
 
         # We build an object library first. And then use these objects to create a shared and static library.
@@ -81,7 +81,6 @@ foreach( prec sp )
 			                    roc::rocfft
                           MPI::MPI_Fortran
                           mpifort
-                          omptarget
                           #MPI::MPI_C
 			  MPI::MPI_CXX
                           #nvhpcwrapnvtx
@@ -89,13 +88,17 @@ foreach( prec sp )
         )
 
         target_link_options   ( trans_gpu_object_${prec}_${gpumethod} INTERFACE "$<$<LINK_LANG_AND_ID:Fortran,NVHPC>:${${gpumethod}_link_flags}>" )
-        target_compile_options( trans_gpu_object_${prec}_${gpumethod} PUBLIC $<$<COMPILE_LANGUAGE:Fortran>:${${gpumethod}_flags}>)
+        target_compile_options( trans_gpu_object_${prec}_${gpumethod} PRIVATE $<$<COMPILE_LANGUAGE:Fortran>:${${gpumethod}_flags}>)
 
         ectrans_target_fortran_module_directory(
           TARGET            trans_gpu_object_${prec}_${gpumethod}
           MODULE_DIRECTORY  ${PROJECT_BINARY_DIR}/module/trans_gpu_${prec}_${gpumethod}
           INSTALL_DIRECTORY module/trans_gpu_${prec}_${gpumethod}
         )
+
+        if( CMAKE_Fortran_COMPILER_ID MATCHES "Cray" AND CMAKE_Fortran_COMPILER_VERSION MATCHES "15.*" )
+          target_link_libraries( trans_gpu_object_${prec}_${gpumethod} PRIVATE omptarget )
+        endif()
 
         if( HAVE_OMP )
           target_link_libraries( trans_gpu_object_${prec}_${gpumethod} PRIVATE OpenMP::OpenMP_Fortran )
