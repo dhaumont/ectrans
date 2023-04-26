@@ -276,15 +276,15 @@ endif
 ! This version selects most square-like distribution
 if (nproc == 0) nproc = 1
 if ( nprgpew == 0 .and. nprgpns == 0 ) then
-	isqr = int(sqrt(real(nproc,jprb)))
-	do ja = isqr, nproc
-	  ib = nproc/ja
-	  if (ja*ib == nproc) then
-		nprgpns = max(ja,ib)
-		nprgpew = min(ja,ib)
-		exit
-	  endif
-	enddo
+  isqr = int(sqrt(real(nproc,jprb)))
+  do ja = isqr, nproc
+    ib = nproc/ja
+    if (ja*ib == nproc) then
+    nprgpns = max(ja,ib)
+    nprgpew = min(ja,ib)
+    exit
+    endif
+  enddo
 elseif (nprgpns == 0 ) then
   nprgpns=nproc/nprgpew
 elseif (nprgpew == 0 ) then
@@ -582,8 +582,8 @@ do jstep = 1, iters
        & pgp2=zgp2,                         &
        & pgpuv=zgpuv,                       &
        & pgp3a=zgp3a,                       &
-	   & pmeanu=zmeanu,                     &
-	   & pmeanv=zmeanv)
+     & pmeanu=zmeanu,                     &
+     & pmeanv=zmeanv)
   else
     call einv_trans(kresol=1, kproma=nproma, &
        & pspsc2=zspsc2,                     & ! spectral surface pressure
@@ -629,8 +629,8 @@ do jstep = 1, iters
       & kvsetuv=ivset,                      &
       & kvsetsc2=ivsetsc,                   &
       & kvsetsc3a=ivset,                    &
-	  & pmeanu=zmeanu,                      &
-	  & pmeanv=zmeanv)
+    & pmeanu=zmeanu,                      &
+    & pmeanv=zmeanv)
   else
     call edir_trans(kresol=1, kproma=nproma, &
       & pgp2=zgmvs(:,1:1,:),                &
@@ -1200,10 +1200,10 @@ subroutine initialize_2d_spectral_field(nsmax, nmsmax, field)
   ! If rank is responsible for the chosen zonal wavenumber...
   do ispec=1,nspec2,4
     if ( my_kn(ispec)== n_num .and. my_km(ispec) == m_num ) then
-	  field(ispec)=1.0 ! cos*cos
-	  !field(ispec+1)=1.0 ! cos*sin
-	  !field(ispec+2)=1.0 ! sin*cos
-	  !field(ispec+3)=1.0 ! sin*sin
+    field(ispec)=1.0 ! cos*cos
+    !field(ispec+1)=1.0 ! cos*sin
+    !field(ispec+2)=1.0 ! sin*cos
+    !field(ispec+3)=1.0 ! sin*sin
     end if
   enddo
 
@@ -1235,23 +1235,30 @@ subroutine dump_gridpoint_field(jstep, myproc, nlat, nproma, ngpblks, fld, fldch
 #include "egath_grid.h"
   
   call etrans_inq(kgptotg=kgptotg)
-  allocate(fldg(kgptotg,1))
+
+  if ( myproc == 1 ) allocate(fldg(kgptotg,1))
+
   call egath_grid(pgpg=fldg,kproma=nproma,kfgathg=kfgathg,kto=kto,pgp=fld)
+  
+  if ( myproc == 1 ) then
  
-  ! write to file
-  !write(filename(1:1),'(a1)') fldchar
-  !write(filename(3:5),'(i3.3)') jstep
-  !open(noutdump, file=filename, form="unformatted", access="stream")
-  !write(noutdump) fldg
-  !close(noutdump)
+    ! write to file
+    !write(filename(1:1),'(a1)') fldchar
+    !write(filename(3:5),'(i3.3)') jstep
+    !open(noutdump, file=filename, form="unformatted", access="stream")
+    !write(noutdump) fldg
+    !close(noutdump)
+    
+    ! write to screen
+    write(frmt(5:8),'(i4.4)') kgptotg/nlat
+    write (*,*) fldchar,' at iteration ',jstep,':'
+    write (*,frmt) fldg
+    call flush(6)
+	
+    deallocate(fldg)
   
-  ! write to screen
-  write(frmt(5:8),'(i4.4)') kgptotg/nlat
-  write (*,*) fldchar,' at iteration ',jstep,':'
-  write (*,frmt) fldg
-  call flush(6)
+  endif
   
-  deallocate(fldg)
 
 end subroutine dump_gridpoint_field
 
