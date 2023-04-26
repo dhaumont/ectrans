@@ -38,19 +38,19 @@ foreach( prec sp )
                           SOURCES ectrans-benchmark.F90
                           LINKER_LANGUAGE Fortran
                           LIBS
+                            trans_${prec}
                             fiat
                             parkind_${prec}
-                            trans_${prec}
                           )
       if ( HAVE_ETRANS )
         ecbuild_add_executable(TARGET  ectrans-lam-benchmark-${prec}
                             SOURCES ectrans-lam-benchmark.F90
                             LINKER_LANGUAGE Fortran
                             LIBS
+                              etrans_${prec}
+                              trans_${prec}
                               fiat
                               parkind_${prec}
-                              trans_${prec}
-                etrans_${prec}
                             )
     
       endif()
@@ -64,9 +64,9 @@ foreach( prec sp )
                                   SOURCES ectrans-benchmark.F90
                                   LINKER_LANGUAGE Fortran
                                   LIBS
+                                    trans_gpu_${prec}_${gpumethod}
                                     fiat
                                     parkind_${prec}
-                                    trans_gpu_${prec}_${gpumethod}
                                     OpenACC::OpenACC_Fortran
                                   )
             target_compile_definitions( ectrans-benchmark-gpu-${prec}-${gpumethod} PRIVATE ACCGPU )
@@ -77,9 +77,9 @@ foreach( prec sp )
                                   SOURCES ectrans-benchmark.F90
                                   LINKER_LANGUAGE Fortran
                                   LIBS
+                                    trans_gpu_${prec}_${gpumethod}
                                     fiat
                                     parkind_${prec}
-                                    trans_gpu_${prec}_${gpumethod}
                                   )
             target_compile_definitions( ectrans-benchmark-gpu-${prec}-${gpumethod} PRIVATE OMPGPU )
           endif()

@@ -106,6 +106,7 @@ real(kind=jprb), pointer :: zspvor(:,:) => null()
 real(kind=jprb), pointer :: zspdiv(:,:) => null()
 real(kind=jprb), pointer :: zspsc3a(:,:,:) => null()
 real(kind=jprb), allocatable :: zspsc2(:,:)
+real(kind=jprb), allocatable :: zmeanu(:), zmeanv(:)
 
 logical :: lstack = .false. ! Output stack info
 logical :: luserpnm = .false.
@@ -305,59 +306,20 @@ elseif (nprtrw == 0 ) then
 endif
 if (nprtrv*nprtrw /= nproc) call abor1('transform_test:nprtrv*nprtrw /= nproc')
 
-! Create communicators for mpi groups
-! daand: don't think this is necessary
-#ifdef gnarls
-if (.not.lmpoff) then
-  call mpl_groups_create(nprtrw, nprtrv)
-endif
-
-if (lmpoff) then
-  mysetw = (myproc - 1)/nprtrv + 1
-  mysetv = mod(myproc - 1, nprtrv) + 1
-else
-  call mpl_cart_coords(myproc, mysetw, mysetv)
-
-  ! Just checking for now...
-  iprtrv = mod(myproc - 1, nprtrv) + 1
-  iprtrw = (myproc - 1)/nprtrv + 1
-  if (iprtrv /= mysetv .or. iprtrw /= mysetw) then
-    call abor1('transform_test:inconsistency when computing mysetw and mysetv')
-  endif
-endif
-
-if (.not. lmpoff) then
-  call mpl_buffer_method(kmp_type=mp_type, kmbx_size=mbx_size, kprocids=nprcids, ldinfo=(verbosity>=1))
-endif
-#endif
 mysetv=mod(myproc-1,nprtrv)+1
 
 ! Determine number of local levels for zonal and meridional fourier calculations
 ! based on the values of nflevg and nprtrv
-allocate(numll(nprtrv+1))
-
-! Calculate remainder
-iprused = min(nflevg+1, nprtrv)
-ilevpp = nflevg/nprtrv
-irest = nflevg -ilevpp*nprtrv
-do jroc = 1, nprtrv
-  if (jroc <= irest) then
-    numll(jroc) = ilevpp+1
-  else
-    numll(jroc) = ilevpp
-  endif
-enddo
-numll(iprused+1:nprtrv+1) = 0
-
+allocate(numll(nprtrv))
+numll=nflevg/nprtrv
+numll(1:modulo(nflevg,nprtrv))=numll(1:modulo(nflevg,nprtrv))+1
+ivsetsc(1)=min(nflevg+1, nprtrv)
 nflevl = numll(mysetv)
 
 write (*,*) 'mysetv = ',mysetv
 write (*,*) 'numll = ',numll
 write (*,*) 'nflevl = ',nflevl
 call flush(6)
-!call abort()
-ivsetsc(1) = iprused
-ifld = 0
 
 !===================================================================================================
 ! Setup gstats
@@ -382,14 +344,14 @@ if (verbosity >= 1) write(nout,'(a)')'======= Setup ecTrans ======='
 
 call gstats(1, 0)
 call setup_trans0(kout=nout, kerr=nerr, kprintlev=merge(2, 0, verbosity == 1),                &
-  &               kmax_resol=nmax_resol, kpromatr=4, kprgpns=nprgpns, kprgpew=nprgpew, &
+  &               kmax_resol=nmax_resol, kpromatr=0, kprgpns=nprgpns, kprgpew=nprgpew, &
   &               kprtrw=nprtrw, kcombflen=ncombflen, ldsync_trans=lsync_trans,               &
   &               ldalloperm=.true., ldmpoff=.not.luse_mpi)
 call gstats(1, 1)
 
 call gstats(2, 0)
-zexwn=1.e-3  ! 2*pi/(nx*dx): spectral resolution
-zeywn=1.e-3  ! 2*pi/(ny*dy)
+zexwn=1._jprb  ! 2*pi/(nx*dx): spectral resolution
+zeywn=1._jprb  ! 2*pi/(ny*dy)
 nloen=nlon
 call esetup_trans(ksmax=nsmax, kmsmax=nmsmax, kdgl=nlat, kdgux=nlat, kloen=nloen, ldsplit=.true.,          &
   &                 ldusefftw=lfftw,pexwn=zexwn,peywn=zeywn)
@@ -452,6 +414,9 @@ nullify(zspdiv)
 nullify(zspsc3a)
 allocate(sp3d(nflevl,nspec2,2+nfld))
 allocate(zspsc2(1,nspec2))
+allocate(zmeanu(nflevl),zmeanv(nflevl))
+zmeanu(:)=0._jprb
+zmeanv(:)=0._jprb
 
 call initialize_spectral_arrays(nsmax, nmsmax, zspsc2, sp3d)
 
@@ -616,7 +581,9 @@ do jstep = 1, iters
        & kvsetsc3a=ivset,                   &
        & pgp2=zgp2,                         &
        & pgpuv=zgpuv,                       &
-       & pgp3a=zgp3a)
+       & pgp3a=zgp3a,                       &
+	   & pmeanu=zmeanu,                     &
+	   & pmeanv=zmeanv)
   else
     call einv_trans(kresol=1, kproma=nproma, &
        & pspsc2=zspsc2,                     & ! spectral surface pressure
@@ -637,10 +604,10 @@ do jstep = 1, iters
 
   if (ldump_values) then
     ! dump a field to a binary file
-    call dump_gridpoint_field(jstep, myproc, nproma, ngpblks, zgp2(:,1,:),         'S', noutdump)
-    call dump_gridpoint_field(jstep, myproc, nproma, ngpblks, zgpuv(:,nflevg,1,:), 'U', noutdump)
-    call dump_gridpoint_field(jstep, myproc, nproma, ngpblks, zgpuv(:,nflevg,2,:), 'V', noutdump)
-    call dump_gridpoint_field(jstep, myproc, nproma, ngpblks, zgp3a(:,nflevg,1,:), 'T', noutdump)
+    call dump_gridpoint_field(jstep, myproc, nlat, nproma, ngpblks, zgp2(:,1,:),         'S', noutdump)
+    call dump_gridpoint_field(jstep, myproc, nlat, nproma, ngpblks, zgpuv(:,nflevg,1,:), 'U', noutdump)
+    call dump_gridpoint_field(jstep, myproc, nlat, nproma, ngpblks, zgpuv(:,nflevg,2,:), 'V', noutdump)
+    call dump_gridpoint_field(jstep, myproc, nlat, nproma, ngpblks, zgp3a(:,nflevg,1,:), 'T', noutdump)
   endif
 
   !=================================================================================================
@@ -661,7 +628,9 @@ do jstep = 1, iters
       & pspsc3a=zspsc3a,                    &
       & kvsetuv=ivset,                      &
       & kvsetsc2=ivsetsc,                   &
-      & kvsetsc3a=ivset)
+      & kvsetsc3a=ivset,                    &
+	  & pmeanu=zmeanu,                      &
+	  & pmeanv=zmeanv)
   else
     call edir_trans(kresol=1, kproma=nproma, &
       & pgp2=zgmvs(:,1:1,:),                &
@@ -895,6 +864,7 @@ endif
 
 deallocate(zgmv)
 deallocate(zgmvs)
+! TODO: many more arrays to deallocate
 
 !===================================================================================================
 
@@ -1216,8 +1186,8 @@ subroutine initialize_2d_spectral_field(nsmax, nmsmax, field)
   integer, allocatable :: my_km(:), my_kn(:)
 
   ! Choose a spherical harmonic to initialize arrays
-  integer :: m_num = 1  ! Zonal wavenumber
-  integer :: n_num = 2  ! Meridional wavenumber
+  integer :: m_num = 0  ! Zonal wavenumber
+  integer :: n_num = 1  ! Meridional wavenumber
 
   ! First initialise all spectral coefficients to zero
   field(:) = 0.0
@@ -1241,27 +1211,47 @@ end subroutine initialize_2d_spectral_field
 
 !===================================================================================================
 
-subroutine dump_gridpoint_field(jstep, myproc, nproma, ngpblks, fld, fldchar, noutdump)
+subroutine dump_gridpoint_field(jstep, myproc, nlat, nproma, ngpblks, fld, fldchar, noutdump)
 
   ! Dump a 2d field to a binary file.
 
   integer(kind=jpim), intent(in) :: jstep ! Time step, used for naming file
   integer(kind=jpim), intent(in) :: myproc ! MPI rank, used for naming file
+  integer(kind=jpim), intent(in) :: nlat ! Number of latitudes
   integer(kind=jpim), intent(in) :: nproma ! Size of nproma
   integer(kind=jpim), intent(in) :: ngpblks ! Number of nproma blocks
-  real(kind=jprb)   , intent(in) :: fld(nproma,ngpblks) ! 2D field
+  real(kind=jprb)   , intent(in) :: fld(nproma,1,ngpblks) ! 2D field
   character         , intent(in) :: fldchar ! Single character field identifier
   integer(kind=jpim), intent(in) :: noutdump ! Tnit number for output file
+  
+  integer(kind=jpim) :: kgptotg      ! global number of gridpoints
+  real(kind=jprb), allocatable :: fldg(:,:)  ! global field
+  integer(kind=jpim) :: kfgathg=1    ! number of fields to gather
+  integer(kind=jpim) :: kto(1)=(/1/) ! processor where to gather
+  character(len=9)  :: filename = "x.xxx.dat"
+  character(len=13) :: frmt='(4X,xxxxF8.2)'
 
-  character(len=14) :: filename = "x.xxx.xxxx.dat"
-
-  write(filename(1:1),'(a1)') fldchar
-  write(filename(3:5),'(i3.3)') jstep
-  write(filename(7:10),'(i4.4)') myproc
-
-  open(noutdump, file=filename, form="unformatted")
-  write(noutdump) reshape(fld, (/ nproma*ngpblks /))
-  close(noutdump)
+#include "etrans_inq.h"
+#include "egath_grid.h"
+  
+  call etrans_inq(kgptotg=kgptotg)
+  allocate(fldg(kgptotg,1))
+  call egath_grid(pgpg=fldg,kproma=nproma,kfgathg=kfgathg,kto=kto,pgp=fld)
+ 
+  ! write to file
+  !write(filename(1:1),'(a1)') fldchar
+  !write(filename(3:5),'(i3.3)') jstep
+  !open(noutdump, file=filename, form="unformatted", access="stream")
+  !write(noutdump) fldg
+  !close(noutdump)
+  
+  ! write to screen
+  write(frmt(5:8),'(i4.4)') kgptotg/nlat
+  write (*,*) fldchar,' at iteration ',jstep,':'
+  write (*,frmt) fldg
+  call flush(6)
+  
+  deallocate(fldg)
 
 end subroutine dump_gridpoint_field
 
