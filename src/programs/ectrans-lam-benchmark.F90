@@ -452,8 +452,8 @@ else
   jend_vder_EW   = jend_uv
 endif
 
-jbegin_sc = jbegin_vder_EW + 1
-jend_sc   = jbegin_vder_EW + nfld
+jbegin_sc = jend_vder_EW + 1
+jend_sc   = jbegin_sc + nfld -1
 
 if (lscders) then
   ndimgmvs = 3
@@ -471,12 +471,16 @@ endif
 
 ndimgmv = jend_scder_EW
 
-allocate(zgmv(nproma,nflevg,ndimgmv,ngpblks))
-allocate(zgmvs(nproma,ndimgmvs,ngpblks))
+!allocate(zgmv(nproma,nflevg,ndimgmv,ngpblks))
+!allocate(zgmvs(nproma,ndimgmvs,ngpblks))
+!zgpuv => zgmv(:,:,1:jend_vder_EW,:)
+!zgp3a => zgmv(:,:,jbegin_sc:jend_scder_EW,:)
+!zgp2  => zgmvs(:,:,:)
 
-zgpuv => zgmv(:,:,1:jend_vder_EW,:)
-zgp3a => zgmv(:,:,jbegin_sc:jend_scder_EW,:)
-zgp2  => zgmvs(:,:,:)
+! allocate separately since non-contiguous host-device transfers are not supported.
+allocate(zgpuv(nproma,nflevg,jend_vder_EW,ngpblks))
+allocate(zgp3a(nproma,nflevg,jend_scder_EW-jbegin_sc+1,ngpblks))
+allocate(zgp2(nproma,ndimgmvs,ngpblks))
 
 !===================================================================================================
 ! Allocate norm arrays
@@ -562,6 +566,7 @@ do jstep = 1, iters
   ztstep1(jstep) = timef()
   call gstats(4,0)
   if (lvordiv) then
+
     call einv_trans(kresol=1, kproma=nproma, &
        & pspsc2=zspsc2,                     & ! spectral surface pressure
        & pspvor=zspvor,                     & ! spectral vorticity
@@ -579,6 +584,7 @@ do jstep = 1, iters
        & pgp3a=zgp3a,                       &
      & pmeanu=zmeanu,                     &
      & pmeanv=zmeanv)
+
   else
 
     call einv_trans(kresol=1, kproma=nproma, &
@@ -700,6 +706,7 @@ do jstep = 1, iters
     write(nout,'("Time step ",i6," took", f8.4)') jstep, ztstep(jstep)
   endif
   call gstats(3,1)
+
 enddo
 
 !===================================================================================================
@@ -1196,7 +1203,13 @@ subroutine initialize_2d_spectral_field(nsmax, nmsmax, field)
   field(:) = 0.0
   
   ! make sure wavenumbers are within truncation
-  if ( m_num>nmsmax .or. n_num > nsmax .or. ( (m_num/real(nmsmax))**2+(n_num/real(nsmax))**2) > 1.) call abort('initial wavenumbers outside of truncation')
+  if ( m_num>nmsmax .or. n_num > nsmax .or. ( (m_num/real(nmsmax))**2+(n_num/real(nsmax))**2) > 1.) then
+    write (nerr,*)
+	write (nerr,*) 'WARNING: INITIAL WAVENUMBERS OUTSIDE OF TRUNCATION! USING (NMSMAX/2, NSMAX/2) instead'
+	write (nerr,*)
+	m_num=nmsmax/2
+	n_num=nsmax/2
+  endif
   
   ! Get wavenumbers this rank is responsible for
   call etrans_inq(kspec2=kspec2)
