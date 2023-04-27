@@ -23,8 +23,8 @@ Recompile/run with
 
     cd ${BASEDIR}/test/
     make -j16 -C ../build/ectrans/ install
-    #srun ../install/ectrans/bin/ectrans-benchmark-gpu-sp-acc
-    srun ../install/ectrans/bin/aatestprog-gpu-sp-acc
+    srun ../install/ectrans/bin/ectrans-benchmark-gpu-sp-acc      # run global benchmark
+	srun ../install/ectrans/bin/ectrans-lam-benchmark-gpu-sp-acc  # run LAM benchmark
 
 Note: recompiling like this may not be sufficient when modifying e.g. hip.cc files; do a full recompilation (above) in this case.
 
