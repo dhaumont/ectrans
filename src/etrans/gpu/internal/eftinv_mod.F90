@@ -74,9 +74,27 @@ ICLEN=D%NLENGTF/D%NDGL_FS
 
 write (*,*) __FILE__, __LINE__; call flush(6)
 CALL CREATE_PLAN_FFT(IPLAN_C2R,1,IRLEN,KFIELDS*D%NDGL_FS)
-write (*,*) __FILE__, __LINE__; call flush(6)
+
+
+
+!$acc data present(PREEL)
+!$acc update host (PREEL)
+!$acc end data
+write (*,*) __FILE__, __LINE__
+write (*,*) 'FFTH INPUT :'
+write (*,*) 'shape(PREEL) = ',shape(PREEL)
+write (*,*) PREEL
+call flush(6)
+
 CALL EXECUTE_PLAN_FFT(1,IRLEN,PREEL(1,1),PREEL(1,1),IPLAN_C2R)
-write (*,*) __FILE__, __LINE__; call flush(6)
+
+!$acc data present(PREEL)
+!$acc update host (PREEL)
+!$acc end data
+write (*,*) __FILE__, __LINE__
+write (*,*) 'FFTH OUTPUT :'
+write (*,*) PREEL
+call flush(6)
 
 
 #ifdef HAVE_CUFFT

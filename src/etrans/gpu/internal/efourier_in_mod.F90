@@ -51,6 +51,12 @@ INTEGER(KIND=JPIM) :: IOFF, JGL
 !$acc& copyin(D_NPTRLS,D_NSTAGTF,D_MSTABF,D_NSTAGT0B,D_NPNTGTB0,G_NMEN,G_NMEN_MAX,D_NPROCM) &
 !$acc& present(PREEL,FOUBUF)
 
+!$acc update host(foubuf)
+write (*,*) 'FOUBUF = '
+write (*,*) FOUBUF
+call flush(6)
+
+
 !$acc kernels
 DO JGL=1,SIZE(PREEL,2)
   DO JF=1,SIZE(PREEL,1)

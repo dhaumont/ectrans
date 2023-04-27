@@ -61,7 +61,7 @@ INTEGER(KIND=JPIM),INTENT(IN) :: KFIELDS,KGL
 REAL(KIND=JPRB), INTENT(INOUT)  :: PREEL(:,:)
 
 INTEGER(KIND=JPIM) :: IGLG,IST,ILEN,IJUMP,JJ,JF,IST1
-INTEGER(KIND=JPIM) :: IOFF,IRLEN,ICLEN, ITYPE
+INTEGER(KIND=JPIM) :: IOFF,IRLEN,ICLEN, ITYPE, IFLD
 LOGICAL :: LL_ALL=.FALSE. ! T=do kfields ffts in one batch, F=do kfields ffts one at a time
 
 !     ------------------------------------------------------------------
@@ -91,8 +91,19 @@ IF (G%NLOEN(IGLG)>1) THEN
 
     IF( T%LUSEFFT992(KGL) )THEN
 
+write (*,*) __FILE__, __LINE__
+write (*,*) 'FFT992 INPUT :'
+write (*,*) 'INC = ',KFIELDS,'; JUMP = ',IJUMP,'; N = ',IRLEN,'; LOT=',KFIELDS
+write (*,'(999F8.2)') PREEL(:,IOFF:)
+call flush(6)
+
       CALL FFT992(PREEL(:,IOFF:),T%TRIGS(1,KGL),&
        &T%NFAX(1,KGL),KFIELDS,IJUMP,IRLEN,KFIELDS,ITYPE)
+
+write (*,*) __FILE__, __LINE__
+write (*,*) 'FFT992 OUTPUT :'
+write (*,'(999F8.2)') PREEL(:,IOFF:)
+call flush(6)
 
     ELSE
 

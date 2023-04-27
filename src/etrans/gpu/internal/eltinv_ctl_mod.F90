@@ -96,12 +96,12 @@ ENDIF
 
 IF(KF_OUT_LT > 0) THEN
 CALL GSTATS(1647,0)
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 CALL ELTINV(KF_OUT_LT,KF_UV,KF_SCALARS,KF_SCDERS,ILEI2,IDIM1,&
     & PSPVOR,PSPDIV,PSPSCALAR ,&
     & PSPSC3A,PSPSC3B,PSPSC2 , &
     & KFLDPTRUV,KFLDPTRSC,FSPGL_PROC,PSPMEANU,PSPMEANV)
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 CALL GSTATS(1647,1)
 ENDIF
 
@@ -119,13 +119,13 @@ ENDIF
 
 CALL GSTATS(152,0)
 #ifdef USE_CUDA_AWARE_MPI_FT
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 CALL TRMTOL_CUDAAWARE(FOUBUF_IN,FOUBUF,2*KF_OUT_LT)
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 #else
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 CALL TRMTOL(FOUBUF_IN,FOUBUF,2*KF_OUT_LT)
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 #endif
 CALL GSTATS(152,1)
 

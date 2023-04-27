@@ -116,8 +116,6 @@ IF (LHOOK) CALL DR_HOOK('ELTINV_MOD:ELTINV',0,ZHOOK_HANDLE)
 IFIRST = 1
 ILAST  = 4*KF_UV
 
-write (*,*) __FILE__, __LINE__; call flush(6)
-
 IF (ALLOCATED (ZFFT_PERM)) THEN
   IF ((UBOUND (ZFFT_PERM, 1) /= RALD%NDGLSUR+R%NNOEXTZG) &
 & .OR. (UBOUND (ZFFT_PERM, 2) /= D%NUMP) &
@@ -138,7 +136,7 @@ ZFFT => ZFFT_PERM (:,:,1:KLEI2)
 ZFFT = 0.0_JPRB
 !$acc end kernels
 
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 
 IF (KF_UV > 0) THEN
   IVORL = 1
@@ -156,22 +154,22 @@ IF (KF_UV > 0) THEN
    & ZFFT(:,:,IUL:IUU),ZFFT(:,:,IVL:IVU),PSPMEANU,PSPMEANV)
 ENDIF
 
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 
 IF(KF_SCALARS > 0)THEN
   IF(PRESENT(PSPSCALAR)) THEN
     IFIRST = ILAST+1
     ILAST  = IFIRST - 1 + 2*KF_SCALARS
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
     CALL EPRFI1B(ZFFT(:,:,IFIRST:ILAST),PSPSCALAR(:,:),KF_SCALARS,KFLDPTRSC)
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
   ELSE
     IF(PRESENT(PSPSC2) .AND. NF_SC2 > 0) THEN
       IFIRST = ILAST+1
       ILAST  = IFIRST-1+2*NF_SC2
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
       CALL EPRFI1B(ZFFT(:,:,IFIRST:ILAST),PSPSC2(:,:),NF_SC2)
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
     ENDIF
     IF(PRESENT(PSPSC3A) .AND. NF_SC3A > 0) THEN
       IDIM1=NF_SC3A
@@ -179,17 +177,17 @@ write (*,*) __FILE__, __LINE__; call flush(6)
       DO J3=1,IDIM3
         IFIRST = ILAST+1
         ILAST  = IFIRST-1+2*IDIM1
-write (*,*) __FILE__, __LINE__
-write (*,*) 'IFIRST = ',IFIRST
-write (*,*) 'ILAST = ',ILAST
-write (*,*) 'J3 = ',J3
-write (*,*) 'IDIM1 = ',IDIM1
-write (*,*) 'IDIM3 = ',IDIM3
-write (*,*) 'shape(ZFFT) = ',shape(ZFFT)
-write (*,*) 'shape(PSPSC3A) = ',shape(PSPSC3A)
+!write (*,*) __FILE__, __LINE__
+!write (*,*) 'IFIRST = ',IFIRST
+!write (*,*) 'ILAST = ',ILAST
+!write (*,*) 'J3 = ',J3
+!write (*,*) 'IDIM1 = ',IDIM1
+!write (*,*) 'IDIM3 = ',IDIM3
+!write (*,*) 'shape(ZFFT) = ',shape(ZFFT)
+!write (*,*) 'shape(PSPSC3A) = ',shape(PSPSC3A)
 call flush(6)
         CALL EPRFI1B(ZFFT(:,:,IFIRST:ILAST),PSPSC3A(:,:,J3),IDIM1)
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
       ENDDO
     ENDIF
     IF(PRESENT(PSPSC3B) .AND. NF_SC3B > 0) THEN
@@ -198,9 +196,9 @@ write (*,*) __FILE__, __LINE__; call flush(6)
       DO J3=1,IDIM3
         IFIRST = ILAST+1
         ILAST  = IFIRST-1+2*IDIM1
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
         CALL EPRFI1B(ZFFT(:,:,IFIRST:ILAST),PSPSC3B(:,:,J3),IDIM1)
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
       ENDDO
     ENDIF
   ENDIF
@@ -210,7 +208,7 @@ write (*,*) __FILE__, __LINE__; call flush(6)
   ENDIF
 ENDIF
 
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 
 IF (KF_SCDERS > 0) THEN
   ISL = 2*(4*KF_UV)+1
@@ -234,29 +232,29 @@ IF(KF_UV > 0 .AND. .NOT. LDIVGP) THEN
   ISTA = ISTA+2*KF_UV
 ENDIF
 
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 CALL ELEINV(IFC,KF_OUT_LT,ZFFT) 
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 
 !     ------------------------------------------------------------------
 
 !*       5.    RECOMBINATION SYMMETRIC/ANTISYMMETRIC PART.
 !              --------------------------------------------
 
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 CALL EASRE1B(KF_OUT_LT,ZFFT(:,:,ISTA:ISTA+IFC-1))
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 
 !     ------------------------------------------------------------------
 
 !     6. OPTIONAL COMPUTATIONS IN FOURIER SPACE
 
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 IF(PRESENT(FSPGL_PROC)) THEN
   CALL FSPGL_INT(KF_UV,KF_SCALARS,KF_SCDERS,KF_OUT_LT,FSPGL_PROC,&
    & KFLDPTRUV,KFLDPTRSC)
 ENDIF
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 
 
 !IF (.NOT. LALLOPERM2) THEN

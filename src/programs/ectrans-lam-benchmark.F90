@@ -115,7 +115,7 @@ logical :: ltrace_stats = .false.
 logical :: lstats_omp = .false.
 logical :: lstats_comms = .false.
 logical :: lstats_mpl = .false.
-logical :: lstats = .true. ! gstats statistics
+logical :: lstats = .false. ! gstats statistics
 logical :: lbarrier_stats = .false.
 logical :: lbarrier_stats2 = .false.
 logical :: ldetailed_stats = .false.
@@ -585,6 +585,8 @@ do jstep = 1, iters
      & pmeanu=zmeanu,                     &
      & pmeanv=zmeanv)
   else
+
+#ifdef gnarls
     call einv_trans(kresol=1, kproma=nproma, &
        & pspsc2=zspsc2,                     & ! spectral surface pressure
        & pspsc3a=zspsc3a,                   & ! spectral scalars
@@ -593,6 +595,14 @@ do jstep = 1, iters
        & kvsetsc3a=ivset,                   &
        & pgp2=zgp2,                         &
        & pgp3a=zgp3a)
+#else
+    call einv_trans(kresol=1, kproma=nproma, &
+       & pspsc2=zspsc2,                     & ! spectral surface pressure
+       & ldscders=lscders,                  & ! scalar derivatives
+       & kvsetsc2=ivsetsc,                  &
+       & pgp2=zgp2)
+
+#endif
   endif
   call gstats(4,1)
 
@@ -605,8 +615,10 @@ do jstep = 1, iters
   if (ldump_values) then
     ! dump a field to a binary file
     call dump_gridpoint_field(jstep, myproc, nlat, nproma, ngpblks, zgp2(:,1,:),         'S', noutdump)
-    call dump_gridpoint_field(jstep, myproc, nlat, nproma, ngpblks, zgpuv(:,nflevg,1,:), 'U', noutdump)
-    call dump_gridpoint_field(jstep, myproc, nlat, nproma, ngpblks, zgpuv(:,nflevg,2,:), 'V', noutdump)
+	if (lvordiv) then
+      call dump_gridpoint_field(jstep, myproc, nlat, nproma, ngpblks, zgpuv(:,nflevg,1,:), 'U', noutdump)
+      call dump_gridpoint_field(jstep, myproc, nlat, nproma, ngpblks, zgpuv(:,nflevg,2,:), 'V', noutdump)
+	endif
     call dump_gridpoint_field(jstep, myproc, nlat, nproma, ngpblks, zgp3a(:,nflevg,1,:), 'T', noutdump)
   endif
 
@@ -711,6 +723,8 @@ write(nout,'(" ")')
 write(nout,'(a)') '======= End of spectral transforms  ======='
 write(nout,'(" ")')
 
+#ifdef gnarls
+
 if (lprint_norms .or. ncheck > 0) then
   call especnorm(pspec=zspvor(1:nflevl,:),    pnorm=znormvor, kvset=ivset)
   call especnorm(pspec=zspdiv(1:nflevl,:),    pnorm=znormdiv, kvset=ivset)
@@ -810,6 +824,7 @@ ztstep2(:) = ztstep2(:)/real(nproc,jprd)
 call sort(ztstep2,iters)
 ztstepmed2 = ztstep2(iters/2)
 
+
 write(nout,'(a)') '======= Start of time step stats ======='
 write(nout,'(" ")')
 write(nout,'("Inverse transforms")')
@@ -857,6 +872,7 @@ if (lstack) then
   endif
 endif
 
+#endif
 
 !===================================================================================================
 ! Cleanup
@@ -1186,8 +1202,8 @@ subroutine initialize_2d_spectral_field(nsmax, nmsmax, field)
   integer, allocatable :: my_km(:), my_kn(:)
 
   ! Choose a spherical harmonic to initialize arrays
-  integer :: m_num = 0  ! Zonal wavenumber
-  integer :: n_num = 1  ! Meridional wavenumber
+  integer :: m_num = 1 ! Zonal wavenumber
+  integer :: n_num = 0 ! Meridional wavenumber
 
   ! First initialise all spectral coefficients to zero
   field(:) = 0.0

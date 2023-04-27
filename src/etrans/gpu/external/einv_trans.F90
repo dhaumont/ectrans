@@ -608,7 +608,6 @@ CALL GSTATS(1807,1)
 !$ACC data copyout (PGP2 ) if (present (PGP2 ))
 #endif
 ! Perform transform
-
 !call MPI_BARRIER(MPI_COMM_WORLD,IERROR)
 CALL EINV_TRANS_CTL(IF_UV_G,IF_SCALARS_G,IF_GP,IF_FS,IF_OUT_LT,&
  & IF_UV,IF_SCALARS,IF_SCDERS,&

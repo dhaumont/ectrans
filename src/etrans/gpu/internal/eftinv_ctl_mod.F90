@@ -176,6 +176,16 @@ ENDIF
 
 !   3.  Fourier transform
 IF(KF_FS > 0) THEN
+
+!$acc data present(ZGTF)
+!$acc update host (ZGTF)
+!$acc end data
+write (*,*) __FILE__, __LINE__
+write (*,*) 'D%NLENGTF = ',D%NLENGTF
+write (*,*) 'ZGTF ='
+write (*,*) ZGTF
+call flush(6)
+
   CALL EFTINV (ZGTF, KF_FS)
 ENDIF
 

@@ -93,25 +93,46 @@ IRLEN=R%NDGL+R%NNOEXTZG
 ICLEN=RALD%NDGLSUR+R%NNOEXTZG
 JLOT=UBOUND(PFFT,2)*UBOUND (PFFT,3)
 
-write (*,*) __FILE__,__LINE__
-write (*,*) 'shape(PFFT) = ',shape(PFFT)
-write (*,*) 'KFC   = ',KFC
-write (*,*) 'IRLEN = ',IRLEN
-write (*,*) 'ICLEN = ',ICLEN
-write (*,*) 'JLOT  = ',JLOT
-call flush(6)
+!write (*,*) __FILE__,__LINE__
+!write (*,*) 'shape(PFFT) = ',shape(PFFT)
+!write (*,*) 'KFC   = ',KFC
+!write (*,*) 'IRLEN = ',IRLEN
+!write (*,*) 'ICLEN = ',ICLEN
+!write (*,*) 'JLOT  = ',JLOT
+!call flush(6)
 
 
 
-write (*,*) __FILE__, __LINE__; call flush(6)
+!write (*,*) __FILE__, __LINE__; call flush(6)
 CALL CREATE_PLAN_FFT(IPLAN_C2R,1,IRLEN,JLOT,LDNONSTRIDED=.TRUE.)
-write (*,*) __FILE__, __LINE__; call flush(6)
+
+#ifdef gnarls
+!$acc data present(PFFT)
+!$acc update host (PFFT)
+!$acc end data
+write (*,*) __FILE__, __LINE__
+write (*,*) 'FFTH INPUT :'
+write (*,*) PFFT
+call flush(6)
+#endif
+
 CALL EXECUTE_PLAN_FFT(1,IRLEN,PFFT(1,1,1),PFFT(1,1,1),IPLAN_C2R)
-write (*,*) __FILE__, __LINE__; call flush(6)
+
+#ifdef gnarls
+!$acc data present(PFFT)
+!$acc update host (PFFT)
+!$acc end data
+write (*,*) __FILE__, __LINE__
+write (*,*) 'FFTH OUTPUT :'
+write (*,*) PFFT
+call flush(6)
+#endif
+
 
 #ifdef HAVE_CUFFT
 CALL CREATE_PLAN_FFT (IPLAN_C2R, +1, KN=IRLEN, KLOT=UBOUND (PFFT,2)*UBOUND (PFFT, 3), &
                     & KISTRIDE=1, KIDIST=ICLEN/2, KOSTRIDE=1, KODIST=ICLEN)
+					
 !$acc host_data use_device (PFFT) 
 CALL EXECUTE_PLAN_FFTC_INPLACE(IPLAN_C2R, +1, PFFT (1, 1, 1))
 !$acc end host_data

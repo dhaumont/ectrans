@@ -87,7 +87,18 @@ IF (KFC>0) THEN
   IRLEN=R%NDGL+R%NNOEXTZG
   ICLEN=RALD%NDGLSUR+R%NNOEXTZG
   IF( TALD%LFFT992 )THEN
+#ifdef gnarls
+    write (*,*) __FILE__, __LINE__
+	write (*,*) 'FFT992 INPUT :'
+	write (*,*) PIA
+#endif
     CALL FFT992(PIA,TALD%TRIGSE,TALD%NFAXE,1,RALD%NDGLSUR+R%NNOEXTZG,IRLEN,KFC,ITYPE)
+#ifdef gnarls
+	write (*,*) 'FFT992 OUTPUT :'
+	write (*,*) PIA
+	call flush(6)
+#endif
+
 #ifdef WITH_FFTW
   ELSEIF( TW%LFFTW )THEN
     IOFF=1
