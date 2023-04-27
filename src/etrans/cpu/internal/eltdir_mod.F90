@@ -113,13 +113,6 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('ELTDIR_MOD:ELTDIR',0,ZHOOK_HANDLE)
 
-! write (*,*) __FILE__, __LINE__
-! if ( present(pspmeanu) ) then
-! write (*,*) 'shape(PSPMEANU) = ',shape(pspmeanu)
-! write (*,*) 'shape(PSPVOR) = ',shape(pspvor)
-! endif
-! call flush(6)
-
 IUS = 1
 IVS = 2*KF_UV+1
 IVORS = IUS
@@ -129,14 +122,11 @@ IFC = 2*KF_FS
 !*     1.    PREPARE WORK ARRAYS.
 !            --------------------
 
-! write (*,*) __FILE__, __LINE__; call flush(6)
 CALL EPRFI2(KM,KMLOC,KF_FS,ZFFT(:,:,KMLOC))
-! write (*,*) __FILE__, __LINE__; call flush(6)
 
 !*     2.    PERIODICIZATION IN Y DIRECTION
 !            ------------------------------
 
-! write (*,*) __FILE__, __LINE__; call flush(6)
 IF(R%NNOEXTZG>0) THEN
   DO JF = 1,IFC
     DO JDIM = 1,R%NDGL
@@ -155,18 +145,14 @@ ENDIF
 !*     3.    DIRECT LEGENDRE TRANSFORM.
 !            --------------------------
 
-! write (*,*) __FILE__, __LINE__; call flush(6)
 CALL ELEDIR(KM,IFC,KLED2,ZFFT(:,:,KMLOC))
-! write (*,*) __FILE__, __LINE__; call flush(6)
 
 !*     4.    COMPUTE VORTICITY AND DIVERGENCE AND STORE MEAN WIND ON TASK OWNING WAVE 0
 !            --------------------------------------------------------------------------
 
 IF( KF_UV > 0 ) THEN
-! write (*,*) __FILE__, __LINE__; call flush(6)
   CALL EUVTVD(KM,KMLOC,KF_UV,ZFFT(:,IUS:,KMLOC),ZFFT(:,IVS:,KMLOC),&
    & ZVODI(:,IVORS:,KMLOC),ZVODI(:,IDIVS:,KMLOC))
-! write (*,*) __FILE__, __LINE__; call flush(6)
   IF (KM == 0) THEN
     IF (PRESENT(KFLDPTRUV)) THEN
       DO J = 1, KF_UV
@@ -188,10 +174,8 @@ ENDIF
 !*       5.    UPDATE SPECTRAL ARRAYS.
 !              -----------------------
 
-! write (*,*) __FILE__, __LINE__; call flush(6)
 CALL EUPDSP(KM,KF_UV,KF_SCALARS,ZFFT(:,:,KMLOC),ZVODI(:,:,KMLOC), &
  & PSPVOR,PSPDIV,PSPSCALAR,PSPSC3A,PSPSC3B,PSPSC2,KFLDPTRUV,KFLDPTRSC)
-! write (*,*) __FILE__, __LINE__; call flush(6)
 
 IF (LHOOK) CALL DR_HOOK('ELTDIR_MOD:ELTDIR',1,ZHOOK_HANDLE)
 !     ------------------------------------------------------------------

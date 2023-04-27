@@ -166,11 +166,6 @@ DO JGL=1,D%NDGL_FS
      & ZUV,ZSCALAR,ZNSDERS,ZEWDERS,ZUVDERS)
   ENDIF
 
-write(*,*) __FILE__, __LINE__
-write (*,*) 'ZGTF = '
-write (*,*) ZGTF
-call flush(6)
-
 !   3.  Fourier transform
   IF(KF_FS > 0) THEN
     CALL FTINV(ZGTF,KF_FS,IGL)

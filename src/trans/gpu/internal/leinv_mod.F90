@@ -94,9 +94,6 @@ INTEGER(KIND=JPIM) :: ITHRESHOLD
 INTEGER(KIND=JPIM) :: ISTAT
 
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-
-!!write (*,*) __FILE__, __LINE__; call flush(6)
-
   
 !*       1.1      PREPARATIONS.
 IF (LHOOK) CALL DR_HOOK('LE_DGEMM',0,ZHOOK_HANDLE)
@@ -106,7 +103,6 @@ IF (LHOOK) CALL DR_HOOK('LE_DGEMM',0,ZHOOK_HANDLE)
 !                 --------------------------
 
 !*       1.1      PREPARATIONS.
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef ACCGPU
 !$ACC DATA COPYIN (S,S%ITHRESHOLD,S%LUSEFLT) &
 !$ACC&      COPYIN (D_MYMS,G_NDGLU,D_NUMP,R_NDGNH,R_NSMAX, KFC, KSTA) &
@@ -120,7 +116,6 @@ IF (LHOOK) CALL DR_HOOK('LE_DGEMM',0,ZHOOK_HANDLE)
 !$OMP TARGET DATA MAP(TO:S,S%ITHRESHOLD,S%LUSEFLT,D_MYMS,G_NDGLU,D_NUMP,R_NDGNH,R_NSMAX) &
 !$OMP&      MAP(PRESENT,ALLOC:ZAA,ZAS,IZCST,ZIA,PSOA1,PAOA1,IZBS)
 #endif
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 
 #ifdef OMPGPU
 !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(3) PRIVATE(KM) &
@@ -130,7 +125,6 @@ IF (LHOOK) CALL DR_HOOK('LE_DGEMM',0,ZHOOK_HANDLE)
 !$ACC PARALLEL LOOP COLLAPSE(3) PRIVATE(KM,KMLOC,JGL) DEFAULT(NONE) &
 !$ACC&      PRESENT(D_MYMS,PSOA1,PAOA1,KFC,KSTA,R_NDGNH,D_NUMP)
 #endif
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 DO KMLOC=1,D_NUMP
    DO JGL=1,R_NDGNH
       DO J1=2,KFC,2
@@ -144,7 +138,6 @@ DO KMLOC=1,D_NUMP
    ENDDO
    !end loop over wavenumber
 END DO
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 
 #ifdef OMPGPU
 !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(3) PRIVATE(KM,ISKIP,ILA,ILS,IA) &
@@ -175,7 +168,6 @@ DO KMLOC=1,D_NUMP
     ENDDO
   ENDDO
 ENDDO
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 
 ITHRESHOLD=S%ITHRESHOLD
 
@@ -186,7 +178,6 @@ ITHRESHOLD=S%ITHRESHOLD
 ! C^T=B^T*A^T
 
 ! OVERLOADED FOR SINGLE AND DOUBLE PRECISION
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef ACCGPU
 !$ACC HOST_DATA USE_DEVICE(ZAA,IZBS,IZCST)
 #endif
@@ -202,14 +193,12 @@ CALL HIP_SGEMM_BATCHED( &
   & 0._JPRBT, &
   & IZCST, ITDZCA, ILDZCA, &
   & D_NUMP)
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef OMPGPU
 !$OMP END TARGET DATA
 #endif
 #ifdef ACCGPU
 !$ACC END HOST_DATA
 #endif
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 
 #ifdef OMPGPU
 !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(3) PRIVATE(KM,KDGLU,ISKIP,ISL) &
@@ -239,11 +228,9 @@ DO KMLOC=1,D_NUMP
       ENDDO
    ENDDO
 END DO
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 
 ! 2. +++++++++++++ symmetric
 
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef OMPGPU
 !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(3) PRIVATE(KM,ISKIP,ILS,IS) &
 !$OMP&      SHARED(D_NUMP,R_NSMAX,KFC,KSTA,D_MYMS,IZBS,ITDZBS,ILDZBS,ZIA) DEFAULT(NONE)
@@ -272,19 +259,16 @@ DO KMLOC=1,D_NUMP
     ENDDO
   ENDDO
 ENDDO
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 
 !C=A*B =>
 ! C^T=B^T*A^T
 
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef OMPGPU
 !$OMP TARGET DATA USE_DEVICE_PTR(ZAS,IZBS,IZCST)
 #endif
 #ifdef ACCGPU
 !$ACC HOST_DATA USE_DEVICE(ZAS,IZBS,IZCST)
 #endif
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 CALL HIP_SGEMM_BATCHED( &
  & 'N', 'T', &
  & ITDZCS, ILDZCS, ILDZBS, &
@@ -294,17 +278,13 @@ CALL HIP_SGEMM_BATCHED( &
  & 0._JPRBT, &
  & IZCST, ITDZCS, ILDZCS, &
  & D_NUMP)
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef OMPGPU
 !$OMP END TARGET DATA
 #endif
 #ifdef ACCGPU
 !$ACC END HOST_DATA
 #endif
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 
-
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef OMPGPU
 !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(3) PRIVATE(KM,KDGLU,ISKIP,ISL) &
 !$OMP&      SHARED(D_NUMP,R_NDGNH,KFC,D_MYMS,G_NDGLU,PSOA1,IZCST,ITDZCS,ILDZCS) DEFAULT(NONE)
@@ -333,15 +313,12 @@ DO KMLOC=1,D_NUMP
       ENDDO
    ENDDO
 END DO
-!!write (*,*) __FILE__, __LINE__; call flush(6)
-
 #ifdef OMPGPU
 !$OMP END TARGET DATA
 #endif
 #ifdef ACCGPU
 !$ACC END DATA
 #endif
-!!write (*,*) __FILE__, __LINE__; call flush(6)
 
 !*       1.       PERFORM LEGENDRE TRANFORM.
 

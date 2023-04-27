@@ -91,20 +91,14 @@ MODULE TPM_FFTH
     END SUBROUTINE CREATE_PLAN_FFTH
   END INTERFACE
   
-  !write (*,*) __FILE__, __LINE__; call flush(6)
-  
   LLNONSTRIDED=.FALSE.  ! default: strided
   IF ( PRESENT(LDNONSTRIDED) ) LLNONSTRIDED=LDNONSTRIDED
   JNONSTRIDED=0
   IF ( LLNONSTRIDED ) JNONSTRIDED=1
 
-  !write (*,*) __FILE__, __LINE__; call flush(6)
-  
   IF( KN > TC%N_MAX )THEN
     stop 'CREATE_PLAN_FFT: KN > N_MAX THAT WAS INITIALISED IN INIT_PLANS_FFTH'
   ENDIF
-  
-  !write (*,*) __FILE__, __LINE__; call flush(6)
   
   ! daand note: these parameters aren't actually used.
   IRANK=1
@@ -126,9 +120,6 @@ MODULE TPM_FFTH
     stop 'CREATE_PLAN_FFT.2: NPLAN_ID /= 123456'
   ENDIF
   ! search for plan in existing plans
-  write (*,*) __FILE__, __LINE__
-  write (*,*) 'Looking for plan with KTYPE = ',KTYPE,', KN = ',KN,', KLOT = ',KLOT,', LLNONSTRIDED = ',LLNONSTRIDED
-  call flush(6)
 
   DO JL=1,TC%N_PLANS(KN)
     IF( ( KLOT == CURR_FFTH_PLAN%NLOT ) &
@@ -158,15 +149,8 @@ MODULE TPM_FFTH
   !     WRITE(*,'("CREATE_PLAN_FFT: END: DESTROYING A PLAN AT THE START OF THE LIST")')
       ENDIF
     ENDIF
-	write (*,*) __FILE__, __LINE__
-	write (*,*) 'Creating plan with KTYPE = ',KTYPE,', KN = ',KN,', KLOT = ',KLOT,', LLNONSTRIDED = ',LLNONSTRIDED
-	call flush(6)
 	
     CALL CREATE_PLAN_FFTH(IPLAN,KTYPE,KN,KLOT,JNONSTRIDED)
-	
-	write (*,*) __FILE__, __LINE__
-	write (*,*) 'Created plan with KTYPE = ',KTYPE,', KN = ',KN,', KLOT = ',KLOT,', LLNONSTRIDED = ',LLNONSTRIDED
-	call flush(6)
 
     KPLAN=IPLAN
     TC%N_PLANS(KN)=TC%N_PLANS(KN)+1
@@ -188,16 +172,8 @@ MODULE TPM_FFTH
   !  & " NEW IPLAN=",Z16)')KN,TC%N_PLANS(KN),KLOT,KTYPE,IPLAN
   ELSE
     KPLAN=IPLAN
-	write (*,*) __FILE__, __LINE__
-	write (*,*) 'Found plan with KTYPE = ',CURR_FFTH_PLAN%NTYPE,', KN = ',CURR_FFTH_PLAN%N,&
-	 & ', KLOT = ',CURR_FFTH_PLAN%NLOT,', LLNONSTRIDED = ',CURR_FFTH_PLAN%LNONSTRIDED
-	call flush(6)
-  ! write(*,'("CREATE_PLAN_FFT: KN=",I5," NPLANS=",I3," KLOT=",I6," KTYPE=",I2,&
-  !  & " CUR IPLAN=",Z16)')KN,TC%N_PLANS(KN),KLOT,KTYPE,IPLAN
   ENDIF
   !!$OMP END CRITICAL
-  
-  !write (*,*) __FILE__, __LINE__; call flush(6)
   
   RETURN
 
@@ -246,7 +222,6 @@ MODULE TPM_FFTH
   !$OMP TARGET DATA USE_DEVICE_PTR(X_IN,X_OUT)
 #endif
 
-write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef ACCGPU
   !$ACC HOST_DATA USE_DEVICE(X_IN,X_OUT)
 #endif
@@ -257,7 +232,6 @@ write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef OMPGPU
   !$OMP END TARGET DATA
 #endif
-write (*,*) __FILE__, __LINE__; call flush(6)
  
   END SUBROUTINE EXECUTE_PLAN_FFT
     

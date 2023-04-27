@@ -431,47 +431,30 @@ CALL ESPECNORM(PSPEC=ZDIV,KVSET=IVSET(1:I_NFLEVG),PNORM=ZNORM)
 ! ENDDO
 !***********************************************
 CALL FLUSH(I_NOUT)
-write (*,*) __FILE__, __LINE__; call flush(6)
 ALLOCATE(ZG(I_NPROMA,3*I_NFLEVG,I_NGPBLKS))
-write (*,*) __FILE__, __LINE__; call flush(6)
 ALLOCATE(ZGG(I_NGPTOTG,3*I_NFLEVG))
-write (*,*) __FILE__, __LINE__; call flush(6)
 ALLOCATE(ITO(3*I_NFLEVG))
-write (*,*) __FILE__, __LINE__; call flush(6)
 ZG=0.0
-write (*,*) __FILE__, __LINE__; call flush(6)
 !write(nout,*) 'temperature avant dirtr'
 !write(nout,*) zspec(1,1:10)
 !write(nout,*) 'divergence avant dirtr'
 !write(nout,*) zdiv(1,1:10)
 !*****************************************************
 !**************************************************************
-write (*,*) __FILE__, __LINE__; call flush(6)
 ! IF ( NPROC>1 ) THEN
   ! WRITE(CLNAME1,'(a,i2.2)') 'avant.',I_MYPROC
 ! ELSE
   ! CLNAME1='avant.1'
 ! ENDIF
-write (*,*) __FILE__, __LINE__; call flush(6)
 ! OPEN(UNIT=97,FILE=CLNAME1,FORM='formatted')
 ! DO J=1,I_NSPEC2
   ! WRITE(97,FMT='(3(E20.8,2x))')ZSPEC(1,J),ZVOR(1,J),ZDIV(1,J)
 ! ENDDO
 ! CLOSE(97)
-write (*,*) __FILE__, __LINE__; call flush(6)
 !**************************************************************
 
-write (I_NOUT,*) __FILE__, __LINE__
-write (I_NOUT,*) 'calling einv_trans'
-
-CALL FLUSH(I_NOUT)
-
-
-write (*,*) __FILE__, __LINE__; call flush(6)
 CALL EINV_TRANS(PSPVOR=ZVOR,PSPDIV=ZDIV,PSPSCALAR=ZSPEC,PGP=ZG,PMEANU=ZMEANU,PMEANV=ZMEANV,&
  & KPROMA=I_NPROMA,KVSETSC=IVSET(1:I_NFLEVG), KVSETUV=IVSET(1:I_NFLEVG))
-write (*,*) __FILE__, __LINE__; call flush(6)
-
 
 ITO(:)=1
 IFGATHG=3*I_NFLEVG
@@ -569,10 +552,6 @@ DEALLOCATE(ZNORM1V)
 DEALLOCATE(ZNORM2V)
 DEALLOCATE(Z_DATA)
 DEALLOCATE(INGRIB)
-
-write (*,*) __FILE__, __LINE__
-write (*,*) 'FINISHED succesfully'
-call flush(6)
 
 IF (LHOOK) CALL DR_HOOK('TEST',1,ZHOOK_HANDLE)
 

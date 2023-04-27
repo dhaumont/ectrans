@@ -46,9 +46,7 @@ IF(.NOT.D%LGRIDONLY) THEN
   ENDIF
 #endif
 
-write (*,*) __FILE__, __LINE__; call flush(6)
   CALL INIT_PLANS_FFT(MAX(R%NDLON+R%NNOEXTZL,R%NDGL+R%NNOEXTZG))
-write (*,*) __FILE__, __LINE__; call flush(6)
 
   !IF(TALD%LFFT992)THEN
   !  ALLOCATE(TALD%TRIGSE(R%NDGL+R%NNOEXTZG))

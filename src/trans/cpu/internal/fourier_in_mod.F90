@@ -55,10 +55,6 @@ INTEGER(KIND=JPIM) :: JM,JF,IGLG,IPROC,IR,II,ISTA
 
 !     ------------------------------------------------------------------
 
-write (*,*) 'FOUBUF = '
-write (*,*) FOUBUF
-call flush(6)
-
 IGLG = D%NPTRLS(MYSETW)+KGL-1
 DO JM=0,G%NMEN(IGLG)
   IPROC = D%NPROCM(JM)

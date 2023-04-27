@@ -316,11 +316,6 @@ numll(1:modulo(nflevg,nprtrv))=numll(1:modulo(nflevg,nprtrv))+1
 ivsetsc(1)=min(nflevg+1, nprtrv)
 nflevl = numll(mysetv)
 
-write (*,*) 'mysetv = ',mysetv
-write (*,*) 'numll = ',numll
-write (*,*) 'nflevl = ',nflevl
-call flush(6)
-
 !===================================================================================================
 ! Setup gstats
 !===================================================================================================
@@ -586,7 +581,6 @@ do jstep = 1, iters
      & pmeanv=zmeanv)
   else
 
-#ifdef gnarls
     call einv_trans(kresol=1, kproma=nproma, &
        & pspsc2=zspsc2,                     & ! spectral surface pressure
        & pspsc3a=zspsc3a,                   & ! spectral scalars
@@ -595,14 +589,7 @@ do jstep = 1, iters
        & kvsetsc3a=ivset,                   &
        & pgp2=zgp2,                         &
        & pgp3a=zgp3a)
-#else
-    call einv_trans(kresol=1, kproma=nproma, &
-       & pspsc2=zspsc2,                     & ! spectral surface pressure
-       & ldscders=lscders,                  & ! scalar derivatives
-       & kvsetsc2=ivsetsc,                  &
-       & pgp2=zgp2)
 
-#endif
   endif
   call gstats(4,1)
 
@@ -1202,12 +1189,15 @@ subroutine initialize_2d_spectral_field(nsmax, nmsmax, field)
   integer, allocatable :: my_km(:), my_kn(:)
 
   ! Choose a spherical harmonic to initialize arrays
-  integer :: m_num = 1 ! Zonal wavenumber
-  integer :: n_num = 0 ! Meridional wavenumber
+  integer :: m_num = 2 ! Zonal wavenumber
+  integer :: n_num = 3 ! Meridional wavenumber
 
   ! First initialise all spectral coefficients to zero
   field(:) = 0.0
-
+  
+  ! make sure wavenumbers are within truncation
+  if ( m_num>nmsmax .or. n_num > nsmax .or. ( (m_num/real(nmsmax))**2+(n_num/real(nsmax))**2) > 1.) call abort('initial wavenumbers outside of truncation')
+  
   ! Get wavenumbers this rank is responsible for
   call etrans_inq(kspec2=kspec2)
   allocate(my_kn(kspec2),my_km(kspec2))

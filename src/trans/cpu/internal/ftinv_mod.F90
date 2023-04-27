@@ -91,19 +91,8 @@ IF (G%NLOEN(IGLG)>1) THEN
 
     IF( T%LUSEFFT992(KGL) )THEN
 
-write (*,*) __FILE__, __LINE__
-write (*,*) 'FFT992 INPUT :'
-write (*,*) 'INC = ',KFIELDS,'; JUMP = ',IJUMP,'; N = ',IRLEN,'; LOT=',KFIELDS
-write (*,'(999F8.2)') PREEL(:,IOFF:)
-call flush(6)
-
       CALL FFT992(PREEL(:,IOFF:),T%TRIGS(1,KGL),&
        &T%NFAX(1,KGL),KFIELDS,IJUMP,IRLEN,KFIELDS,ITYPE)
-
-write (*,*) __FILE__, __LINE__
-write (*,*) 'FFT992 OUTPUT :'
-write (*,'(999F8.2)') PREEL(:,IOFF:)
-call flush(6)
 
     ELSE
 

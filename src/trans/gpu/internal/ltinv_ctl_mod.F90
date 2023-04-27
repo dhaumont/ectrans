@@ -98,12 +98,10 @@ MODULE LTINV_CTL_MOD
     CALL GSTATS(1647,0)
 
       ! from PSPXXX to FOUBUF_IN
-!write (*,*) __FILE__, __LINE__; call flush(6)
       CALL LTINV(KF_OUT_LT,KF_UV,KF_SCALARS,KF_SCDERS,ILEI2,IDIM1,&
           & PSPVOR,PSPDIV,PSPSCALAR ,&
           & PSPSC3A,PSPSC3B,PSPSC2 , &
           & KFLDPTRUV,KFLDPTRSC,FSPGL_PROC)
-!write (*,*) __FILE__, __LINE__; call flush(6)
  
     CALL GSTATS(1647,1)
   ENDIF
@@ -112,21 +110,16 @@ MODULE LTINV_CTL_MOD
   CALL GSTATS(152,0)
   ! from FOUBUF_IN to FOUBUF
 #ifdef USE_CUDA_AWARE_MPI_FT
-!write (*,*) __FILE__, __LINE__; call flush(6)
   !WRITE(NOUT,*) 'ltinv_ctl:TRMTOL_CUDAAWARE'
   CALL TRMTOL_CUDAAWARE(FOUBUF_IN,FOUBUF,2*KF_OUT_LT)
-!write (*,*) __FILE__, __LINE__; call flush(6)
 #else
-!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef ACCGPU
   !$ACC UPDATE HOST(FOUBUF_IN)
 #endif
 #ifdef OMPGPU
   !$OMP TARGET UPDATE FROM(FOUBUF_IN)
 #endif
-!write (*,*) __FILE__, __LINE__; call flush(6)
   CALL TRMTOL(FOUBUF_IN,FOUBUF,2*KF_OUT_LT)
-!write (*,*) __FILE__, __LINE__; call flush(6)
 #ifdef ACCGPU
   !$ACC UPDATE DEVICE(FOUBUF)
 #endif

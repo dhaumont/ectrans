@@ -87,13 +87,7 @@ IF (LHOOK) CALL DR_HOOK('EUVTVD_COMM_MOD:EUVTVD_COMM',0,ZHOOK_HANDLE)
 !*       1.    COMPUTE U V FROM VORTICITY AND DIVERGENCE.
 !              ------------------------------------------
 
-!write (*,*) 'shape(PU) = ',shape(PU)
-!write (*,*) 'lbounds(PU) = ',lbound(PU,1),lbound(PU,2)
-!write (*,*) 'km = ',KM
-
 IF (KM == 0) THEN
-
-! daand: PU,PV should be present, but cray compiler says no
 
 !$acc data present(PU,PV)
 !$acc data copyout (PSPMEANU, PSPMEANV, KMLOC) 

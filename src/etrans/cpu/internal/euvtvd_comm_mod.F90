@@ -75,36 +75,26 @@ IF (LHOOK) CALL DR_HOOK('EUVTVD_COMM_MOD:EUVTVD_COMM',0,ZHOOK_HANDLE)
 !              ---------------------
 
 
-!write (*,*) __FILE__, __LINE__; call flush(6)
-!if ( present(kfldptr) ) !write (*,*) 'KFLDPTR = ',KFLDPTR
-!call flush(6)
-
-
 IF (D%NPROCM(0) == MYSETW) THEN
   IF (PRESENT(KFLDPTR)) THEN
-!write (*,*) __FILE__, __LINE__; call flush(6)
     DO J=1,KFIELD
       IFLD=KFLDPTR(J)
       ZSPU(J)=PSPMEANU(IFLD)
       ZSPU(KFIELD+J)=PSPMEANV(IFLD)
     ENDDO 
   ELSE
-!write (*,*) __FILE__, __LINE__; call flush(6)
     DO J=1,KFIELD
       ZSPU(J)=PSPMEANU(J)
       ZSPU(KFIELD+J)=PSPMEANV(J)
     ENDDO
   ENDIF
-!write (*,*) __FILE__, __LINE__; call flush(6)
   DO JA=1,NPRTRW
     IF (JA /= MYSETW) THEN
       CALL SET2PE(ISND,0,0,JA,MYSETV)
       ISND=NPRCIDS(ISND)          
       ITAG=1
-!write (*,*) __FILE__, __LINE__; call flush(6)
       CALL MPL_SEND(ZSPU(1:2*KFIELD),KDEST=ISND,KTAG=ITAG, &
        &   KMP_TYPE=JP_NON_BLOCKING_STANDARD,KREQUEST=ISENDREQ(JA),CDSTRING='EUVTVD_COMM:')
-!write (*,*) __FILE__, __LINE__; call flush(6)
     ENDIF
   ENDDO
   DO JA=1,NPRTRW
@@ -115,11 +105,8 @@ IF (D%NPROCM(0) == MYSETW) THEN
 ELSE
   CALL SET2PE(ISND,0,0,D%NPROCM(0),MYSETV)
   ITAG=1
-!write (*,*) __FILE__, __LINE__; call flush(6)
   CALL MPL_RECV(ZSPU(1:2*KFIELD),KSOURCE=NPRCIDS(ISND),KTAG=ITAG,KOUNT=ILEN, CDSTRING='EUVTVD_COMM:')
-!write (*,*) __FILE__, __LINE__; call flush(6)
   IF (ILEN /= 2*KFIELD) CALL ABORT_TRANS('EUVTVD_COMM: RECV INVALID RECEIVE MESSAGE LENGHT')
-!write (*,*) __FILE__, __LINE__; call flush(6)
   IF (PRESENT(KFLDPTR)) THEN
     DO J=1,KFIELD
       IFLD=KFLDPTR(J)

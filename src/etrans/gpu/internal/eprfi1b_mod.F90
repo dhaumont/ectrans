@@ -70,17 +70,11 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('EPRFI1B_MOD:EPRFI1B',0,ZHOOK_HANDLE)
 
-!write (*,*) __FILE__, __LINE__; call flush(6)
-
 !$acc data present (PFFT, PSPEC)
-
-!write (*,*) __FILE__, __LINE__; call flush(6)
 
 !$acc kernels default(none)
 PFFT = 0._JPRB
 !$acc end kernels
-
-!write (*,*) __FILE__, __LINE__; call flush(6)
 
 IF(PRESENT(KFLDPTR)) THEN
   ! TODO 
@@ -103,16 +97,7 @@ IF(PRESENT(KFLDPTR)) THEN
   ENDDO
 ELSE
   MAX_NCPL2M = MAXVAL (DALD_NCPL2M)
-!write (*,*) __FILE__, __LINE__;
-!write (*,*) 'shape(PSPEC) = ',shape(PSPEC)
-!write (*,*) 'shape(PFFT) = ',shape(PFFT)
-!write (*,*) 'KFIELDS = ',KFIELDS
-!write (*,*) 'D_NUMP = ',D_NUMP
-!write (*,*) 'MAX_NCPL2M = ',MAX_NCPL2M
-!write (*,*) 'D_MYMS = ',D_MYMS
-!write (*,*) 'DALD_NCPL2M = ',DALD_NCPL2M
-!write (*,*) 'DALD_NESM0 = ',DALD_NESM0
-call flush(6)
+
   !$ACC parallel loop collapse(3) &
   !$ACC& present(D_MYMS,DALD_NCPL2M,DALD_NESM0,D_NUMP) &
   !$ACC& present(PFFT,PSPEC) &
@@ -136,12 +121,10 @@ call flush(6)
       ENDDO
     ENDDO
   ENDDO
-!write (*,*) __FILE__, __LINE__; call flush(6)
 ENDIF
 
 !$acc end data
 
-!write (*,*) __FILE__, __LINE__; call flush(6)
 
 IF (LHOOK) CALL DR_HOOK('EPRFI1B_MOD:EPRFI1B',1,ZHOOK_HANDLE)
 

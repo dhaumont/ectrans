@@ -96,29 +96,18 @@ IF (KF_FS>0) THEN
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC,1) PRIVATE(JM,IM)
   DO JM=1,D%NUMP
     IM = D%MYMS(JM)
-!write (*,*) __FILE__, __LINE__; call flush(6)
     CALL ELTDIR(IM,JM,KF_FS,KF_UV,KF_SCALARS,ILED2, &
      & PSPVOR,PSPDIV,PSPSCALAR,&
      & PSPSC3A,PSPSC3B,PSPSC2 , &
      & KFLDPTRUV,KFLDPTRSC,PSPMEANU,PSPMEANV)
-!write (*,*) __FILE__, __LINE__; call flush(6)
   ENDDO
 !$OMP END PARALLEL DO
   IF (KF_UV > 0) THEN
-!write (*,*) __FILE__, __LINE__
-!write (*,*) 'KF_UV = ',KF_UV
-!write (*,*) 'shape(PSPMEANU) = ',shape(PSPMEANU)
-!write (*,*) 'shape(PSPMEANV) = ',shape(PSPMEANV)
-!write (*,*) 'present(KFLDPTRUV) = ',present(KFLDPTRUV)
-call flush(6)
-!!write (*,*) 'KFLDPTRUV = ',KFLDPTRUV
-call flush(6)
-    if ( present(kfldptruv) ) then
+    if ( present(kfldptruv) ) then ! daand: no idea why this is needed, but I get crash on lumi otherwise.
 	  CALL EUVTVD_COMM(KF_UV,PSPMEANU,PSPMEANV,KFLDPTRUV)
 	else
 	  CALL EUVTVD_COMM(KF_UV,PSPMEANU,PSPMEANV)
 	endif
-!write (*,*) __FILE__, __LINE__; call flush(6)
   ENDIF
 ENDIF
 CALL GSTATS(1645,1)
