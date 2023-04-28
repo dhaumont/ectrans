@@ -4,7 +4,7 @@
 
 ### (re)Compilation
 
-    source ~dadegrau2/ENV_lumi
+    source ENV_lumi
     rm -rf ${BUILDDIR}/ectrans ${INSTALLDIR}/ectrans
     mkdir -p ${BUILDDIR}/ectrans
     cd ${BUILDDIR}/ectrans
