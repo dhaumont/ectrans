@@ -4,7 +4,7 @@
 
 ### (re)Compilation
 
-    source ~dadegrau2/ENV_lumi
+    source ENV_lumi
     rm -rf ${BUILDDIR}/ectrans ${INSTALLDIR}/ectrans
     mkdir -p ${BUILDDIR}/ectrans
     cd ${BUILDDIR}/ectrans
@@ -21,14 +21,15 @@ Allocate GPU resource with
 
 Recompile/run with 
 
+    mkdir ${BASEDIR}/test/
     cd ${BASEDIR}/test/
     make -j16 -C ${BUILDDIR}/ectrans/ install
 
-	args="--truncation 79 --nproma 32 --vordiv --scders --uvders --nfld 1 --nlev 10 --norms --check 10"
+	args="--truncation 79 --nproma 32 --vordiv --scders --uvders --nfld 1 --nlev 10 --norms --check 10 --niter 10"
     srun ${INSTALLDIR}/ectrans/bin/ectrans-benchmark-sp  ${args}             # run global benchmark on CPU
     srun ${INSTALLDIR}/ectrans/bin/ectrans-benchmark-gpu-sp-acc ${args}      # run global benchmark on GPU
 	
-	args="--nlon 128 --nlat 128 --nproma 32 --vordiv --scders --uvders --nfld 5 --nlev 10 --norms --check 10"
+	args="--nlon 128 --nlat 128 --nproma 32 --vordiv --scders --uvders --nfld 5 --nlev 10 --norms --check 10 --niter 10"
 	srun ${INSTALLDIR}/ectrans/bin/ectrans-lam-benchmark-sp ${args}          # run LAM benchmark on CPU
 	srun ${INSTALLDIR}/ectrans/bin/ectrans-lam-benchmark-gpu-sp-acc ${args}  # run LAM benchmark on GPU
 
