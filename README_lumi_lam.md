@@ -4,7 +4,7 @@
 
 ### (re)Compilation
 
-    source ~dadegrau2/deode/ectrans/lam/sources/ectrans/ENV_lumi
+    source ~dadegrau2/ENV_lumi
     rm -rf ${BUILDDIR}/ectrans ${INSTALLDIR}/ectrans
     mkdir -p ${BUILDDIR}/ectrans
     cd ${BUILDDIR}/ectrans
@@ -13,7 +13,7 @@
 	make -j32   # note: dependencies aren't worked out entirely correctly by cmake, therefore a second make is necessary.
     make install
 
-### test run
+### Test run on single GPU
 
 Allocate GPU resource with
 
@@ -22,11 +22,19 @@ Allocate GPU resource with
 Recompile/run with 
 
     cd ${BASEDIR}/test/
-    make -j16 -C ../build/ectrans/ install
-    srun ../install/ectrans/bin/ectrans-benchmark-gpu-sp-acc      # run global benchmark
-	srun ../install/ectrans/bin/ectrans-lam-benchmark-gpu-sp-acc  # run LAM benchmark
+    make -j16 -C ${BUILDDIR}/ectrans/ install
+
+	args="--truncation 79 --nproma 32 --vordiv --scders --uvders --nfld 1 --nlev 10 --norms --check 10"
+    srun ${INSTALLDIR}/ectrans/bin/ectrans-benchmark-sp  ${args}             # run global benchmark on CPU
+    srun ${INSTALLDIR}/ectrans/bin/ectrans-benchmark-gpu-sp-acc ${args}      # run global benchmark on GPU
+	
+	args="--nlon 128 --nlat 128 --nproma 32 --vordiv --scders --uvders --nfld 5 --nlev 10 --norms --check 10"
+	srun ${INSTALLDIR}/ectrans/bin/ectrans-lam-benchmark-sp ${args}          # run LAM benchmark on CPU
+	srun ${INSTALLDIR}/ectrans/bin/ectrans-lam-benchmark-gpu-sp-acc ${args}  # run LAM benchmark on GPU
 
 Note: recompiling like this may not be sufficient when modifying e.g. hip.cc files; do a full recompilation (above) in this case.
+
+Note: a bug still resides in the global gpu runs when setting nfld>1.
 
 ## Prerequisites: ecbuild and fiat
 

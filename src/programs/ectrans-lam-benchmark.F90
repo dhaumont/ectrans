@@ -453,7 +453,7 @@ else
 endif
 
 jbegin_sc = jend_vder_EW + 1
-jend_sc   = jbegin_sc + nfld -1
+jend_sc   = jend_vder_EW + nfld
 
 if (lscders) then
   ndimgmvs = 3
@@ -624,7 +624,7 @@ do jstep = 1, iters
   call gstats(5,0)
   if (lvordiv) then
     call edir_trans(kresol=1, kproma=nproma, &
-      & pgp2=zgmvs(:,1:1,:),                &
+      & pgp2=zgp2(:,1:1,:),                &
       & pgpuv=zgpuv(:,:,1:2,:),             &
       & pgp3a=zgp3a(:,:,1:nfld,:),          &
       & pspvor=zspvor,                      &
@@ -637,8 +637,9 @@ do jstep = 1, iters
     & pmeanu=zmeanu,                      &
     & pmeanv=zmeanv)
   else
+  
     call edir_trans(kresol=1, kproma=nproma, &
-      & pgp2=zgmvs(:,1:1,:),                &
+      & pgp2=zgp2(:,1:1,:),                &
       & pgp3a=zgp3a(:,:,1:nfld,:),          &
       & pspsc2=zspsc2,                      &
       & pspsc3a=zspsc3a,                    &
@@ -716,8 +717,6 @@ ztloop = (timef() - ztloop)/1000.0_jprd
 write(nout,'(" ")')
 write(nout,'(a)') '======= End of spectral transforms  ======='
 write(nout,'(" ")')
-
-#ifdef gnarls
 
 if (lprint_norms .or. ncheck > 0) then
   call especnorm(pspec=zspvor(1:nflevl,:),    pnorm=znormvor, kvset=ivset)
@@ -866,14 +865,10 @@ if (lstack) then
   endif
 endif
 
-#endif
-
 !===================================================================================================
 ! Cleanup
 !===================================================================================================
 
-deallocate(zgmv)
-deallocate(zgmvs)
 ! TODO: many more arrays to deallocate
 
 !===================================================================================================

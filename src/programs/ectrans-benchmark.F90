@@ -497,8 +497,8 @@ else
   jend_vder_EW   = jend_uv
 endif
 
-jbegin_sc = jbegin_vder_EW + 1
-jend_sc   = jbegin_vder_EW + nfld
+jbegin_sc = jend_vder_EW + 1
+jend_sc   = jend_vder_EW + nfld
 
 if (lscders) then
   ndimgmvs = 3
@@ -516,12 +516,16 @@ endif
 
 ndimgmv = jend_scder_EW
 
-allocate(zgmv(nproma,nflevg,ndimgmv,ngpblks))
-allocate(zgmvs(nproma,ndimgmvs,ngpblks))
+!allocate(zgmv(nproma,nflevg,ndimgmv,ngpblks))
+!allocate(zgmvs(nproma,ndimgmvs,ngpblks))
 
-zgpuv => zgmv(:,:,1:jend_vder_EW,:)
-zgp3a => zgmv(:,:,jbegin_sc:jend_scder_EW,:)
-zgp2  => zgmvs(:,:,:)
+! separate allocation to have contiguous arguments
+allocate(zgpuv(nproma,nflevg,jend_vder_EW,ngpblks))
+allocate(zgp3a(nproma,nflevg,jend_scder_EW-jbegin_sc+1,ngpblks))
+allocate(zgp2(nproma,ndimgmvs,ngpblks))
+!zgpuv => zgmv(:,:,1:jend_vder_EW,:)
+!zgp3a => zgmv(:,:,jbegin_sc:jend_scder_EW,:)
+!zgp2  => zgmvs(:,:,:)
 
 !===================================================================================================
 ! Allocate norm arrays
@@ -657,7 +661,7 @@ do jstep = 1, iters
   call gstats(5,0)
   if (lvordiv) then
     call dir_trans(kresol=1, kproma=nproma, &
-      & pgp2=zgmvs(:,1:1,:),                &
+      & pgp2=zgp2(:,1:1,:),                &
       & pgpuv=zgpuv(:,:,1:2,:),             &
       & pgp3a=zgp3a(:,:,1:nfld,:),          &
       & pspvor=zspvor,                      &
@@ -669,7 +673,7 @@ do jstep = 1, iters
       & kvsetsc3a=ivset)
   else
     call dir_trans(kresol=1, kproma=nproma, &
-      & pgp2=zgmvs(:,1:1,:),                &
+      & pgp2=zgp2(:,1:1,:),                &
       & pgp3a=zgp3a(:,:,1:nfld,:),          &
       & pspsc2=zspsc2,                      &
       & pspsc3a=zspsc3a,                    &
@@ -898,8 +902,8 @@ endif
 ! Cleanup
 !===================================================================================================
 
-deallocate(zgmv)
-deallocate(zgmvs)
+!deallocate(zgmv)
+!deallocate(zgmvs)
 
 !===================================================================================================
 
