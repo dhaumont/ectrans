@@ -58,7 +58,7 @@ foreach( prec sp dp )
                        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/ectrans>
                        $<INSTALL_INTERFACE:include/ectrans>
                        $<INSTALL_INTERFACE:include>
-      PUBLIC_LIBS      fiat parkind_${prec}
+      PUBLIC_LIBS      fiat parkind_${prec} field_api_${prec}
     )
     ectrans_target_fortran_module_directory(
       TARGET            trans_${prec}

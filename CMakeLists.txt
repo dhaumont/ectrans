@@ -17,6 +17,7 @@ ecbuild_enable_fortran( REQUIRED NO_MODULE_DIRECTORY )
 ### Find (optional) dependencies 
 
 ecbuild_find_package( NAME fiat REQUIRED )
+ecbuild_find_package( NAME field_api REQUIRED )
 
 ecbuild_add_option( FEATURE MPI 
                     DESCRIPTION "Support for MPI distributed memory parallelism"
