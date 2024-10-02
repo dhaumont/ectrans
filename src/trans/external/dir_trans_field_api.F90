@@ -21,7 +21,7 @@ SUBROUTINE DIR_TRANS_FIELD_API(PSPVOR,    PSPDIV,   PSPSCALAR, PSPSC3A,   &
 
 !**   Interface.
 !     ----------
-!     CALL DIR_TRANS(...)
+!     CALL DIR_TRANS_FIELD_API(...)
 
 !     Explicit arguments : All arguments except from PGP are optional.
 !     --------------------
