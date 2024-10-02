@@ -7,12 +7,18 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 !
-SUBROUTINE INV_TRANS_FIELD_API(YD_PSPVOR,    YD_PSPDIV,    YD_PSPSCALAR,  YD_PSPSC3A,  &
-                              &YD_PSPSC3B,   YD_PSPSC2,    FSPGL_PROC, LDSCDERS, &
-                              &LDVORGP,   LDDIVGP,   LDUVDER,    LDLATLON, &
-                              &KPROMA,    KVSETUV,   KVSETSC,    KRESOL,   &
-                              &KVSETSC3A, KVSETSC3B, KVSETSC2,   YD_PGP,      &
-                              &YD_PGPUV,     YD_PGP3A,     YD_PGP3B,      YD_PGP2, LACC)    
+SUBROUTINE INV_TRANS_FIELD_API(YD_PSPVOR,   YD_PSPDIV,   YD_PSPSCALAR,   &
+                              &YD_PSPSC_3D, YD_PSPSC_2D, FSPGL_PROC,     &
+                              &LDSCDERS,    LDVORGP,     LDDIVGP,        &
+                              &LDUVDER,     LDLATLON,    KPROMA,         &
+                              &KVSETUV,     KVSETSC,     KRESOL,         &
+                              &KVSETSC_3D,  KVSETSC_2D,  YD_PGP,         &
+                              &YD_PGPUV,    YD_PGP_3D,   YD_PGP_2D,      &
+                              &LACC)                                      
+
+                                      
+
+    
 
 !**** *INV_TRANS* - Inverse spectral transform.
 
@@ -30,7 +36,7 @@ SUBROUTINE INV_TRANS_FIELD_API(YD_PSPVOR,    YD_PSPDIV,    YD_PSPSCALAR,  YD_PSP
 !     PSPDIV(:,:) - spectral divergence (input)
 !     PSPSCALAR(:,:) - spectral scalarvalued fields (input)
 !     PSPSC3A(:,:,:) - alternative to use of PSPSCALAR, see PGP3A below (input)
-!     PSPSC3B(:,:,:) - alternative to use of PSPSCALAR, see PGP3B below (input)
+
 !     PSPSC2(:,:)  - alternative to use of PSPSCALAR, see PGP2 below (input)
 !     FSPGL_PROC  - external procedure to be executed in fourier space
 !                   before transposition
@@ -51,7 +57,7 @@ SUBROUTINE INV_TRANS_FIELD_API(YD_PSPVOR,    YD_PSPDIV,    YD_PSPSCALAR,  YD_PSP
 !                   the number of processors used for distribution in
 !                   spectral wave space.
 !     KVSETSC3A(:) - as KVESETSC for PSPSC3A (distribution on first dimension)
-!     KVSETSC3B(:) - as KVESETSC for PSPSC3B (distribution on first dimension)
+
 !     KVSETSC2(:) - as KVESETSC for PSPSC2 (distribution on first dimension)
 !     KRESOL   - resolution tag  which is required ,default is the
 !                first defined resulution (input)
@@ -96,10 +102,6 @@ SUBROUTINE INV_TRANS_FIELD_API(YD_PSPVOR,    YD_PSPDIV,    YD_PSPSCALAR,  YD_PSP
 !                      dimensioned(NPROMA,ILEVS,IFLDS,NGPBLKS)
 !                      IFLDS is the number of 'variables' (the same as in
 !                      PSPSC3A if no derivatives, 3 times that with der.)
-!     PGP3B(:,:,:,:) - grid-point array directly connected with PSPSC3B
-!                      dimensioned(NPROMA,ILEVS,IFLDS,NGPBLKS)
-!                      IFLDS is the number of 'variables' (the same as in
-!                      PSPSC3B if no derivatives, 3 times that with der.)
 !     PGP2(:,:,:)    - grid-point array directly connected with PSPSC2
 !                      dimensioned(NPROMA,IFLDS,NGPBLKS)
 !                      IFLDS is the number of 'variables' (the same as in
@@ -128,20 +130,6 @@ USE FIELD_ACCESS_MODULE
 USE FIELD_FACTORY_MODULE
 USE FIELD_MODULE
 
-!ifndef INTERFACE
-
-USE TPM_GEN         ,ONLY : NERR, NOUT, NPROMATR
-!USE TPM_DIM
-USE TPM_TRANS       ,ONLY : LDIVGP, LSCDERS, LUVDER, LVORGP, LATLON,  &
-     &                      NF_SC2, NF_SC3A, NF_SC3B, NGPBLKS, NPROMA
-USE TPM_DISTR       ,ONLY : D, NPRTRV, MYSETV
-!USE TPM_GEOMETRY
-!USE TPM_FIELDS
-!USE TPM_FFT
-
-USE SET_RESOL_MOD     ,ONLY : SET_RESOL
-USE INV_TRANS_CTL_MOD ,ONLY : INV_TRANS_CTL
-USE ABORT_TRANS_MOD   ,ONLY : ABORT_TRANS
 USE YOMHOOK           ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 
 !endif INTERFACE
@@ -153,9 +141,8 @@ IMPLICIT NONE
 CLASS (FIELD_2RB), POINTER, OPTIONAL, INTENT(IN) :: YD_PSPVOR
 CLASS (FIELD_2RB), POINTER, OPTIONAL, INTENT(IN) :: YD_PSPDIV
 CLASS (FIELD_2RB), POINTER, OPTIONAL, INTENT(IN) :: YD_PSPSCALAR
-CLASS (FIELD_3RB), POINTER, OPTIONAL, INTENT(IN) :: YD_PSPSC3A
-CLASS (FIELD_3RB), POINTER, OPTIONAL, INTENT(IN) :: YD_PSPSC3B
-CLASS (FIELD_2RB), POINTER, OPTIONAL, INTENT(IN) :: YD_PSPSC2
+CLASS (FIELD_3RB), POINTER, OPTIONAL, INTENT(IN) :: YD_PSPSC_3D(:)
+CLASS (FIELD_2RB), POINTER, OPTIONAL, INTENT(IN) :: YD_PSPSC_2D(:)
 
 LOGICAL   ,OPTIONAL, INTENT(IN) :: LDSCDERS
 LOGICAL   ,OPTIONAL, INTENT(IN) :: LDVORGP
@@ -165,34 +152,29 @@ LOGICAL   ,OPTIONAL, INTENT(IN) :: LDLATLON
 INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KPROMA
 INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KVSETUV(:)
 INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KVSETSC(:)
-INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KVSETSC3A(:)
-INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KVSETSC3B(:)
-INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KVSETSC2(:)
+INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KVSETSC_3D(:)
+INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KVSETSC_2D(:)
 INTEGER(KIND=JPIM) ,OPTIONAL, INTENT(IN) :: KRESOL
 EXTERNAL  FSPGL_PROC
 OPTIONAL  FSPGL_PROC
 CLASS (FIELD_3RB), POINTER, OPTIONAL, INTENT(OUT) :: YD_PGP
 CLASS (FIELD_4RB), POINTER, OPTIONAL, INTENT(OUT) :: YD_PGPUV
-CLASS (FIELD_4RB), POINTER, OPTIONAL, INTENT(OUT) :: YD_PGP3A
-CLASS (FIELD_4RB), POINTER, OPTIONAL, INTENT(OUT) :: YD_PGP3B
-CLASS (FIELD_3RB), POINTER, OPTIONAL, INTENT(OUT) :: YD_PGP2
+CLASS (FIELD_3RB), POINTER, OPTIONAL, INTENT(OUT) :: YD_PGP_3D(:)
+CLASS (FIELD_2RB), POINTER, OPTIONAL, INTENT(OUT) :: YD_PGP_2D(:)
 LOGICAL, INTENT(IN), OPTIONAL :: LACC
 
 !IN
 REAL(KIND=JPRB), POINTER  :: PSPVOR(:,:)
 REAL(KIND=JPRB), POINTER  :: PSPDIV(:,:)
 REAL(KIND=JPRB), POINTER  :: PSPSCALAR(:,:)
-REAL(KIND=JPRB), POINTER  :: PSPSC3A(:,:,:)
-REAL(KIND=JPRB), POINTER  :: PSPSC3B(:,:,:)
-REAL(KIND=JPRB), POINTER  :: PSPSC2(:,:)
+REAL(KIND=JPRB), POINTER  :: PSPSC_3D(:,:,:)
+REAL(KIND=JPRB), POINTER  :: PSPSC_2D(:,:)
 
 !OUT
 REAL(KIND=JPRB),POINTER :: PGP(:,:,:)
 REAL(KIND=JPRB),POINTER :: PGPUV(:,:,:,:)
-REAL(KIND=JPRB),POINTER :: PGP3A(:,:,:,:)
-REAL(KIND=JPRB),POINTER :: PGP3B(:,:,:,:)
-REAL(KIND=JPRB),POINTER :: PGP2(:,:,:)
-
+REAL(KIND=JPRB),POINTER :: PGP_3D(:,:,:,:)
+REAL(KIND=JPRB),POINTER :: PGP_2D(:,:,:)
 
 REAL(KIND=JPHOOK), POINTER, CONTIGUOUS :: ZHOOK_HANDLE
 #include "inv_trans.h"
@@ -204,44 +186,49 @@ IF (LHOOK) CALL DR_HOOK('INV_TRANS_FIELD_API',0,ZHOOK_HANDLE)
 PSPVOR => NULL ()
 PSPDIV => NULL ()
 PSPSCALAR => NULL ()
-PSPSC3A => NULL ()
-PSPSC3B => NULL ()
-PSPSC2 => NULL ()
+PSPSC_3D => NULL ()
+PSPSC_2D => NULL ()
 
 if (LACC) THEN
   IF(PRESENT(YD_PSPVOR)) PSPVOR => GET_HOST_DATA_RDONLY (YD_PSPVOR)
   IF(PRESENT(YD_PSPDIV)) PSPDIV => GET_HOST_DATA_RDONLY (YD_PSPDIV)
   IF(PRESENT(YD_PSPSCALAR)) PSPSCALAR => GET_HOST_DATA_RDONLY (YD_PSPSCALAR)
-  IF(PRESENT(YD_PSPSC3A)) PSPSC3A => GET_HOST_DATA_RDONLY (YD_PSPSC3A)
-  IF(PRESENT(YD_PSPSC3B)) PSPSC3B => GET_HOST_DATA_RDONLY (YD_PSPSC3B)
-  IF(PRESENT(YD_PSPSC2)) PSPSC2 => GET_HOST_DATA_RDONLY (YD_PSPSC2)
+  !IF(PRESENT(YD_PSPSC3A)) PSPSC3A => GET_HOST_DATA_RDONLY (YD_PSPSC3A)
+  !IF(PRESENT(YD_PSPSC2)) PSPSC2 => GET_HOST_DATA_RDONLY (YD_PSPSC2)
 
   IF(PRESENT(YD_PGP)) PGP => GET_HOST_DATA_RDWR (YD_PGP)
   IF(PRESENT(YD_PGPUV)) PGPUV => GET_HOST_DATA_RDWR (YD_PGPUV)
-  IF(PRESENT(YD_PGP3A)) PGP3A => GET_HOST_DATA_RDWR (YD_PGP3A)
-  IF(PRESENT(YD_PGP3B)) PGP3B => GET_HOST_DATA_RDWR (YD_PGP3B)
-  IF(PRESENT(YD_PGP2)) PGP2 => GET_HOST_DATA_RDWR (YD_PGP2)
+  !IF(PRESENT(YD_PGP3A)) PGP3A => GET_HOST_DATA_RDWR (YD_PGP3A)
+  !IF(PRESENT(YD_PGP2)) PGP2 => GET_HOST_DATA_RDWR (YD_PGP2)
 
 ELSE
   IF(PRESENT(YD_PSPVOR)) PSPVOR => GET_DEVICE_DATA_RDONLY (YD_PSPVOR)
   IF(PRESENT(YD_PSPDIV)) PSPDIV => GET_DEVICE_DATA_RDONLY (YD_PSPDIV)
   IF(PRESENT(YD_PSPSCALAR)) PSPSCALAR => GET_DEVICE_DATA_RDONLY (YD_PSPSCALAR)
-  IF(PRESENT(YD_PSPSC3A)) PSPSC3A => GET_DEVICE_DATA_RDONLY (YD_PSPSC3A)
-  IF(PRESENT(YD_PSPSC3B)) PSPSC3B => GET_DEVICE_DATA_RDONLY (YD_PSPSC3B)
-  IF(PRESENT(YD_PSPSC2)) PSPSC2 => GET_DEVICE_DATA_RDONLY (YD_PSPSC2)
+  !IF(PRESENT(YD_PSPSC3A)) PSPSC3A => GET_DEVICE_DATA_RDONLY (YD_PSPSC3A)
+  !IF(PRESENT(YD_PSPSC2)) PSPSC2 => GET_DEVICE_DATA_RDONLY (YD_PSPSC2)
 
   IF(PRESENT(YD_PGP)) PGP => GET_DEVICE_DATA_RDWR (YD_PGP)
   IF(PRESENT(YD_PGPUV)) PGPUV => GET_DEVICE_DATA_RDWR (YD_PGPUV)
-  IF(PRESENT(YD_PGP3A)) PGP3A => GET_DEVICE_DATA_RDWR (YD_PGP3A)
-  IF(PRESENT(YD_PGP3B)) PGP3B => GET_DEVICE_DATA_RDWR (YD_PGP3B)
-  IF(PRESENT(YD_PGP2)) PGP2 => GET_DEVICE_DATA_RDWR (YD_PGP2)
+  !IF(PRESENT(YD_PGP3A)) PGP3A => GET_DEVICE_DATA_RDWR (YD_PGP3A)
+  !IF(PRESENT(YD_PGP2)) PGP2 => GET_DEVICE_DATA_RDWR (YD_PGP2)
 ENDIF
 
-CALL INV_TRANS(PSPVOR,  PSPDIV,     PSPSCALAR, PSPSC3A,  PSPSC3B,        &
-              &PSPSC2,  FSPGL_PROC, LDSCDERS,  LDVORGP,  LDDIVGP,        &
-              &LDUVDER, LDLATLON,   KPROMA,    KVSETUV,  KVSETSC,        &
-              &KRESOL,  KVSETSC3A,  KVSETSC3B, KVSETSC2, PGP,            &
-              &PGPUV,   PGP3A,      PGP3B,     PGP2)                      
+CALL INV_TRANS(PSPVOR=PSPVOR,       PSPDIV=PSPDIV,                       &
+              &PSPSCALAR=PSPSCALAR, PSPSC3A=PSPSC_3D,                    &
+              &PSPSC2=PSPSC_2D,     FSPGL_PROC=FSPGL_PROC,               &
+              &LDSCDERS=LDSCDERS,   LDVORGP=LDVORGP,                     &
+              &LDDIVGP=LDDIVGP,     LDUVDER=LDUVDER,                     &
+              &LDLATLON=LDLATLON,   KPROMA=KPROMA,                       &
+              &KVSETUV=KVSETUV,     KVSETSC=KVSETSC,                     &
+              &KRESOL=KRESOL,       KVSETSC3A=KVSETSC_3D,                &
+              &KVSETSC2=KVSETSC_2D, PGP=PGP,                             &
+              &PGPUV=PGPUV,         PGP3A=PGP_3D,                        &
+              &PGP2=PGP_2D)                                               
+
+                                                 
+
+                      
 
 IF (LHOOK) CALL DR_HOOK('INV_TRANS',1,ZHOOK_HANDLE)
 !     ------------------------------------------------------------------
