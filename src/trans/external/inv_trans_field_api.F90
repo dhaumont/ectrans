@@ -61,7 +61,7 @@ REAL(KIND=JPRB), POINTER  :: PTR_3D(:,:,:)
 REAL(KIND=JPRB), POINTER  :: PTR_4D(:,:,:,:)
 
 
-INTEGER(KIND=JPIM) :: JFLD
+INTEGER(KIND=JPIM) :: JFLD, V_IDX, S_IDX, JFLD1, JLEV1, NFIELDS, NLEVS
 
 
 REAL(KIND=JPHOOK), POINTER, CONTIGUOUS :: ZHOOK_HANDLE
@@ -71,6 +71,54 @@ REAL(KIND=JPHOOK), POINTER, CONTIGUOUS :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('INV_TRANS_FIELD_API',0,ZHOOK_HANDLE)
 
+V_IDX = 1
+S_IDX = 1
+
+! Step 1: Assign index to each field
+IF (PRESENT(YD_SPECTRAL_V2D)) THEN    
+  DO JFLD = 1, SIZE(YD_SPECTRAL_V2D)
+    IF (ASSOCIATED(YD_SPECTRAL_V2D(JFLD)%PSP_VOR)) THEN        
+      YD_SPECTRAL_V2D(JFLD)%IDX = V_IDX
+      V_IDX = V_IDX + 1      
+    END IF
+  END DO
+END IF
+
+IF (PRESENT(YD_SPECTRAL_V3D)) THEN    
+  DO JFLD = 1, SIZE(YD_SPECTRAL_V3D)
+    IF (ASSOCIATED(YD_SPECTRAL_V3D(JFLD)%PSP_VOR)) THEN
+      YD_SPECTRAL_V2D(JFLD)%IDX = V_IDX
+      NFIELDS = SIZE(PTR_3D, 2)      
+      V_IDX = V_IDX + NFIELDS    
+    END IF
+  END DO
+END IF
+
+IF (PRESENT(YD_SPECTRAL_V4D)) THEN    
+  DO JFLD = 1, SIZE(YD_SPECTRAL_V4D)
+    IF (ASSOCIATED(YD_SPECTRAL_V4D(JFLD)%PSP_VOR)) THEN
+      YD_SPECTRAL_V2D(JFLD)%IDX = V_IDX    
+      NFIELDS = SIZE(PTR_3D, 3)
+      NLEVS = SIZE(PTR_3D, 2)
+      V_IDX = V_IDX + NFIELDS*NLEVS    
+    END IF
+  END DO
+END IF
+
+! Step 2: Allocate temporary arrays
+!ALLOCATE(PSPVOR(V_IDX, SIZE))
+!ALLOCATE(PSPDIV(V_IDX, SIZE))
+!ALLOCATE(PSPSC3(V_IDX, SIZE))
+!ALLOCATE(PSPSC2(V_IDX, SIZE))
+!ALLOCATE(PGPUV(V_IDX, SIZE))
+!ALLOCATE(PGP3(V_IDX, SIZE))
+!ALLOCATE(PGP2(V_IDX, SIZE))
+
+IF (LACC) THEN
+  ! Allocate the temporary arrays in device memory
+ENDIF
+
+! Step 3: Copy fields to temporary arrays
 IF (PRESENT(YD_SPECTRAL_V2D)) THEN    
     DO JFLD = 1, SIZE(YD_SPECTRAL_V2D)
       IF (ASSOCIATED(YD_SPECTRAL_V2D(JFLD)%PSP_VOR)) THEN        
@@ -79,9 +127,10 @@ IF (PRESENT(YD_SPECTRAL_V2D)) THEN
         ELSE
           PTR_2D => GET_HOST_DATA_RDWR (YD_SPECTRAL_V2D(JFLD)%PSP_VOR)
         END IF
-          !TODO YD_SPECTRAL_V2D(JFLD)%LEV = ... + 1
-          !TODO YD_SPECTRAL_V2D(JFLD)%FLD = ... + 1
-          !PSPVOR(:,YD_SPECTRAL_V2D(JFLD)%LEV,YD_SPECTRAL_V2D(JFLD)%FLD, :) = PTR_2D(:,:)
+        V_IDX = YD_SPECTRAL_V2D(JFLD)%IDX
+        
+    !    PSPVOR(V_IDX, :) = PTR_2D(:,:)
+      
       END IF
     END DO
   END IF
@@ -95,10 +144,14 @@ IF (PRESENT(YD_SPECTRAL_V3D)) THEN
       ELSE
         PTR_3D => GET_HOST_DATA_RDWR (YD_SPECTRAL_V3D(JFLD)%PSP_VOR)
       END IF
-        !TODO YD_SPECTRAL_V3D(JFLD)%LEV = ... + 1
-        !TODO YD_SPECTRAL_V3D(JFLD)%FLD = ... + 1
-          
-       !   PSPVOR(:,:,YD_SPECTRAL_V2D(JFLD)%FLD,:) = PTR_3D(:,:,:)
+
+      V_IDX = YD_SPECTRAL_V2D(JFLD)%IDX
+      NFIELDS = SIZE(PTR_3D, 2)      
+      
+      DO JFLD1 = 1,NFIELDS
+        !PSPVOR(V_IDX,:) = PTR_3D(:,:,JFLD1)
+        V_IDX = V_IDX + 1
+      END DO
     END IF
   END DO
 END IF
@@ -112,19 +165,31 @@ IF (PRESENT(YD_SPECTRAL_V4D)) THEN
       ELSE
         PTR_4D => GET_HOST_DATA_RDWR (YD_SPECTRAL_V4D(JFLD)%PSP_VOR)
       END IF
+
+      V_IDX = YD_SPECTRAL_V2D(JFLD)%IDX
     
-      !TODO YD_SPECTRAL_V4D(JFLD)%LEV = ... + 1
-      !TODO YD_SPECTRAL_V4D(JFLD)%FLD = ...
-    
-     !  PSPVOR(:,:,:,:) = PTR_4D(:,:,:,:)
+      NFIELDS = SIZE(PTR_3D, 3)
+      NLEVS = SIZE(PTR_3D, 2)
+
+      DO JFLD1 = 1,NFIELDS
+        DO JLEV1 = 1,NLEVS
+       !   PSPVOR(V_IDX,:) = PTR_4D(:,:,JLEV1,JFLD1)
+          V_IDX = V_IDX + 1
+        END DO
+      ENDDO
+     
     END IF
   END DO
 END IF
 
+! Step 4 : Call the inverse transformation routine
+
 CALL INV_TRANS(PSPVOR=PSPVOR,  PSPDIV=PSPDIV,      & !IN
               &PSPSC3A=PSPSC3, PSPSC2=PSPSC2,      & !IN
               &PGPUV=PGPUV,   PGP3A=PGP3, PGP2=PGP2) !OUT
-                                  
+            
+! Step 4 : Copy from temporary arrays to fields
+
 IF (PRESENT(YD_SPECTRAL_V2D)) THEN    
   DO JFLD = 1, SIZE(YD_SPECTRAL_V2D)
     IF (ASSOCIATED(YD_SPECTRAL_V4D(JFLD)%PGP_U)) THEN        
@@ -134,8 +199,8 @@ IF (PRESENT(YD_SPECTRAL_V2D)) THEN
       ELSE
         PTR_2D => GET_HOST_DATA_RDWR (YD_SPECTRAL_V2D(JFLD)%PGP_U)
       END IF
-        
-        PTR_2D(:,:) = PGPUV(:,YD_SPECTRAL_V2D(JFLD)%LEV, YD_SPECTRAL_V2D(JFLD)%FLD, :)
+      V_IDX = YD_SPECTRAL_V2D(JFLD)%IDX 
+     ! PTR_2D(:,:) = PGPUV(:, 1 ,V+IDX, :)
     END IF
   END DO
 END IF
@@ -148,8 +213,13 @@ IF (PRESENT(YD_SPECTRAL_V3D)) THEN
       ELSE
         PTR_3D => GET_HOST_DATA_RDWR (YD_SPECTRAL_V3D(JFLD)%PGP_U)
       END IF
+    V_IDX = YD_SPECTRAL_V3D(JFLD)%IDX 
+
+    DO JFLD1 = 1,NFIELDS
+    !PTR_3D(:,:,:) = PGPUV(:,1,V_IDX,:)
+      V_IDX = V_IDX + 1
+    END DO
         
-        PTR_3D(:,:,:) = PGPUV(:,:,YD_SPECTRAL_V3D(JFLD)%FLD, :)
     END IF
   END DO    
 END IF
@@ -162,11 +232,30 @@ IF (PRESENT(YD_SPECTRAL_V4D)) THEN
       ELSE
         PTR_4D => GET_HOST_DATA_RDWR (YD_SPECTRAL_V4D(JFLD)%PGP_U)
       END IF
-      
-       PTR_4D(:,:,:,:) = PGPUV(:,:, :, :)
+      NFIELDS = SIZE(PTR_3D, 3)
+      NLEVS = SIZE(PTR_3D, 2)
+      V_IDX = YD_SPECTRAL_V4D(JFLD)%IDX 
+      DO JFLD1 = 1,NFIELDS
+        DO JLEV1 = 1,NLEVS
+        !  PTR_4D(:,:,:,:) = PGPUV(:,JLEV1, V_IDX, :)          
+        END DO
+        V_IDX = V_IDX + 1
+      ENDDO
+     
+     
     END IF
   END DO
 END IF
+
+! Step 5 Delete temporary arrays
+!DEALLOCATE(PSPVOR)
+!DEALLOCATE(PSPDIV)
+!DEALLOCATE(PSPSC3)
+!DEALLOCATE(PSPSC2)
+!DEALLOCATE(PGPUV)
+!DEALLOCATE(PGP3)
+!DEALLOCATE(PGP2)
+
 
 IF (LHOOK) CALL DR_HOOK('INV_TRANS_FIELD_API',1,ZHOOK_HANDLE)
 !     ------------------------------------------------------------------
