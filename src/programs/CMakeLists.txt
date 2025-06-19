@@ -10,7 +10,7 @@
 foreach( program ectrans-benchmark )
 
   if ( HAVE_CPU )
-    foreach( prec dp)
+    foreach( prec dp sp)
       if( HAVE_${prec} )
         ecbuild_add_executable( TARGET  ${program}-cpu-${prec}
                                 SOURCES ${program}.F90

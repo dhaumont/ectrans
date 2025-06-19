@@ -75,7 +75,7 @@ endfunction(generate_backend_sources)
 set( BUILD_INTERFACE_INCLUDE_DIR ${CMAKE_BINARY_DIR}/include/ectrans )
 
 # loop over precisions
-foreach( prec dp)
+foreach( prec dp sp)
   if( HAVE_${prec} )
    
      generate_backend_includes(BACKEND ${prec} TARGET ectrans_field_api_${prec}_includes DESTINATION ${BUILD_INTERFACE_INCLUDE_DIR} INCLUDE_DIRECTORY ${PROJECT_SOURCE_DIR}/src/trans/include )
