@@ -10,7 +10,7 @@
 foreach( program ectrans-benchmark )
 
   if ( HAVE_CPU )
-    foreach( prec dp sp )
+    foreach( prec dp )
       if( HAVE_${prec} )
         ecbuild_add_executable( TARGET  ${program}-cpu-${prec}
                                 SOURCES ${program}.F90
@@ -19,6 +19,8 @@ foreach( program ectrans-benchmark )
                                   fiat
                                   parkind_${prec}
                                   trans_${prec}
+                                  ectrans_field_api_${prec}
+                                  
         )
         target_compile_definitions(${program}-cpu-${prec} PRIVATE VERSION="cpu")
       endif()
@@ -34,7 +36,7 @@ foreach( program ectrans-benchmark )
                                 LIBS
                                   fiat
                                   parkind_${prec}
-                                  trans_gpu_${prec}
+                                  trans_gpu_${prec}                                  
                                   $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
                                   $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
                                 DEFINITIONS

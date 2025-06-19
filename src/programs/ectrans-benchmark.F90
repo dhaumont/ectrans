@@ -51,7 +51,8 @@ use oml_mod ,only : oml_max_threads
 use mpl_module
 use yomgstats, only: jpmaxstat, gstats_lstats => lstats
 use yomhook, only : dr_hook_init
-
+USE INV_TRANS_FIELD_API_MOD, ONLY : INV_TRANS_FIELD_API, FSPGL_INTF
+USE FIELD_API_ECTRANS_MOD, ONLY: FIELD_BASIC_PTR
 implicit none
 
 ! Number of points in top/bottom latitudes
@@ -114,6 +115,15 @@ real(kind=jprb), pointer :: zspdiv(:,:) => null()
 real(kind=jprb), pointer :: zspsc3a(:,:,:) => null()
 real(kind=jprb), allocatable PINNED_TAG :: zspsc2(:,:)
 
+TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFU (:), YLFV (:)
+TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSCALAR (:)
+TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSPVOR (:), YLFSPDIV (:)
+TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFVOR (:), YLFDIV (:)
+TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSPSCALAR (:)
+TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFUDM (:), YLFVDM (:)
+TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSCALARDM (:), YLFSCALARDL (:)
+
+
 logical :: lstack = .false. ! Output stack info
 logical :: luserpnm = .false.
 logical :: lkeeprpnm = .false.
@@ -136,6 +146,7 @@ logical :: lscders = .false.
 logical :: luvders = .false.
 logical :: lprint_norms = .false. ! Calculate and print spectral norms
 logical :: lmeminfo = .false. ! Show information from FIAT routine ec_meminfo at the end
+logical :: LLACC = .false.
 
 integer(kind=jpim) :: nstats_mem = 0
 integer(kind=jpim) :: ntrace_stats = 0
@@ -211,6 +222,13 @@ character(len=16) :: cgrid = ''
 integer(kind=jpim) :: ierr
 
 real(kind=jprb), allocatable :: global_field(:,:)
+!TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFU (:), YLFV (:)
+!TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSCALAR (:)
+!TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSPVOR (:), YLFSPDIV (:)
+!TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFVOR (:), YLFDIV (:)
+!TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSPSCALAR (:)
+!TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFUDM (:), YLFVDM (:)
+!TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSCALARDM (:), YLFSCALARDL (:)
 
 !===================================================================================================
 
@@ -485,6 +503,8 @@ do jb = 1, nprtrv
   enddo
 enddo
 
+!init_field_api(lvordiv, luvders,lscders)
+
 ! Allocate grid-point arrays
 if (lvordiv) then
   jbegin_uv = 1
@@ -648,6 +668,15 @@ do jstep = 1, iters+iters_warmup
        & pgp2=zgp2,                         &
        & pgp3a=zgp3a)
   endif
+
+  CALL INV_TRANS_FIELD_API (YDFSPVOR=YLFSPVOR, YDFSPDIV=YLFSPDIV, YDFSPSCALAR=YLFSPSCALAR, &
+                        & YDFU=YLFU, YDFV=YLFV, YDFSCALAR=YLFSCALAR, &
+                        & YDFUDM=YLFUDM, YDFVDM=YLFVDM, &
+                        & YDFSCALARDM=YLFSCALARDM, YDFSCALARDL=YLFSCALARDL, &
+                        & YDFVOR=YLFVOR, YDFDIV=YLFDIV, &
+                        & KSPEC=NSPEC2, KPROMA=NPROMA, KGPBLKS=NGPBLKS, KGPTOT=NGPTOT, KFLEVG=NFLEVG, KFLEVL=NFLEVL,& 
+                        & LDACC=LLACC, LDVERBOSE =.TRUE.)
+
   call gstats(4,1)
 
   ztstep1(jstep) = (timef() - ztstep1(jstep))/1000.0_jprd
@@ -1463,6 +1492,13 @@ subroutine set_ectrans_gpu_nflev(kflev)
   character(len=32) :: ECTRANS_GPU_NFLEV
   write(ECTRANS_GPU_NFLEV,'(A,I0)') "ECTRANS_GPU_NFLEV=",kflev
   call ec_putenv(ECTRANS_GPU_NFLEV, overwrite=.true.)
+end subroutine
+
+subroutine init_field_api(kvordiv, kuvders,kscders)
+  logical, intent(in) :: kvordiv
+  logical, intent(in) :: kuvders
+  logical, intent(in) :: kscders
+
 end subroutine
 
 end program ectrans_benchmark

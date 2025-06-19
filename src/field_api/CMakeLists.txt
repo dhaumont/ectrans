@@ -15,13 +15,12 @@ function(generate_backend_sources)
   file(MAKE_DIRECTORY ${destination}/field_api_${backend})
   file(MAKE_DIRECTORY ${destination}/field_api_${backend}/trans)
 
-
+  set(files)
   list( APPEND files
-  field_api_ectrans_module.F90
-  trans/dir_trans_field_api.F90
-  trans/inv_trans_field_api.F90
+    field_api_ectrans_mod.F90
+    trans/dir_trans_field_api_mod.F90
+    trans/inv_trans_field_api_mod.F90
   )
-
 
   set(outfiles)
   foreach(file_i ${files})
@@ -31,7 +30,7 @@ function(generate_backend_sources)
     get_filename_component(outfile_dir     ${file_i} DIRECTORY)
     #set(outfile "${destination}/${file_i}")
     set(outfile "${destination}/${outfile_name_we}_${backend}${outfile_ext}")
-    ecbuild_debug("Generate ${outfile}")
+    message("Denis: Generate ${outfile}")
     generate_file(BACKEND ${backend} INPUT ${CMAKE_CURRENT_SOURCE_DIR}/${file_i} OUTPUT ${outfile})
     list(APPEND outfiles ${outfile})
   endforeach(file_i)
@@ -39,21 +38,40 @@ function(generate_backend_sources)
 endfunction(generate_backend_sources)
 
 
+set( BUILD_INTERFACE_INCLUDE_DIR ${CMAKE_BINARY_DIR}/include/ectrans )
+
 # loop over precisions
-foreach( prec dp )
+foreach( prec dp)
+message("Denis: Have ${prec}?")
   if( HAVE_${prec} )
-   generate_backend_sources( BACKEND ${prec} 
-                             OUTPUT ectrans_field_api_${prec}_src  
-                             DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_field_api_${prec})
- 
+  message("Denis: Enter ${prec}")
+    #generate_backend_sources(BACKEND ${prec} 
+     #                        OUTPUT ectrans_field_api_${prec}_src  
+      #                       DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_field_api_${prec})
+      set(files)
+      list( APPEND files
+        field_api_ectrans_mod.F90
+        trans/dir_trans_field_api_mod.F90
+        trans/inv_trans_field_api_mod.F90
+      )
+    
+    message("Denis:${ectrans_field_api_${prec}_src}")
     ecbuild_add_library(
        TARGET           ectrans_field_api_${prec}
        LINKER_LANGUAGE  Fortran
-       SOURCES          ${ectrans_field_api_${prec}_src}
-       PUBLIC_LIBS      field_api_${prec} fiat trans_${prec} parkind_${prec}
-       PUBLIC_INCLUDES   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/trans/include/ectrans>
+      # SOURCES          ${ectrans_field_api_${prec}_src}
+      SOURCES           ${files}
+      PUBLIC_LIBS       ectrans_${prec} field_api_${prec} fiat parkind_${prec}
+       PUBLIC_INCLUDES  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/trans/include/ectrans>       
        )
-  endif()
+
+    ectrans_target_fortran_module_directory(
+      TARGET            ectrans_field_api_${prec}
+      MODULE_DIRECTORY  ${CMAKE_BINARY_DIR}/module/ectrans
+      INSTALL_DIRECTORY module/ectrans
+    )
+    
+    endif()
 endforeach()
 
 
