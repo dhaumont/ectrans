@@ -4,6 +4,40 @@
 # In applying this licence, ECMWF does not waive the privileges and immunities
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
+
+function(generate_file)
+  set (options)
+  set (oneValueArgs INPUT OUTPUT BACKEND)
+  set (multiValueArgs)
+  cmake_parse_arguments(_PAR "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  set(output  ${_PAR_OUTPUT})
+  set(input   ${_PAR_INPUT})
+  set(backend ${_PAR_BACKEND})
+  set(sed_rules ${PROJECT_SOURCE_DIR}/src/field_api/sedrenames.txt)
+
+  set( JPRB_dp JPRD )
+  set( jprb_dp jprd )
+  set( JPRB_sp JPRM )
+  set( jprb_sp jprm )
+  set( JPRB_gpu_dp JPRD )
+  set( jprb_gpu_dp jprd )
+  set( JPRB_gpu_sp JPRM )
+  set( jprb_gpu_sp jprm )
+
+  add_custom_command(
+    OUTPUT  ${output}
+    COMMAND  cat ${sed_rules} |
+             sed -e "s/VARIANTDESIGNATOR/${backend}/g" |
+             sed -e "s/TYPEDESIGNATOR_UPPER/${JPRB_${backend}}/g" |
+             sed -e "s/TYPEDESIGNATOR_LOWER/${jprb_${backend}}/g" |
+             sed -rf - ${input} > ${output}
+    DEPENDS  ${input} ${sed_rules}
+    COMMENT "Generating ${output}"
+    VERBATIM
+  )
+endfunction(generate_file)
+
 function(generate_backend_sources)
   set (options)
   set (oneValueArgs BACKEND DESTINATION OUTPUT)
@@ -43,6 +77,8 @@ set( BUILD_INTERFACE_INCLUDE_DIR ${CMAKE_BINARY_DIR}/include/ectrans )
 # loop over precisions
 foreach( prec dp)
   if( HAVE_${prec} )
+   
+     generate_backend_includes(BACKEND ${prec} TARGET ectrans_field_api_${prec}_includes DESTINATION ${BUILD_INTERFACE_INCLUDE_DIR} INCLUDE_DIRECTORY ${PROJECT_SOURCE_DIR}/src/trans/include )
 
     generate_backend_sources(BACKEND ${prec} 
                              OUTPUT ectrans_field_api_${prec}_src  
