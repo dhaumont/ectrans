@@ -1,258 +1,258 @@
-MODULE DIR_TRANS_FIELD_API_MOD
-USE FIELD_API_ECTRANS_MOD
-USE PARKIND1  ,ONLY : JPIM     ,JPRB
+module dir_trans_field_api_mod
+use field_api_ectrans_mod
+use parkind1  ,only : jpim     ,jprb
 
-IMPLICIT NONE
-
-
-CONTAINS
-
-SUBROUTINE DIR_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
-                             & YDFU, YDFV, YDFVOR,YDFDIV,YDFSCALAR, &
-                             & KSPEC, KPROMA, KGPBLKS, KGPTOT, KFLEVG, KFLEVL,&
-                             & LDACC, LDVERBOSE)
+implicit none
 
 
-TYPE(FIELD_BASIC_PTR),INTENT(IN), OPTIONAL  :: YDFSPVOR(:), YDFSPDIV(:)        !Spectral vector fields : vorticity and divergence fields (in)
-TYPE(FIELD_BASIC_PTR),INTENT(IN), OPTIONAL  :: YDFSPSCALAR(:)                !Spectral scalar fields (in)
+contains
 
-TYPE(FIELD_BASIC_PTR),INTENT(IN), OPTIONAL  :: YDFU(:),YDFV(:)                 !Grid vector fields     (out)
-TYPE(FIELD_BASIC_PTR),INTENT(IN), OPTIONAL  :: YDFVOR(:),YDFDIV(:)             !Grid vector fields :vorticity and divergence     (out)
-TYPE(FIELD_BASIC_PTR),INTENT(IN), OPTIONAL  :: YDFSCALAR(:)                  !Grid scalar fields     (out)
-
-INTEGER(KIND=JPIM), INTENT(IN) ::KSPEC
-INTEGER(KIND=JPIM), INTENT(IN) ::KPROMA
-INTEGER(KIND=JPIM), INTENT(IN) ::KGPBLKS
-INTEGER(KIND=JPIM), INTENT(IN) ::KGPTOT
-INTEGER(KIND=JPIM), INTENT(IN) :: KFLEVG
-INTEGER(KIND=JPIM), INTENT(IN) :: KFLEVL
-LOGICAL, INTENT(IN), OPTIONAL  :: LDACC
-LOGICAL, INTENT(IN), OPTIONAL  :: LDVERBOSE
-
-! Local variables
-
-! Temporary arrays:
-
-TYPE(SPEC_VIEW), ALLOCATABLE  :: YLSPVVOR(:), YLSPVDIV(:)
-TYPE(SPEC_VIEW), ALLOCATABLE  :: YLSPVSCALAR(:)
-
-TYPE(GRID_VIEW), ALLOCATABLE  :: YLGVU(:),YLGVV(:)
-TYPE(GRID_VIEW), ALLOCATABLE  :: YLGVVOR(:),YLGVDIV(:)
-TYPE(GRID_VIEW), ALLOCATABLE  :: YLGVSCALAR(:)
-
-REAL(KIND=JPRB),ALLOCATABLE :: ZPSPVOR(:,:),ZPSPDIV(:,:)          ! Spectral vector fields (in)
-REAL(KIND=JPRB),ALLOCATABLE :: ZPSPSC2(:,:)                       ! Spectral surface scalar fields(in)
-REAL(KIND=JPRB),ALLOCATABLE :: ZPGPUV(:,:,:,:)                    ! Grid vector fields (out)
-REAL(KIND=JPRB),ALLOCATABLE :: ZPGP2(:,:,:)                       ! Grid surface scalar fields (out)
-
-INTEGER(KIND=JPIM)          :: ISPUV                              ! Number of input spectral vector fields
-INTEGER(KIND=JPIM)          :: IFLDXG
-INTEGER(KIND=JPIM)          :: IFLDXL
-INTEGER(KIND=JPIM)          :: IFLDXGUV
-INTEGER(KIND=JPIM)          :: IFLDXLUV
-INTEGER(KIND=JPIM)          :: IUVG                               ! Number of output vector fields
-INTEGER(KIND=JPIM)          :: ISCDIM                             ! Size of output scalar fields array
-INTEGER(KIND=JPIM)          :: IUVDIM                             ! Size of output vector fields array
-INTEGER(KIND=JPIM)          :: ID,IOFFSET,JLEV
-INTEGER(KIND=JPIM)          :: IEND
+subroutine dir_trans_field_api(ydfspvor,ydfspdiv,ydfspscalar, &
+                             & ydfu, ydfv, ydfvor,ydfdiv,ydfscalar, &
+                             & kspec, kproma, kgpblks, kgptot, kflevg, kflevl,&
+                             & ldacc, ldverbose)
 
 
-INTEGER(KIND=JPIM),ALLOCATABLE :: IVSETUV(:)
-INTEGER(KIND=JPIM),ALLOCATABLE :: IVSETSC2(:)
+type(field_basic_ptr),intent(in), optional  :: ydfspvor(:), ydfspdiv(:)        !spectral vector fields : vorticity and divergence fields (in)
+type(field_basic_ptr),intent(in), optional  :: ydfspscalar(:)                !spectral scalar fields (in)
 
-INTEGER(KIND=JPIM)          :: JFLD                                 ! field counter
-LOGICAL          :: LLSCDERS                                        ! indicating if derivatives of scalar variables are req.
-LOGICAL          :: LLVORGP                                         ! indicating if grid-point vorticity is req.
-LOGICAL          :: LLDIVGP                                         ! indicating if grid-point divergence is req.
-LOGICAL          :: LLUVDER                                         ! indicating if E-W derivatives of u and v are req.
-LOGICAL          :: LLVERBOSE                                       ! indicating if verbose output is req.
+type(field_basic_ptr),intent(in), optional  :: ydfu(:),ydfv(:)                 !grid vector fields     (out)
+type(field_basic_ptr),intent(in), optional  :: ydfvor(:),ydfdiv(:)             !grid vector fields :vorticity and divergence     (out)
+type(field_basic_ptr),intent(in), optional  :: ydfscalar(:)                  !grid scalar fields     (out)
+
+integer(kind=jpim), intent(in) ::kspec
+integer(kind=jpim), intent(in) ::kproma
+integer(kind=jpim), intent(in) ::kgpblks
+integer(kind=jpim), intent(in) ::kgptot
+integer(kind=jpim), intent(in) :: kflevg
+integer(kind=jpim), intent(in) :: kflevl
+logical, intent(in), optional  :: ldacc
+logical, intent(in), optional  :: ldverbose
+
+! local variables
+
+! temporary arrays:
+
+type(spec_view), allocatable  :: ylspvvor(:), ylspvdiv(:)
+type(spec_view), allocatable  :: ylspvscalar(:)
+
+type(grid_view), allocatable  :: ylgvu(:),ylgvv(:)
+type(grid_view), allocatable  :: ylgvvor(:),ylgvdiv(:)
+type(grid_view), allocatable  :: ylgvscalar(:)
+
+real(kind=jprb),allocatable :: zpspvor(:,:),zpspdiv(:,:)          ! spectral vector fields (in)
+real(kind=jprb),allocatable :: zpspsc2(:,:)                       ! spectral surface scalar fields(in)
+real(kind=jprb),allocatable :: zpgpuv(:,:,:,:)                    ! grid vector fields (out)
+real(kind=jprb),allocatable :: zpgp2(:,:,:)                       ! grid surface scalar fields (out)
+
+integer(kind=jpim)          :: ispuv                              ! number of input spectral vector fields
+integer(kind=jpim)          :: ifldxg
+integer(kind=jpim)          :: ifldxl
+integer(kind=jpim)          :: ifldxguv
+integer(kind=jpim)          :: ifldxluv
+integer(kind=jpim)          :: iuvg                               ! number of output vector fields
+integer(kind=jpim)          :: iscdim                             ! size of output scalar fields array
+integer(kind=jpim)          :: iuvdim                             ! size of output vector fields array
+integer(kind=jpim)          :: id,ioffset,jlev
+integer(kind=jpim)          :: iend
+
+
+integer(kind=jpim),allocatable :: ivsetuv(:)
+integer(kind=jpim),allocatable :: ivsetsc2(:)
+
+integer(kind=jpim)          :: jfld                                 ! field counter
+logical          :: llscders                                        ! indicating if derivatives of scalar variables are req.
+logical          :: llvorgp                                         ! indicating if grid-point vorticity is req.
+logical          :: lldivgp                                         ! indicating if grid-point divergence is req.
+logical          :: lluvder                                         ! indicating if e-w derivatives of u and v are req.
+logical          :: llverbose                                       ! indicating if verbose output is req.
 #include "dir_trans.h"
 #include "abor1.intfb.h"
 
-LLVERBOSE = .FALSE.
-IF (PRESENT(LDVERBOSE))  LLVERBOSE = LDVERBOSE
+llverbose = .false.
+if (present(ldverbose))  llverbose = ldverbose
 
-! 1. VECTOR FIELDS TRANSFORMATION
+! 1. vector fields transformation
 
-! Check if all provided vector field information is consistent
-IF (PRESENT(YDFU) .NEQV. PRESENT(YDFV)) CALL ABOR1("[ECTRANS_API] IYDU/YDFV")
-IF (PRESENT(YDFU) .NEQV. PRESENT(YDFSPVOR)) CALL ABOR1("[ECTRANS_API] IYDU/YDFVOR")
-IF (PRESENT(YDFU) .NEQV. PRESENT(YDFSPDIV)) CALL ABOR1("[ECTRANS_API] IYDU/YDFDIV")
+! check if all provided vector field information is consistent
+if (present(ydfu) .neqv. present(ydfv)) call abor1("[ectrans_api] iydu/ydfv")
+if (present(ydfu) .neqv. present(ydfspvor)) call abor1("[ectrans_api] iydu/ydfvor")
+if (present(ydfu) .neqv. present(ydfspdiv)) call abor1("[ectrans_api] iydu/ydfdiv")
 
-IUVDIM = 0
-! Do we have vector fields?
+iuvdim = 0
+! do we have vector fields?
 
-IF (PRESENT(YDFU)) THEN
+if (present(ydfu)) then
 
-  IF ((SIZE(YDFU)/= SIZE(YDFV)).OR.(SIZE(YDFU)/= SIZE(YDFSPDIV)).OR.(SIZE(YDFU)/= SIZE(YDFSPVOR))) THEN
-     CALL ABOR1("[ECTRANS_API] INVALID LIST SIZES:")
-  ENDIF
-  YLSPVVOR = LS (YDFSPVOR, LDACC)
-  YLSPVDIV = LS (YDFSPDIV, LDACC)
+  if ((size(ydfu)/= size(ydfv)).or.(size(ydfu)/= size(ydfspdiv)).or.(size(ydfu)/= size(ydfspvor))) then
+     call abor1("[ectrans_api] invalid list sizes:")
+  endif
+  ylspvvor = ls (ydfspvor, ldacc)
+  ylspvdiv = ls (ydfspdiv, ldacc)
 
-  YLGVU = LG (YDFU, LDACC)
-  YLGVV = LG (YDFV, LDACC)
-  IF ((SIZE (YLGVU) /= SIZE (YLGVV)) .OR. (SIZE (YLSPVVOR) /= SIZE (YLSPVDIV))) THEN
-     CALL ABOR1("[ECTRANS_API] INCONSISTENT NUMBER OF FIELD_VIEW FOR VECTORS:")
-  ENDIF
-   IF (((SIZE (YLGVU) / SIZE (YDFU)) /= KFLEVG) .OR. ((SIZE (YLSPVVOR) / SIZE (YDFSPVOR)) /= KFLEVL)) THEN
-     CALL ABOR1("[ECTRANS_API] INCONSISTENT KFLEVG OR KFLEVL")
-  ENDIF
+  ylgvu = lg (ydfu, ldacc)
+  ylgvv = lg (ydfv, ldacc)
+  if ((size (ylgvu) /= size (ylgvv)) .or. (size (ylspvvor) /= size (ylspvdiv))) then
+     call abor1("[ectrans_api] inconsistent number of field_view for vectors:")
+  endif
+   if (((size (ylgvu) / size (ydfu)) /= kflevg) .or. ((size (ylspvvor) / size (ydfspvor)) /= kflevl)) then
+     call abor1("[ectrans_api] inconsistent kflevg or kflevl")
+  endif
 
-  IUVG = SIZE(YDFU)           ! Number of output  vector fields
-  ISPUV = SIZE(YDFSPVOR)
+  iuvg = size(ydfu)           ! number of output  vector fields
+  ispuv = size(ydfspvor)
 
-  IUVDIM = 2
+  iuvdim = 2
 
-  IF (PRESENT(YDFDIV)) THEN
-     LLDIVGP = .TRUE.
-     IUVDIM = 5
-     YLGVDIV = LG (YDFDIV, LDACC)
-  ENDIF
+  if (present(ydfdiv)) then
+     lldivgp = .true.
+     iuvdim = 5
+     ylgvdiv = lg (ydfdiv, ldacc)
+  endif
 
-  IF (PRESENT(YDFVOR)) THEN
-     LLVORGP = .TRUE.
-     IUVDIM = 6
-     YLGVVOR = LG (YDFVOR, LDACC)
-  ENDIF
+  if (present(ydfvor)) then
+     llvorgp = .true.
+     iuvdim = 6
+     ylgvvor = lg (ydfvor, ldacc)
+  endif
    
-  ! Allocate vector field input in spectral space
-  ALLOCATE(ZPSPVOR(SIZE(YLSPVVOR),KSPEC))
-  ALLOCATE(ZPSPDIV(SIZE(YLSPVDIV),KSPEC))
+  ! allocate vector field input in spectral space
+  allocate(zpspvor(size(ylspvvor),kspec))
+  allocate(zpspdiv(size(ylspvdiv),kspec))
 
-  ! Allocate vector field output in grid space
-  ALLOCATE(ZPGPUV(KPROMA,KFLEVG, IUVG * IUVDIM,KGPBLKS))
-  ALLOCATE(IVSETUV(KFLEVG))
+  ! allocate vector field output in grid space
+  allocate(zpgpuv(kproma,kflevg, iuvg * iuvdim,kgpblks))
+  allocate(ivsetuv(kflevg))
 
-  ! Copy from fields to temporary arrays (1D copy thanks to FIELD VIEW)
+  ! copy from fields to temporary arrays (1d copy thanks to field view)
 
-  DO JFLD=1,SIZE(YLSPVVOR)
-     ZPSPVOR(JFLD,:) = YLSPVVOR(JFLD)%VIEW%P(:)
-     ZPSPDIV(JFLD,:) = YLSPVDIV(JFLD)%VIEW%P(:)
-  ENDDO
-
-
-ELSE
-  ! YDFU is not provided, we do not have to compute the corresponding vector output
-  ISPUV = 0
-  ALLOCATE(ZPGPUV(0,ISPUV,2,0),ZPSPVOR(0,0),ZPSPDIV(0,0))
-ENDIF
-
-! 2. SCALAR FIELDS TRANSFORMATION
-
-! Check if all provided scalar field information is consistent
-IF (PRESENT(YDFSPSCALAR) .NEQV. PRESENT(YDFSCALAR))  CALL ABOR1("[ECTRANS_API] GRID/SPEC")
-
-IF (PRESENT(YDFSPSCALAR)) THEN
-
-  IF ((SIZE(YDFSPSCALAR)/= SIZE(YDFSCALAR)))  CALL ABOR1("[ECTRANS_API] INCONSISTENT NUMBER OF FIELD_VIEW FOR YDFSCALAR")
-
-  YLGVSCALAR = LG (YDFSCALAR, LDACC)
-  YLSPVSCALAR = LS (YDFSPSCALAR, LDACC)
-
-  IFLDXG = SIZE(YLGVSCALAR) ! Number of output scalar fields in grid space
-
-  IFLDXL = 0  ! Number of input scalar fields in spectral space
-  DO JFLD = 1, SIZE(YLGVSCALAR) ! Number of output scalar fields in grid space
-  IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) IFLDXL = IFLDXL + 1
-  END DO 
-
-  ISCDIM = 1
-
-   ! Allocate scalar field input in spectral space
-  ALLOCATE(ZPSPSC2(IFLDXL,KSPEC))
-
-  ! Allocate scalar field output in grid space
-  ALLOCATE(ZPGP2(KPROMA,IFLDXG * ISCDIM,KGPBLKS))
-  ALLOCATE(IVSETSC2(IFLDXG))
-
- ! Copy scalar spectral fields to temporary arrays (1D copy thanks to FIELD VIEW)
-  ID = 1
-  DO JFLD = 1, SIZE(YLSPVSCALAR) ! Number of output scalar fields in grid space
-     IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) THEN
-         ZPSPSC2(ID,:) = YLSPVSCALAR(JFLD)%VIEW%P(:)
-         ID = ID + 1 
-     ENDIF
-  ENDDO
-
- DO JFLD=1, IFLDXG
-    IVSETSC2(JFLD) = YLGVSCALAR(JFLD)%IVSET
- ENDDO
+  do jfld=1,size(ylspvvor)
+     zpspvor(jfld,:) = ylspvvor(jfld)%view%p(:)
+     zpspdiv(jfld,:) = ylspvdiv(jfld)%view%p(:)
+  enddo
 
 
-DO JFLD=1,IUVG
-  DO JLEV=1,KFLEVG
-     ID = JLEV + (JFLD -1) * KFLEVG
-     IF (JFLD .EQ. 1) IVSETUV(JLEV) = YLGVU(ID)%IVSET
-     IF (IVSETUV(JLEV) .NE. YLGVU(ID)%IVSET)  CALL ABOR1("[ECTRANS_API] IVSETUV INCONSISTENT WITH YLGVU%IVSET")
-     IF (IVSETUV(JLEV) .NE. YLGVV(ID)%IVSET)  CALL ABOR1("[ECTRANS_API] IVSETUV INCONSISTENT WITH YLGVV%IVSET")
-  ENDDO
-ENDDO
+else
+  ! ydfu is not provided, we do not have to compute the corresponding vector output
+  ispuv = 0
+  allocate(zpgpuv(0,ispuv,2,0),zpspvor(0,0),zpspdiv(0,0))
+endif
+
+! 2. scalar fields transformation
+
+! check if all provided scalar field information is consistent
+if (present(ydfspscalar) .neqv. present(ydfscalar))  call abor1("[ectrans_api] grid/spec")
+
+if (present(ydfspscalar)) then
+
+  if ((size(ydfspscalar)/= size(ydfscalar)))  call abor1("[ectrans_api] inconsistent number of field_view for ydfscalar")
+
+  ylgvscalar = lg (ydfscalar, ldacc)
+  ylspvscalar = ls (ydfspscalar, ldacc)
+
+  ifldxg = size(ylgvscalar) ! number of output scalar fields in grid space
+
+  ifldxl = 0  ! number of input scalar fields in spectral space
+  do jfld = 1, size(ylgvscalar) ! number of output scalar fields in grid space
+  if (associated(ylspvscalar(jfld)%view%p)) ifldxl = ifldxl + 1
+  end do 
+
+  iscdim = 1
+
+   ! allocate scalar field input in spectral space
+  allocate(zpspsc2(ifldxl,kspec))
+
+  ! allocate scalar field output in grid space
+  allocate(zpgp2(kproma,ifldxg * iscdim,kgpblks))
+  allocate(ivsetsc2(ifldxg))
+
+ ! copy scalar spectral fields to temporary arrays (1d copy thanks to field view)
+  id = 1
+  do jfld = 1, size(ylspvscalar) ! number of output scalar fields in grid space
+     if (associated(ylspvscalar(jfld)%view%p)) then
+         zpspsc2(id,:) = ylspvscalar(jfld)%view%p(:)
+         id = id + 1 
+     endif
+  enddo
+
+ do jfld=1, ifldxg
+    ivsetsc2(jfld) = ylgvscalar(jfld)%ivset
+ enddo
+
+
+do jfld=1,iuvg
+  do jlev=1,kflevg
+     id = jlev + (jfld -1) * kflevg
+     if (jfld .eq. 1) ivsetuv(jlev) = ylgvu(id)%ivset
+     if (ivsetuv(jlev) .ne. ylgvu(id)%ivset)  call abor1("[ectrans_api] ivsetuv inconsistent with ylgvu%ivset")
+     if (ivsetuv(jlev) .ne. ylgvv(id)%ivset)  call abor1("[ectrans_api] ivsetuv inconsistent with ylgvv%ivset")
+  enddo
+enddo
 !
-ELSE
-  IFLDXG = 0
-  ALLOCATE(ZPGP2(0,IFLDXG,0),ZPSPSC2(0,1))
-ENDIF
+else
+  ifldxg = 0
+  allocate(zpgp2(0,ifldxg,0),zpspsc2(0,1))
+endif
 
 
-! 3. CALL DIR_TRANS
+! 3. call dir_trans
 
-	CALL DIR_TRANS(PSPVOR = ZPSPVOR,PSPDIV = ZPSPDIV,PGPUV = ZPGPUV,KVSETUV = IVSETUV, &
-	             & PSPSC2 = ZPSPSC2,PGP2 = ZPGP2, KVSETSC2 = IVSETSC2, &
-	             & KPROMA = KPROMA)
-! 4. Copy back data to fields
+	call dir_trans(pspvor = zpspvor,pspdiv = zpspdiv,pgpuv = zpgpuv,kvsetuv = ivsetuv, &
+	             & pspsc2 = zpspsc2,pgp2 = zpgp2, kvsetsc2 = ivsetsc2, &
+	             & kproma = kproma)
+! 4. copy back data to fields
 
-! Remove garbage at the end of arrays
-  IEND = KGPTOT - KPROMA * (KGPBLKS - 1)
-  ZPGPUV (IEND+1:, :, :, KGPBLKS) = 0
-  ZPGP2 (IEND+1:, :, KGPBLKS) = 0
+! remove garbage at the end of arrays
+  iend = kgptot - kproma * (kgpblks - 1)
+  zpgpuv (iend+1:, :, :, kgpblks) = 0
+  zpgp2 (iend+1:, :, kgpblks) = 0
 
-  ! Copy vector fields back from temporary vector arrays
-IOFFSET = 0
+  ! copy vector fields back from temporary vector arrays
+ioffset = 0
 
-IF (LLVORGP) THEN
-  DO JFLD=1,IUVG
-    DO JLEV=1,KFLEVG
-     ID = JLEV + (JFLD -1) * KFLEVG
-     YLGVVOR(ID)%VIEW%P(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
-    ENDDO
-  ENDDO
-  IOFFSET = IOFFSET + 1
-ENDIF
+if (llvorgp) then
+  do jfld=1,iuvg
+    do jlev=1,kflevg
+     id = jlev + (jfld -1) * kflevg
+     ylgvvor(id)%view%p(:,:) = zpgpuv(:, jlev,jfld+ioffset*iuvg,:)
+    enddo
+  enddo
+  ioffset = ioffset + 1
+endif
 
-IF (LLDIVGP) THEN
-  DO JFLD=1,IUVG
-    DO JLEV=1,KFLEVG
-     ID = JLEV + (JFLD -1) * KFLEVG
-     YLGVDIV(ID)%VIEW%P(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
-    ENDDO
-  ENDDO
-  IOFFSET = IOFFSET + 1
-ENDIF
+if (lldivgp) then
+  do jfld=1,iuvg
+    do jlev=1,kflevg
+     id = jlev + (jfld -1) * kflevg
+     ylgvdiv(id)%view%p(:,:) = zpgpuv(:, jlev,jfld+ioffset*iuvg,:)
+    enddo
+  enddo
+  ioffset = ioffset + 1
+endif
 
-DO JFLD=1,IUVG
-  DO JLEV=1,KFLEVG
-     ID = JLEV + (JFLD -1) * KFLEVG
-     YLGVU(ID)%VIEW%P(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
-     YLGVV(ID)%VIEW%P(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
-  ENDDO
-ENDDO
+do jfld=1,iuvg
+  do jlev=1,kflevg
+     id = jlev + (jfld -1) * kflevg
+     ylgvu(id)%view%p(:,:) =  zpgpuv(:,jlev,jfld+ioffset*iuvg,:)
+     ylgvv(id)%view%p(:,:) =  zpgpuv(:,jlev,jfld+(ioffset+1)*iuvg,:)
+  enddo
+enddo
 
-! Copy scalar fields back from temporary scalar arrays
-DO JFLD=1, IFLDXG
-    YLGVSCALAR(JFLD)%VIEW%P(:,:) = ZPGP2(:,JFLD,:)
-ENDDO
+! copy scalar fields back from temporary scalar arrays
+do jfld=1, ifldxg
+    ylgvscalar(jfld)%view%p(:,:) = zpgp2(:,jfld,:)
+enddo
 
 
-DEALLOCATE(ZPSPVOR)
-DEALLOCATE(ZPSPDIV)
-DEALLOCATE(ZPSPSC2)
-DEALLOCATE(ZPGPUV)
-DEALLOCATE(ZPGP2)
-DEALLOCATE(IVSETUV)
-DEALLOCATE(IVSETSC2)
+deallocate(zpspvor)
+deallocate(zpspdiv)
+deallocate(zpspsc2)
+deallocate(zpgpuv)
+deallocate(zpgp2)
+deallocate(ivsetuv)
+deallocate(ivsetsc2)
 
-END SUBROUTINE DIR_TRANS_FIELD_API
+end subroutine dir_trans_field_api
 
-END MODULE DIR_TRANS_FIELD_API_MOD
+end module dir_trans_field_api_mod
 
