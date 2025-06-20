@@ -171,6 +171,7 @@ logical :: luvders = .false.
 logical :: lprint_norms = .false. ! Calculate and print spectral norms
 logical :: lmeminfo = .false. ! Show information from FIAT routine ec_meminfo at the end
 logical :: LLACC = .false.
+logical :: lfield_api = .false.
 
 integer(kind=jpim) :: nstats_mem = 0
 integer(kind=jpim) :: ntrace_stats = 0
@@ -490,6 +491,7 @@ if (verbosity >= 0 .and. myproc == 1) then
   write(nout,'("lvordiv    ",l1)') lvordiv
   write(nout,'("lscders    ",l1)') lscders
   write(nout,'("luvders    ",l1)') luvders
+  write(nout,'("lfield_api ",l1)') lfield_api
   write(nout,'(" ")')
   write(nout,'(a)') '======= End of runtime parameters ======='
   write(nout,'(" ")')
@@ -591,6 +593,7 @@ write(nout,*) "zgmv", shape(zgmv)
 write(nout,*) "zgmvs", shape(zgmvs)
 write(nout,*) "zgp2", shape(zgp2)
 
+if (lfield_api) then
 wf = wrap_fields(lvordiv, lscders, luvders, &
                 & sp3d, zspsc2, zgmv, zgmvs, zgp2, &
                 & jbegin_uv,jend_uv, &
@@ -603,7 +606,7 @@ call output_wrapped_file(wf)
 
 ylf = create_fields_lists(wf,ivset,ivsetsc)
 call output_fields_lists(ylf)
-
+endif
 !===================================================================================================
 ! Allocate norm arrays
 !===================================================================================================
@@ -698,6 +701,9 @@ do jstep = 1, iters+iters_warmup
 
   ztstep1(jstep) = timef()
   call gstats(4,0)
+
+  if (.NOT. lfield_api) then
+  write(nout,*) "INV_TRANS"
   if (lvordiv) then
     call inv_trans(kresol=1, kproma=nproma, &
        & pspsc2=zspsc2,                     & ! spectral surface pressure
@@ -724,7 +730,8 @@ do jstep = 1, iters+iters_warmup
        & pgp2=zgp2,                         &
        & pgp3a=zgp3a)
   endif
-#if 1
+else
+  write(nout,*) "INV_TRANS_FIELD_API"
   CALL INV_TRANS_FIELD_API (YDFSPVOR=ylf%SPVOR, YDFSPDIV=ylf%SPDIV, YDFSPSCALAR=ylf%SPSCALAR, &
                         & YDFU=ylf%U, YDFV=ylf%V, YDFSCALAR=ylf%SCALAR, &
                         & YDFUDM=ylf%UDM, YDFVDM=ylf%VDM, &
@@ -732,7 +739,7 @@ do jstep = 1, iters+iters_warmup
                         & YDFVOR=ylf%VOR, YDFDIV=ylf%DIV, &
                         & KSPEC=NSPEC2, KPROMA=NPROMA, KGPBLKS=NGPBLKS, KGPTOT=NGPTOT, KFLEVG=NFLEVG, KFLEVL=NFLEVL,& 
                         & LDACC=LLACC, LDVERBOSE =.TRUE.)
-#endif
+endif
   call gstats(4,1)
 
   ztstep1(jstep) = (timef() - ztstep1(jstep))/1000.0_jprd
@@ -784,8 +791,10 @@ do jstep = 1, iters+iters_warmup
   endif
   call gstats(5,1)
 
+  if (lfield_api) then
   call delete_wrapped_fields(wf)
   call delete_fields_lists(ylf)
+  endif
   ztstep2(jstep) = (timef() - ztstep2(jstep))/1000.0_jprd
 
   ztstep(jstep) = (timef() - ztstep(jstep))/1000.0_jprd
@@ -1216,6 +1225,7 @@ subroutine print_help(unit)
     & subroutine on memory usage, thread-binding etc."
   write(nout, "(a)") "    --nprtrv            Size of V set in spectral decomposition"
   write(nout, "(a)") "    --nprtrw            Size of W set in spectral decomposition"
+  write(nout, "(a)") "    --field-api         Use field API interface"
   write(nout, "(a)") "    -c, --check VALUE   The multiplier of the machine epsilon used as a&
    & tolerance for correctness checking"
   write(nout, "(a)") ""
@@ -1324,6 +1334,7 @@ subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, n
       case('--nprtrv'); nprtrv = get_int_value('--nprtrv', iarg)
       case('--nprtrw'); nprtrw = get_int_value('--nprtrw', iarg)
       case('-c', '--check'); ncheck = get_int_value('-c', iarg)
+      case('--field-api'); lfield_api = .True.
       case default
         call parsing_failed("Unrecognised argument: " // trim(carg))
 
