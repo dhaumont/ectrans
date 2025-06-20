@@ -76,13 +76,13 @@ TYPE WRAPPED_FIELDS
 END TYPE WRAPPED_FIELDS
 
 TYPE FIELDS_LISTS
-  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: U (:), V (:)
-  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: SCALAR (:)
-  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: SPVOR (:), SPDIV (:)
-  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: VOR (:), DIV (:)
-  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: SPSCALAR (:)
-  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: UDM (:), VDM (:)
-  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: SCALARDM (:), SCALARDL (:)
+  TYPE (FIELD_BASIC_PTR), POINTER:: U (:), V (:)
+  TYPE (FIELD_BASIC_PTR), POINTER:: SCALAR (:)
+  TYPE (FIELD_BASIC_PTR), POINTER:: SPVOR (:), SPDIV (:)
+  TYPE (FIELD_BASIC_PTR), POINTER:: VOR (:), DIV (:)
+  TYPE (FIELD_BASIC_PTR), POINTER:: SPSCALAR (:)
+  TYPE (FIELD_BASIC_PTR), POINTER:: UDM (:), VDM (:)
+  TYPE (FIELD_BASIC_PTR), POINTER:: SCALARDM (:), SCALARDL (:)
 END TYPE FIELDS_LISTS
 
 ! Number of points in top/bottom latitudes
@@ -564,6 +564,25 @@ zgpuv => zgmv(:,:,1:jend_vder_EW,:)
 zgp3a => zgmv(:,:,jbegin_sc:jend_scder_EW,:)
 zgp2  => zgmvs(:,:,:)
 
+write(nout,*) "jbegin_uv", jbegin_uv
+write(nout,*) "jend_uv", jend_uv
+write(nout,*) "jbegin_sc", jbegin_sc
+write(nout,*) "jend_sc", jend_sc
+write(nout,*) "jbegin_scder_NS", jbegin_scder_NS
+write(nout,*) "jend_scder_NS", jend_scder_NS
+write(nout,*) "jbegin_scder_EW", jbegin_scder_EW
+write(nout,*) "jend_scder_EW", jend_scder_EW
+write(nout,*) "jbegin_uder_EW", jbegin_uder_EW
+write(nout,*) "jend_uder_EW", jend_uder_EW
+write(nout,*) "jbegin_vder_EW", jbegin_vder_EW
+write(nout,*) "jend_vder_EW", jend_vder_EW
+
+write(nout,*) "sp3d", shape(sp3d)
+write(nout,*) "zspsc2", shape(zspsc2)
+write(nout,*) "zgmv", shape(zgmv)
+write(nout,*) "zgmvs", shape(zgmvs)
+write(nout,*) "zgp2", shape(zgp2)
+
 wf = wrap_fields(lvordiv, lscders, luvders, &
                 & sp3d, zspsc2, zgmv, zgmvs, zgp2, &
                 & jbegin_uv,jend_uv, &
@@ -697,7 +716,7 @@ do jstep = 1, iters+iters_warmup
        & pgp2=zgp2,                         &
        & pgp3a=zgp3a)
   endif
-#if 0
+#if 1
   CALL INV_TRANS_FIELD_API (YDFSPVOR=ylf%SPVOR, YDFSPDIV=ylf%SPDIV, YDFSPSCALAR=ylf%SPSCALAR, &
                         & YDFU=ylf%U, YDFV=ylf%V, YDFSCALAR=ylf%SCALAR, &
                         & YDFUDM=ylf%UDM, YDFVDM=ylf%VDM, &
@@ -1605,6 +1624,7 @@ function wrap_fields(lvordiv, lscders, luvders,&
     
   wrap_fields = allocate_wrapped_fields()
 
+  
   if (lvordiv) then
     IF (jbegin_uv>0 )      CALL FIELD_NEW(wrap_fields%F_U,         DATA=zgmv(:,:,jbegin_uv,:))
     IF (jend_uv>0 )        CALL FIELD_NEW(wrap_fields%F_V,         DATA=zgmv(:,:,jend_uv,:))
@@ -1659,95 +1679,133 @@ subroutine delete_wrapped_fields(wrap_fields)
   
 end subroutine delete_wrapped_fields
 
+function allocate_fields_lists()
+  type(FIELDS_LISTS), ALLOCATABLE :: allocate_fields_lists
+  ALLOCATE(allocate_fields_lists)
+  
+  NULLIFY(allocate_fields_lists%U)
+  NULLIFY(allocate_fields_lists%V)
+  NULLIFY(allocate_fields_lists%SCALAR)
+  NULLIFY(allocate_fields_lists%SPSCALAR)
+  NULLIFY(allocate_fields_lists%SPVOR)
+  NULLIFY(allocate_fields_lists%SPDIV)
+  NULLIFY(allocate_fields_lists%VOR)
+  NULLIFY(allocate_fields_lists%DIV)
+  NULLIFY(allocate_fields_lists%UDM)
+  NULLIFY(allocate_fields_lists%VDM)
+  NULLIFY(allocate_fields_lists%SCALARDM)
+  NULLIFY(allocate_fields_lists%SCALARDL)
+end function allocate_fields_lists
+
 subroutine delete_fields_lists(fl)
   type(FIELDS_LISTS), INTENT(INOUT) ::fl
-  IF (ALLOCATED(fl%U)) DEALLOCATE(fl%U)
-  IF (ALLOCATED(fl%V)) DEALLOCATE(fl%V)
-  IF (ALLOCATED(fl%SCALAR)) DEALLOCATE(fl%SCALAR)
-  IF (ALLOCATED(fl%SPSCALAR)) DEALLOCATE(fl%SPSCALAR)
-  IF (ALLOCATED(fl%SPVOR)) DEALLOCATE(fl%SPVOR)
-  IF (ALLOCATED(fl%SPDIV)) DEALLOCATE(fl%SPDIV)
-  IF (ALLOCATED(fl%VOR)) DEALLOCATE(fl%VOR)
-  IF (ALLOCATED(fl%DIV)) DEALLOCATE(fl%DIV)
-  IF (ALLOCATED(fl%UDM)) DEALLOCATE(fl%UDM)
-  IF (ALLOCATED(fl%VDM)) DEALLOCATE(fl%VDM) 
-  IF (ALLOCATED(fl%SCALARDM)) DEALLOCATE(fl%SCALARDM)
-  IF (ALLOCATED(fl%SCALARDL)) DEALLOCATE(fl%SCALARDL)
+  IF (ASSOCIATED(fl%U)) DEALLOCATE(fl%U)
+  IF (ASSOCIATED(fl%V)) DEALLOCATE(fl%V)
+  IF (ASSOCIATED(fl%SCALAR)) DEALLOCATE(fl%SCALAR)
+  IF (ASSOCIATED(fl%SPSCALAR)) DEALLOCATE(fl%SPSCALAR)
+  IF (ASSOCIATED(fl%SPVOR)) DEALLOCATE(fl%SPVOR)
+  IF (ASSOCIATED(fl%SPDIV)) DEALLOCATE(fl%SPDIV)
+  IF (ASSOCIATED(fl%VOR)) DEALLOCATE(fl%VOR)
+  IF (ASSOCIATED(fl%DIV)) DEALLOCATE(fl%DIV)
+  IF (ASSOCIATED(fl%UDM)) DEALLOCATE(fl%UDM)
+  IF (ASSOCIATED(fl%VDM)) DEALLOCATE(fl%VDM) 
+  IF (ASSOCIATED(fl%SCALARDM)) DEALLOCATE(fl%SCALARDM)
+  IF (ASSOCIATED(fl%SCALARDL)) DEALLOCATE(fl%SCALARDL)
 end subroutine delete_fields_lists
 
 subroutine output_fields_lists(fl)
   type(FIELDS_LISTS), INTENT(IN) :: fl
   
-  write(nout,*) "fl%U", SIZE(fl%U)  
-  write(nout,*) "fl%V", SIZE(fl%V)
-  write(nout,*) "fl%SCALAR", SIZE(fl%SCALAR)
-  write(nout,*) "fl%SPSCALAR", SIZE(fl%SPSCALAR)
-  write(nout,*) "fl%SPVOR", SIZE(fl%SPVOR)
-  write(nout,*) "fl%SPDIV", SIZE(fl%SPDIV)
-  write(nout,*) "fl%VOR", SIZE(fl%VOR)
-  write(nout,*) "fl%DIV", SIZE(fl%DIV)
-  write(nout,*) "fl%UDM", SIZE(fl%UDM)
-  write(nout,*) "fl%VDM", SIZE(fl%VDM)
-  write(nout,*) "fl%SCALARDM", SIZE(fl%SCALARDM)
-  write(nout,*) "fl%SCALARDL", SIZE(fl%SCALARDL)
+  IF (ASSOCIATED(fl%U)) write(nout,*) "fl%U", SIZE(fl%U)  
+  IF (ASSOCIATED(fl%V)) write(nout,*) "fl%V", SIZE(fl%V)
+  IF (ASSOCIATED(fl%SCALAR)) write(nout,*) "fl%SCALAR", SIZE(fl%SCALAR)
+  IF (ASSOCIATED(fl%SPSCALAR)) write(nout,*) "fl%SPSCALAR", SIZE(fl%SPSCALAR)
+  IF (ASSOCIATED(fl%SPVOR)) write(nout,*) "fl%SPVOR", SIZE(fl%SPVOR)
+  IF (ASSOCIATED(fl%SPDIV)) write(nout,*) "fl%SPDIV", SIZE(fl%SPDIV)
+  IF (ASSOCIATED(fl%VOR)) write(nout,*) "fl%VOR", SIZE(fl%VOR)
+  IF (ASSOCIATED(fl%DIV)) write(nout,*) "fl%DIV", SIZE(fl%DIV)
+  IF (ASSOCIATED(fl%UDM)) write(nout,*) "fl%UDM", SIZE(fl%UDM)
+  IF (ASSOCIATED(fl%VDM)) write(nout,*) "fl%VDM", SIZE(fl%VDM)
+  IF (ASSOCIATED(fl%SCALARDM)) write(nout,*) "fl%SCALARDM", SIZE(fl%SCALARDM)
+  IF (ASSOCIATED(fl%SCALARDL)) write(nout,*) "fl%SCALARDL", SIZE(fl%SCALARDL)
 end subroutine output_fields_lists
 
 function create_fields_lists(wf,NBSETLEV,NBSETSC)
   type(WRAPPED_FIELDS), INTENT(IN), ALLOCATABLE :: wf
   INTEGER(KIND=JPIM) :: NBSETLEV(:)
   INTEGER(KIND=JPIM) :: NBSETSC(:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE,TARGET:: U (:), V (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE,TARGET:: SCALAR (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE,TARGET:: SPVOR (:), SPDIV (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE,TARGET:: VOR (:), DIV (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE,TARGET:: SPSCALAR (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE,TARGET:: UDM (:), VDM (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE,TARGET:: SCALARDM (:), SCALARDL (:)
 
+  
   type(FIELDS_LISTS), ALLOCATABLE ::create_fields_lists
-  ALLOCATE(create_fields_lists)
+  create_fields_lists = allocate_fields_lists()
+
   ASSOCIATE(ylf=>create_fields_lists,f=>wf) 
+
+  IF(ASSOCIATED(f%F_SPVOR)) SPVOR=[B(f%F_SPVOR,'SP_VOR')]
   
-  IF(ASSOCIATED(f%F_SPVOR)) ylf%SPVOR= [B(f%F_SPVOR,'SP_VOR')]
+  IF(ASSOCIATED(f%F_SPDIV)) SPDIV= [B(f%F_SPDIV,'SPDIV')]
   
-  IF(ASSOCIATED(f%F_SPDIV)) ylf%SPDIV= [B(f%F_SPDIV,'SPDIV')]
-  
-  IF(ASSOCIATED(f%F_U)) ylf%U = [B(f%F_U,'U',NBSETLEV)]
-  IF(ASSOCIATED(f%F_V)) ylf%V = [B(f%F_V,'V',NBSETLEV)]
+  IF(ASSOCIATED(f%F_U)) U = [B(f%F_U,'U',NBSETLEV)]
+  IF(ASSOCIATED(f%F_V)) V = [B(f%F_V,'V',NBSETLEV)]
       
-  IF(ASSOCIATED(f%F_UDM)) ylf%UDM=[B(f%F_UDM,'U_FDM', NBSETLEV)]
-  IF(ASSOCIATED(f%F_VDM)) ylf%VDM=[B(f%F_VDM,'V_FDM', NBSETLEV)]
+  IF(ASSOCIATED(f%F_UDM)) UDM=[B(f%F_UDM,'U_FDM', NBSETLEV)]
+  IF(ASSOCIATED(f%F_VDM)) VDM=[B(f%F_VDM,'V_FDM', NBSETLEV)]
     
-  IF(ASSOCIATED(f%F_VOR))  ylf%VOR = [B(f%F_VOR,'VOR', NBSETLEV)]
-  IF(ASSOCIATED(f%F_DIV))  ylf%DIV = [B(f%F_DIV,'DIV', NBSETLEV)]
+  IF(ASSOCIATED(f%F_VOR))  VOR = [B(f%F_VOR,'VOR', NBSETLEV)]
+  IF(ASSOCIATED(f%F_DIV))  DIV = [B(f%F_DIV,'DIV', NBSETLEV)]
   
   IF (ASSOCIATED(f%F_SPSCALARS) .AND. ASSOCIATED(f%F_SPSCALARS2) ) THEN
-      ylf%SPSCALAR = [B(f%F_SPSCALARS,'SP_SCALARS'), B(f%F_SPSCALARS2,'SP_SCALARS2')]
+      SPSCALAR = [B(f%F_SPSCALARS,'SP_SCALARS'), B(f%F_SPSCALARS2,'SP_SCALARS2')]
   ELSE IF (ASSOCIATED(f%F_SPSCALARS)) THEN
-      ylf%SPSCALAR = [B(f%F_SPSCALARS,'SP_SCALARS')]    
+      SPSCALAR = [B(f%F_SPSCALARS,'SP_SCALARS')]    
   ELSE IF (ASSOCIATED(f%F_SPSCALARS2)) THEN
-    ylf%SPSCALAR = [B(f%F_SPSCALARS2,'SP_SCALARS2')]  
+    SPSCALAR = [B(f%F_SPSCALARS2,'SP_SCALARS2')]  
   ENDIF
     
   IF (ASSOCIATED(f%F_SCALARS) .AND. ASSOCIATED(f%F_SCALARS2) ) THEN
-    ylf%SCALAR = [B(f%F_SCALARS,'SCALARS', NBSETLEV), B(f%F_SCALARS2,'SCALARS2', NBSETSC)]
+    SCALAR = [B(f%F_SCALARS,'SCALARS', NBSETLEV), B(f%F_SCALARS2,'SCALARS2', NBSETSC)]
   ELSE IF (ASSOCIATED(f%F_SCALARS)) THEN
-    ylf%SCALAR = [B(f%F_SCALARS,'SCALARS', NBSETLEV)]    
+    SCALAR = [B(f%F_SCALARS,'SCALARS', NBSETLEV)]    
   ELSE IF (ASSOCIATED(f%F_SCALARS2)) THEN
-    ylf%SCALAR = [B(f%F_SCALARS2,'SCALARS2', NBSETSC)]  
+    SCALAR = [B(f%F_SCALARS2,'SCALARS2', NBSETSC)]  
   ENDIF
   
   IF (ASSOCIATED(f%F_SCALARS_NS) .AND. ASSOCIATED(f%F_SCALARS2_NS) ) THEN
-    ylf%SCALARDM = [B(f%F_SCALARS_NS,'SCALARS_NS', NBSETLEV), B(f%F_SCALARS2,'SCALARS2_NS', NBSETSC)]
+    SCALARDM = [B(f%F_SCALARS_NS,'SCALARS_NS', NBSETLEV), B(f%F_SCALARS2,'SCALARS2_NS', NBSETSC)]
   ELSE IF (ASSOCIATED(f%F_SCALARS_NS)) THEN
-    ylf%SCALARDM = [B(f%F_SCALARS_NS,'SCALARS_NS', NBSETLEV)]
+    SCALARDM = [B(f%F_SCALARS_NS,'SCALARS_NS', NBSETLEV)]
   ELSE IF (ASSOCIATED(f%F_SCALARS2_NS)) THEN
-    ylf%SCALARDM = [B(f%F_SCALARS2_NS,'SCALARS2_NS', NBSETSC)]  
+    SCALARDM = [B(f%F_SCALARS2_NS,'SCALARS2_NS', NBSETSC)]  
   ENDIF
   
   IF (ASSOCIATED(f%F_SCALARS_EW) .AND. ASSOCIATED(f%F_SCALARS2_EW) ) THEN
-    ylf%SCALARDL = [B(f%F_SCALARS_EW,'SCALARS_EW', NBSETLEV), B(f%F_SCALARS2,'SCALARS2_EW', NBSETSC)]
+    SCALARDL = [B(f%F_SCALARS_EW,'SCALARS_EW', NBSETLEV), B(f%F_SCALARS2,'SCALARS2_EW', NBSETSC)]
   ELSE IF (ASSOCIATED(f%F_SCALARS_EW)) THEN
-    ylf%SCALARDL = [B(f%F_SCALARS_EW,'SCALARS_EW', NBSETLEV)]    
+    SCALARDL = [B(f%F_SCALARS_EW,'SCALARS_EW', NBSETLEV)]    
   ELSE IF (ASSOCIATED(f%F_SCALARS2_EW)) THEN
-    ylf%SCALARDL = [B(f%F_SCALARS2_EW,'SCALARS2_EW', NBSETSC)]  
+    SCALARDL = [B(f%F_SCALARS2_EW,'SCALARS2_EW', NBSETSC)]  
   ENDIF
-    
 
-WRITE(nout,*)"END create_fields_lists"
+  IF (ALLOCATED(U)) ylf%U=>U
+  IF (ALLOCATED(V)) ylf%V=>V
+  IF (ALLOCATED(SCALAR)) ylf%SCALAR=>SCALAR
+  IF (ALLOCATED(SPSCALAR)) ylf%SPSCALAR=>SPSCALAR
+  IF (ALLOCATED(SPVOR)) ylf%SPVOR=>SPVOR
+  IF (ALLOCATED(SPDIV)) ylf%SPDIV=>SPDIV
+  IF (ALLOCATED(VOR)) ylf%VOR=>VOR
+  IF (ALLOCATED(DIV)) ylf%DIV=>DIV
+  IF (ALLOCATED(UDM)) ylf%UDM=>UDM
+  IF (ALLOCATED(VDM)) ylf%VDM=>VDM 
+  IF (ALLOCATED(SCALARDM)) ylf%SCALARDM=>SCALARDM
+  IF (ALLOCATED(SCALARDL)) ylf%SCALARDL=>SCALARDL
+
 END ASSOCIATE
 
 end function create_fields_lists
