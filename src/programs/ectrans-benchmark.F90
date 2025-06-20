@@ -54,7 +54,36 @@ use yomhook, only : dr_hook_init
 USE FIELD_MODULE, ONLY:FIELD_1RB, FIELD_2RB, FIELD_3RB, FIELD_4RB
 USE FIELD_FACTORY_MODULE
 #include "field_basic_type_ptr.h"
+#include "field_api_ectrans.h"
 implicit none
+
+TYPE WRAPPED_FIELDS
+  CLASS (FIELD_3RB), POINTER :: F_SPSCALARS
+  CLASS (FIELD_2RB), POINTER :: F_SPSCALARS2
+  CLASS (FIELD_2RB), POINTER :: F_SPVOR, F_SPDIV
+
+  CLASS (FIELD_3RB), POINTER :: F_VOR, F_DIV
+  CLASS (FIELD_3RB), POINTER :: F_U, F_V
+  CLASS (FIELD_3RB), POINTER :: F_UDM, F_VDM
+
+  CLASS (FIELD_4RB), POINTER :: F_SCALARS
+  CLASS (FIELD_4RB), POINTER :: F_SCALARS_EW
+  CLASS (FIELD_4RB), POINTER :: F_SCALARS_NS
+
+  CLASS (FIELD_3RB), POINTER :: F_SCALARS2
+  CLASS (FIELD_3RB), POINTER :: F_SCALARS2_EW
+  CLASS (FIELD_3RB), POINTER :: F_SCALARS2_NS
+END TYPE WRAPPED_FIELDS
+
+TYPE FIELDS_LISTS
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFU (:), YLFV (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSCALAR (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSPVOR (:), YLFSPDIV (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFVOR (:), YLFDIV (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSPSCALAR (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFUDM (:), YLFVDM (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSCALARDM (:), YLFSCALARDL (:)
+END TYPE FIELDS_LISTS
 
 ! Number of points in top/bottom latitudes
 integer(kind=jpim), parameter :: min_octa_points = 20
@@ -124,22 +153,8 @@ TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSPSCALAR (:)
 TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFUDM (:), YLFVDM (:)
 TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSCALARDM (:), YLFSCALARDL (:)
 
-CLASS (FIELD_3RB), POINTER :: F_U, F_V
-CLASS (FIELD_3RB), POINTER :: F_UDM, F_VDM
-
-CLASS (FIELD_4RB), POINTER :: F_SCALARS
-CLASS (FIELD_4RB), POINTER :: F_SCALARS_EW
-CLASS (FIELD_4RB), POINTER :: F_SCALARS_NS
-
-CLASS (FIELD_2RB), POINTER :: F_SCALAR2
-CLASS (FIELD_2RB), POINTER :: F_SCALAR2_EW
-CLASS (FIELD_2RB), POINTER :: F_SCALAR2_NS
-
-CLASS (FIELD_3RB), POINTER :: F_SPSCALARS
-CLASS (FIELD_2RB), POINTER :: F_SPVOR, F_SPDIV
-CLASS (FIELD_2RB), POINTER :: F_VOR, F_DIV
-
-
+TYPE(WRAPPED_FIELDS), ALLOCATABLE :: wf
+TYPE(FIELDS_LISTS), ALLOCATABLE :: fl
 
 logical :: lstack = .false. ! Output stack info
 logical :: luserpnm = .false.
@@ -499,11 +514,6 @@ zspvor  => sp3d(:,:,1)
 zspdiv  => sp3d(:,:,2)
 zspsc3a => sp3d(:,:,3:3+(nfld-1))
 
-CALL FIELD_NEW(F_SPVOR,      DATA=zspvor)
-CALL FIELD_NEW(F_SPDIV,      DATA=zspdiv)
-CALL FIELD_NEW(F_SPSCALARS,  DATA=zspsc3a)
-
-
 !===================================================================================================
 ! Allocate gridpoint arrays
 !===================================================================================================
@@ -518,8 +528,6 @@ do jb = 1, nprtrv
     ivset(ilev) = jb
   enddo
 enddo
-
-call init_field_api(lvordiv, luvders,lscders)
 
 ! Allocate grid-point arrays
 if (lvordiv) then
@@ -565,15 +573,8 @@ zgp3a => zgmv(:,:,jbegin_sc:jend_scder_EW,:)
 zgp2  => zgmvs(:,:,:)
 
 
-CALL FIELD_NEW(F_UDM,   DATA=zgmv(:,:,3,:))
-CALL FIELD_NEW(F_VDM,   DATA=zgmv(:,:,4,:))
-CALL FIELD_NEW(F_SCALARS,    DATA=zgmv(:,:,1:1,:))
-CALL FIELD_NEW(F_SCALARS_EW, DATA=zgmv(:,:,1:1,:))
-CALL FIELD_NEW(F_SCALARS_NS, DATA=zgmv(:,:,1:1,:))
-!CALL FIELD_NEW(F_VOR,   DATA=zgmv(:,:,1:1,:))
-!CALL FIELD_NEW(F_DIV,   DATA=zgmv(:,:,1:1,:))
-
-
+wf = wrap_fields(sp3d, zspsc2, zgmv, zgmvs, zgp2)
+fl = create_fields_lists(wf)
 
 !===================================================================================================
 ! Allocate norm arrays
@@ -754,10 +755,13 @@ do jstep = 1, iters+iters_warmup
       & kvsetsc3a=ivset)
   endif
   call gstats(5,1)
+
+  call delete_wrapped_fields(wf)
+
   ztstep2(jstep) = (timef() - ztstep2(jstep))/1000.0_jprd
 
   ztstep(jstep) = (timef() - ztstep(jstep))/1000.0_jprd
-
+  
   !=================================================================================================
   ! Print norms
   !=================================================================================================
@@ -1521,20 +1525,81 @@ subroutine set_ectrans_gpu_nflev(kflev)
   call ec_putenv(ECTRANS_GPU_NFLEV, overwrite=.true.)
 end subroutine
 
-subroutine init_field_api(kvordiv, kuvders,kscders)
-  logical, intent(in) :: kvordiv
-  logical, intent(in) :: kuvders
-  logical, intent(in) :: kscders
+function wrap_fields(sp3d, spc2, zgmv, zgmvs, zgp2)
+  type(WRAPPED_FIELDS), ALLOCATABLE :: wrap_fields
+  real(kind=jprb), INTENT(IN) :: sp3d(:,:,:)
+  real(kind=jprb), INTENT(IN) :: spc2(:,:)
+  real(kind=jprb), INTENT(IN) :: zgmv(:,:,:,:)
+  real(kind=jprb), INTENT(IN) :: zgmvs(:,:,:)
+  real(kind=jprb), INTENT(IN) :: zgp2 (:,:,:)
+  
+  ALLOCATE(wrap_fields)
+  CALL FIELD_NEW(wrap_fields%F_SPVOR,       DATA=sp3d(:,:,1))
+  CALL FIELD_NEW(wrap_fields%F_SPDIV,       DATA=sp3d(:,:,2))
+  CALL FIELD_NEW(wrap_fields%F_SPSCALARS,   DATA=sp3d(:,:,3:))
+  CALL FIELD_NEW(wrap_fields%F_SPSCALARS2,  DATA=zspsc2(:,:))
+
+  CALL FIELD_NEW(wrap_fields%F_U,           DATA=zgmv(:,:,1,:))
+  CALL FIELD_NEW(wrap_fields%F_V,           DATA=zgmv(:,:,2,:))
+  CALL FIELD_NEW(wrap_fields%F_UDM,         DATA=zgmv(:,:,3,:))
+  CALL FIELD_NEW(wrap_fields%F_VDM,         DATA=zgmv(:,:,4,:))
+  CALL FIELD_NEW(wrap_fields%F_SCALARS,     DATA=zgmv(:,:,1:3,:))
+  CALL FIELD_NEW(wrap_fields%F_SCALARS_EW,  DATA=zgmv(:,:,1:3,:))
+  CALL FIELD_NEW(wrap_fields%F_SCALARS_NS,  DATA=zgmv(:,:,1:3,:))
+  CALL FIELD_NEW(wrap_fields%F_VOR,         DATA=zgmv(:,:,1,:))
+  CALL FIELD_NEW(wrap_fields%F_DIV,         DATA=zgmv(:,:,1,:))
+
+  CALL FIELD_NEW(wrap_fields%F_SCALARS2,    DATA=zgmvs(:,1:3,:))
+  CALL FIELD_NEW(wrap_fields%F_SCALARS2_EW, DATA=zgmvs(:,1:3,:))
+  CALL FIELD_NEW(wrap_fields%F_SCALARS2_NS, DATA=zgmvs(:,1:3,:))
+end function wrap_fields
+
+subroutine delete_wrapped_fields(wrap_fields)
+  type(WRAPPED_FIELDS), ALLOCATABLE :: wrap_fields
+
+  CALL FIELD_DELETE(wrap_fields%F_SPVOR)
+  CALL FIELD_DELETE(wrap_fields%F_SPDIV)
+  CALL FIELD_DELETE(wrap_fields%F_SPSCALARS)
+  CALL FIELD_DELETE(wrap_fields%F_SPSCALARS2)
+
+  CALL FIELD_DELETE(wrap_fields%F_U)
+  CALL FIELD_DELETE(wrap_fields%F_V)
+  CALL FIELD_DELETE(wrap_fields%F_UDM)
+  CALL FIELD_DELETE(wrap_fields%F_VDM)
+  CALL FIELD_DELETE(wrap_fields%F_SCALARS)
+  CALL FIELD_DELETE(wrap_fields%F_SCALARS_EW)
+  CALL FIELD_DELETE(wrap_fields%F_SCALARS_NS)
+  CALL FIELD_DELETE(wrap_fields%F_VOR)
+  CALL FIELD_DELETE(wrap_fields%F_DIV)
+
+  CALL FIELD_DELETE(wrap_fields%F_SCALARS2)
+  CALL FIELD_DELETE(wrap_fields%F_SCALARS2_EW)
+  CALL FIELD_DELETE(wrap_fields%F_SCALARS2_NS)
+end subroutine delete_wrapped_fields
+
+function create_fields_lists(wrap_fields)
+  
+  type(WRAPPED_FIELDS), ALLOCATABLE :: wrap_fields
+  type(FIELDS_LISTS), ALLOCATABLE ::create_fields_lists
+  
+  ASSOCIATE(l=>create_fields_lists)
+  ALLOCATE(create_fields_lists)
+
+  l%YLFSPVOR= [B(wrap_fields%F_SPVOR,'SP_VOR')]
+  l%YLFSPVOR= [B(wrap_fields%F_SPDIV,'SP_VOR')]
+
+  
+  
+END ASSOCIATE
+
+end function create_fields_lists
+
+end program ectrans_benchmark
+
+!===================================================================================================
+
 
 #if 0
-  CLASS (FIELD_2RB), POINTER :: F_SPVOR
-  CLASS (FIELD_2RB), POINTER :: F_I
-  CLASS (FIELD_2RB), POINTER :: F_SPD
-  CLASS (FIELD_2RB), POINTER :: F_SVD
-  CLASS (FIELD_2RB), POINTER :: F_NHX
-  CLASS (FIELD_1RB), POINTER :: F_SP
-  CLASS (FIELD_1RB), POINTER :: F_OROG
-
   YLFSPVOR= [B(F_VOR,'SP_VOR')]
   YLFSPDIV= [B(F_DIV,'SP_DIV')]
   
@@ -1611,12 +1676,3 @@ subroutine init_field_api(kvordiv, kuvders,kscders)
     ENDIF
   ENDIF
 #endif 
-  
-  
-
-
-end subroutine
-
-end program ectrans_benchmark
-
-!===================================================================================================
