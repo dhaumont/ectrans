@@ -572,7 +572,10 @@ wf = wrap_fields(lvordiv, lscders, luvders, &
                 & jbegin_scder_EW, jend_scder_EW, &
                 & jbegin_uder_EW, jend_uder_EW, &
                 & jbegin_vder_EW, jend_vder_EW)
+call output_wrapped_file(wf)
+
 ylf = create_fields_lists(wf,ivset,ivsetsc)
+call output_fields_lists(ylf)
 
 !===================================================================================================
 ! Allocate norm arrays
@@ -694,7 +697,7 @@ do jstep = 1, iters+iters_warmup
        & pgp2=zgp2,                         &
        & pgp3a=zgp3a)
   endif
-
+#if 0
   CALL INV_TRANS_FIELD_API (YDFSPVOR=ylf%SPVOR, YDFSPDIV=ylf%SPDIV, YDFSPSCALAR=ylf%SPSCALAR, &
                         & YDFU=ylf%U, YDFV=ylf%V, YDFSCALAR=ylf%SCALAR, &
                         & YDFUDM=ylf%UDM, YDFVDM=ylf%VDM, &
@@ -702,7 +705,7 @@ do jstep = 1, iters+iters_warmup
                         & YDFVOR=ylf%VOR, YDFDIV=ylf%DIV, &
                         & KSPEC=NSPEC2, KPROMA=NPROMA, KGPBLKS=NGPBLKS, KGPTOT=NGPTOT, KFLEVG=NFLEVG, KFLEVL=NFLEVL,& 
                         & LDACC=LLACC, LDVERBOSE =.TRUE.)
-
+#endif
   call gstats(4,1)
 
   ztstep1(jstep) = (timef() - ztstep1(jstep))/1000.0_jprd
@@ -755,7 +758,7 @@ do jstep = 1, iters+iters_warmup
   call gstats(5,1)
 
   call delete_wrapped_fields(wf)
-
+  call delete_fields_lists(ylf)
   ztstep2(jstep) = (timef() - ztstep2(jstep))/1000.0_jprd
 
   ztstep(jstep) = (timef() - ztstep(jstep))/1000.0_jprd
@@ -1543,7 +1546,6 @@ subroutine output_wrapped_file(wrap_fields)
   write(nout,*) "wrap_fields%F_SCALARS2", LOC(wrap_fields%F_SCALARS2)
   write(nout,*) "wrap_fields%F_SCALARS2_EW", LOC(wrap_fields%F_SCALARS2_EW)
   write(nout,*) "wrap_fields%F_SCALARS2_NS", LOC(wrap_fields%F_SCALARS2_NS)
-
 end subroutine output_wrapped_file
 
 function allocate_wrapped_fields()
@@ -1622,44 +1624,73 @@ function wrap_fields(lvordiv, lscders, luvders,&
     CALL FIELD_NEW(wrap_fields%F_UDM,         DATA=zgmv(:,:,jbegin_uder_EW,:))
     CALL FIELD_NEW(wrap_fields%F_VDM,         DATA=zgmv(:,:,jbegin_vder_EW,:))
   endif
-  if (lscders) then
-    IF (jend_sc>0 .AND. jend_sc>=jbegin_sc )                   CALL FIELD_NEW(wrap_fields%F_SCALARS,     DATA=zgmv(:,:,jbegin_sc:jend_sc,:))
+
+  IF (jend_sc>0 .AND. jend_sc>=jbegin_sc )  CALL FIELD_NEW(wrap_fields%F_SCALARS,     DATA=zgmv(:,:,jbegin_sc:jend_sc,:))
+  if (lscders) then    
     IF (jend_scder_EW>0 .AND. jend_scder_EW>=jbegin_scder_EW ) CALL FIELD_NEW(wrap_fields%F_SCALARS_EW,  DATA=zgmv(:,:,jbegin_scder_EW:jend_scder_EW,:))
     IF (jend_scder_NS>0 .AND. jend_scder_NS>=jbegin_scder_NS ) CALL FIELD_NEW(wrap_fields%F_SCALARS_NS,  DATA=zgmv(:,:,jbegin_scder_NS:jend_scder_NS,:))
   
     IF (SIZE(ZGMVS,2)>=2)     CALL FIELD_NEW(wrap_fields%F_SCALARS2_EW, DATA=zgmvs(:,2:2,:))
     IF (SIZE(ZGMVS,2)>=3)     CALL FIELD_NEW(wrap_fields%F_SCALARS2_NS, DATA=zgmvs(:,3:3,:))      
   endif
-
-  
-  
-  
-  call output_wrapped_file(wrap_fields)
 end function wrap_fields
 
 subroutine delete_wrapped_fields(wrap_fields)
-  type(WRAPPED_FIELDS), ALLOCATABLE :: wrap_fields
+  type(WRAPPED_FIELDS), INTENT(INOUT) :: wrap_fields
    
-  CALL FIELD_DELETE(wrap_fields%F_SPVOR)
-  CALL FIELD_DELETE(wrap_fields%F_SPDIV)
-  CALL FIELD_DELETE(wrap_fields%F_SPSCALARS)
-  CALL FIELD_DELETE(wrap_fields%F_SPSCALARS2)
+  IF(ASSOCIATED(wrap_fields%F_SPVOR)) CALL FIELD_DELETE(wrap_fields%F_SPVOR)
+  IF(ASSOCIATED(wrap_fields%F_SPDIV)) CALL FIELD_DELETE(wrap_fields%F_SPDIV)
+  IF(ASSOCIATED(wrap_fields%F_SPSCALARS)) CALL FIELD_DELETE(wrap_fields%F_SPSCALARS)
+  IF(ASSOCIATED(wrap_fields%F_SPSCALARS2)) CALL FIELD_DELETE(wrap_fields%F_SPSCALARS2)
 
-  CALL FIELD_DELETE(wrap_fields%F_U)
-  CALL FIELD_DELETE(wrap_fields%F_V)
-  CALL FIELD_DELETE(wrap_fields%F_UDM)
-  CALL FIELD_DELETE(wrap_fields%F_VDM)
-  CALL FIELD_DELETE(wrap_fields%F_SCALARS)
-  CALL FIELD_DELETE(wrap_fields%F_SCALARS_EW)
-  CALL FIELD_DELETE(wrap_fields%F_SCALARS_NS)
-  CALL FIELD_DELETE(wrap_fields%F_VOR)
-  CALL FIELD_DELETE(wrap_fields%F_DIV)
+  IF(ASSOCIATED(wrap_fields%F_U)) CALL FIELD_DELETE(wrap_fields%F_U)
+  IF(ASSOCIATED(wrap_fields%F_V)) CALL FIELD_DELETE(wrap_fields%F_V)
+  IF(ASSOCIATED(wrap_fields%F_UDM)) CALL FIELD_DELETE(wrap_fields%F_UDM)
+  IF(ASSOCIATED(wrap_fields%F_VDM)) CALL FIELD_DELETE(wrap_fields%F_VDM)
+  IF(ASSOCIATED(wrap_fields%F_SCALARS)) CALL FIELD_DELETE(wrap_fields%F_SCALARS)
+  IF(ASSOCIATED(wrap_fields%F_SCALARS_EW)) CALL FIELD_DELETE(wrap_fields%F_SCALARS_EW)
+  IF(ASSOCIATED(wrap_fields%F_SCALARS_NS)) CALL FIELD_DELETE(wrap_fields%F_SCALARS_NS)
+  IF(ASSOCIATED(wrap_fields%F_VOR)) CALL FIELD_DELETE(wrap_fields%F_VOR)
+  IF(ASSOCIATED(wrap_fields%F_DIV)) CALL FIELD_DELETE(wrap_fields%F_DIV)
 
-  CALL FIELD_DELETE(wrap_fields%F_SCALARS2)
-  CALL FIELD_DELETE(wrap_fields%F_SCALARS2_EW)
-  CALL FIELD_DELETE(wrap_fields%F_SCALARS2_NS)
+  IF(ASSOCIATED(wrap_fields%F_SCALARS2)) CALL FIELD_DELETE(wrap_fields%F_SCALARS2)
+  IF(ASSOCIATED(wrap_fields%F_SCALARS2_EW)) CALL FIELD_DELETE(wrap_fields%F_SCALARS2_EW)
+  IF(ASSOCIATED(wrap_fields%F_SCALARS2_NS)) CALL FIELD_DELETE(wrap_fields%F_SCALARS2_NS)
   
 end subroutine delete_wrapped_fields
+
+subroutine delete_fields_lists(fl)
+  type(FIELDS_LISTS), INTENT(INOUT) ::fl
+  IF (ALLOCATED(fl%U)) DEALLOCATE(fl%U)
+  IF (ALLOCATED(fl%V)) DEALLOCATE(fl%V)
+  IF (ALLOCATED(fl%SCALAR)) DEALLOCATE(fl%SCALAR)
+  IF (ALLOCATED(fl%SPSCALAR)) DEALLOCATE(fl%SPSCALAR)
+  IF (ALLOCATED(fl%SPVOR)) DEALLOCATE(fl%SPVOR)
+  IF (ALLOCATED(fl%SPDIV)) DEALLOCATE(fl%SPDIV)
+  IF (ALLOCATED(fl%VOR)) DEALLOCATE(fl%VOR)
+  IF (ALLOCATED(fl%DIV)) DEALLOCATE(fl%DIV)
+  IF (ALLOCATED(fl%UDM)) DEALLOCATE(fl%UDM)
+  IF (ALLOCATED(fl%VDM)) DEALLOCATE(fl%VDM) 
+  IF (ALLOCATED(fl%SCALARDM)) DEALLOCATE(fl%SCALARDM)
+  IF (ALLOCATED(fl%SCALARDL)) DEALLOCATE(fl%SCALARDL)
+end subroutine delete_fields_lists
+
+subroutine output_fields_lists(fl)
+  type(FIELDS_LISTS), INTENT(IN) :: fl
+  
+  write(nout,*) "fl%U", SIZE(fl%U)  
+  write(nout,*) "fl%V", SIZE(fl%V)
+  write(nout,*) "fl%SCALAR", SIZE(fl%SCALAR)
+  write(nout,*) "fl%SPSCALAR", SIZE(fl%SPSCALAR)
+  write(nout,*) "fl%SPVOR", SIZE(fl%SPVOR)
+  write(nout,*) "fl%SPDIV", SIZE(fl%SPDIV)
+  write(nout,*) "fl%VOR", SIZE(fl%VOR)
+  write(nout,*) "fl%DIV", SIZE(fl%DIV)
+  write(nout,*) "fl%UDM", SIZE(fl%UDM)
+  write(nout,*) "fl%VDM", SIZE(fl%VDM)
+  write(nout,*) "fl%SCALARDM", SIZE(fl%SCALARDM)
+  write(nout,*) "fl%SCALARDL", SIZE(fl%SCALARDL)
+end subroutine output_fields_lists
 
 function create_fields_lists(wf,NBSETLEV,NBSETSC)
   type(WRAPPED_FIELDS), INTENT(IN), ALLOCATABLE :: wf
