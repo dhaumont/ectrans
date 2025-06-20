@@ -63,8 +63,8 @@ TYPE WRAPPED_FIELDS
   CLASS (FIELD_2RB), POINTER :: F_SPVOR, F_SPDIV
 
   CLASS (FIELD_3RB), POINTER :: F_VOR, F_DIV
-  CLASS (FIELD_3RB), POINTER :: F_U, F_V
-  CLASS (FIELD_3RB), POINTER :: F_UDM, F_VDM
+  CLASS (FIELD_4RB), POINTER :: F_U, F_V
+  CLASS (FIELD_4RB), POINTER :: F_UDM, F_VDM
 
   CLASS (FIELD_4RB), POINTER :: F_SCALARS
   CLASS (FIELD_4RB), POINTER :: F_SCALARS_EW
@@ -76,13 +76,13 @@ TYPE WRAPPED_FIELDS
 END TYPE WRAPPED_FIELDS
 
 TYPE FIELDS_LISTS
-  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFU (:), YLFV (:)
-  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSCALAR (:)
-  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSPVOR (:), YLFSPDIV (:)
-  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFVOR (:), YLFDIV (:)
-  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSPSCALAR (:)
-  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFUDM (:), YLFVDM (:)
-  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSCALARDM (:), YLFSCALARDL (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: U (:), V (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: SCALAR (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: SPVOR (:), SPDIV (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: VOR (:), DIV (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: SPSCALAR (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: UDM (:), VDM (:)
+  TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: SCALARDM (:), SCALARDL (:)
 END TYPE FIELDS_LISTS
 
 ! Number of points in top/bottom latitudes
@@ -145,16 +145,8 @@ real(kind=jprb), pointer :: zspdiv(:,:) => null()
 real(kind=jprb), pointer :: zspsc3a(:,:,:) => null()
 real(kind=jprb), allocatable PINNED_TAG :: zspsc2(:,:)
 
-TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFU (:), YLFV (:)
-TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSCALAR (:)
-TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSPVOR (:), YLFSPDIV (:)
-TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFVOR (:), YLFDIV (:)
-TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSPSCALAR (:)
-TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFUDM (:), YLFVDM (:)
-TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSCALARDM (:), YLFSCALARDL (:)
-
 TYPE(WRAPPED_FIELDS), ALLOCATABLE :: wf
-TYPE(FIELDS_LISTS), ALLOCATABLE :: fl
+TYPE(FIELDS_LISTS), ALLOCATABLE :: ylf
 
 logical :: lstack = .false. ! Output stack info
 logical :: luserpnm = .false.
@@ -572,9 +564,14 @@ zgpuv => zgmv(:,:,1:jend_vder_EW,:)
 zgp3a => zgmv(:,:,jbegin_sc:jend_scder_EW,:)
 zgp2  => zgmvs(:,:,:)
 
-
-wf = wrap_fields(sp3d, zspsc2, zgmv, zgmvs, zgp2)
-fl = create_fields_lists(wf)
+wf = wrap_fields(sp3d, zspsc2, zgmv, zgmvs, zgp2, &
+                & jbegin_uv,jend_uv, &
+                & jbegin_sc,jend_sc, &
+                & jbegin_scder_NS, jend_scder_NS, &
+                & jbegin_scder_EW, jend_scder_EW, &
+                & jbegin_uder_EW, jend_uder_EW, &
+                & jbegin_vder_EW, jend_vder_EW)
+ylf = create_fields_lists(wf,ivset,ivsetsc)
 
 !===================================================================================================
 ! Allocate norm arrays
@@ -697,11 +694,11 @@ do jstep = 1, iters+iters_warmup
        & pgp3a=zgp3a)
   endif
 
-  CALL INV_TRANS_FIELD_API (YDFSPVOR=YLFSPVOR, YDFSPDIV=YLFSPDIV, YDFSPSCALAR=YLFSPSCALAR, &
-                        & YDFU=YLFU, YDFV=YLFV, YDFSCALAR=YLFSCALAR, &
-                        & YDFUDM=YLFUDM, YDFVDM=YLFVDM, &
-                        & YDFSCALARDM=YLFSCALARDM, YDFSCALARDL=YLFSCALARDL, &
-                        & YDFVOR=YLFVOR, YDFDIV=YLFDIV, &
+  CALL INV_TRANS_FIELD_API (YDFSPVOR=ylf%SPVOR, YDFSPDIV=ylf%SPDIV, YDFSPSCALAR=ylf%SPSCALAR, &
+                        & YDFU=ylf%U, YDFV=ylf%V, YDFSCALAR=ylf%SCALAR, &
+                        & YDFUDM=ylf%UDM, YDFVDM=ylf%VDM, &
+                        & YDFSCALARDM=ylf%SCALARDM, YDFSCALARDL=ylf%SCALARDL, &
+                        & YDFVOR=ylf%VOR, YDFDIV=ylf%DIV, &
                         & KSPEC=NSPEC2, KPROMA=NPROMA, KGPBLKS=NGPBLKS, KGPTOT=NGPTOT, KFLEVG=NFLEVG, KFLEVL=NFLEVL,& 
                         & LDACC=LLACC, LDVERBOSE =.TRUE.)
 
@@ -1525,34 +1522,80 @@ subroutine set_ectrans_gpu_nflev(kflev)
   call ec_putenv(ECTRANS_GPU_NFLEV, overwrite=.true.)
 end subroutine
 
-function wrap_fields(sp3d, spc2, zgmv, zgmvs, zgp2)
+function allocate_wrapped_fields()
+  type(WRAPPED_FIELDS), ALLOCATABLE :: allocate_wrapped_fields
+  ALLOCATE(allocate_wrapped_fields)
+  
+  NULLIFY(allocate_wrapped_fields%F_SPVOR)
+  NULLIFY(allocate_wrapped_fields%F_SPDIV)
+  NULLIFY(allocate_wrapped_fields%F_SPSCALARS)
+  NULLIFY(allocate_wrapped_fields%F_SPSCALARS2)
+
+  NULLIFY(allocate_wrapped_fields%F_U)
+  NULLIFY(allocate_wrapped_fields%F_V)
+  NULLIFY(allocate_wrapped_fields%F_UDM)
+  NULLIFY(allocate_wrapped_fields%F_VDM)
+  NULLIFY(allocate_wrapped_fields%F_SCALARS)
+  NULLIFY(allocate_wrapped_fields%F_SCALARS_EW)
+  NULLIFY(allocate_wrapped_fields%F_SCALARS_NS)
+  NULLIFY(allocate_wrapped_fields%F_VOR)
+  NULLIFY(allocate_wrapped_fields%F_DIV)
+
+  NULLIFY(allocate_wrapped_fields%F_SCALARS2)
+  NULLIFY(allocate_wrapped_fields%F_SCALARS2_EW)
+  NULLIFY(allocate_wrapped_fields%F_SCALARS2_NS)
+end function allocate_wrapped_fields
+
+function wrap_fields(sp3d, spc2, zgmv, zgmvs, zgp2,& 
+                    &jbegin_uv,jend_uv,& 
+                    &jbegin_sc,jend_sc,& 
+                    &jbegin_scder_NS, jend_scder_NS,& 
+                    &jbegin_scder_EW, jend_scder_EW,& 
+                    &jbegin_uder_EW, jend_uder_EW,& 
+                    &jbegin_vder_EW, jend_vder_EW)
+
   type(WRAPPED_FIELDS), ALLOCATABLE :: wrap_fields
   real(kind=jprb), INTENT(IN) :: sp3d(:,:,:)
   real(kind=jprb), INTENT(IN) :: spc2(:,:)
   real(kind=jprb), INTENT(IN) :: zgmv(:,:,:,:)
   real(kind=jprb), INTENT(IN) :: zgmvs(:,:,:)
   real(kind=jprb), INTENT(IN) :: zgp2 (:,:,:)
+  integer(kind=jpim) :: jbegin_uv
+  integer(kind=jpim) :: jend_uv
+  integer(kind=jpim) :: jbegin_sc
+  integer(kind=jpim) :: jend_sc
+  integer(kind=jpim) :: jbegin_scder_NS
+  integer(kind=jpim) :: jend_scder_NS
+  integer(kind=jpim) :: jbegin_scder_EW
+  integer(kind=jpim) :: jend_scder_EW
+  integer(kind=jpim) :: jbegin_uder_EW
+  integer(kind=jpim) :: jend_uder_EW
+  integer(kind=jpim) :: jbegin_vder_EW
+  integer(kind=jpim) :: jend_vder_EW
   
-  ALLOCATE(wrap_fields)
-  CALL FIELD_NEW(wrap_fields%F_SPVOR,       DATA=sp3d(:,:,1))
-  CALL FIELD_NEW(wrap_fields%F_SPDIV,       DATA=sp3d(:,:,2))
-  CALL FIELD_NEW(wrap_fields%F_SPSCALARS,   DATA=sp3d(:,:,3:))
-  CALL FIELD_NEW(wrap_fields%F_SPSCALARS2,  DATA=zspsc2(:,:))
+  wrap_fields = allocate_wrapped_fields()
+  
+  IF (SIZE(sp3d,3) >=1 )   CALL FIELD_NEW(wrap_fields%F_SPVOR,        DATA=sp3d(:,:,1))
+  IF (SIZE(sp3d,3) >=2 )   CALL FIELD_NEW(wrap_fields%F_SPDIV,        DATA=sp3d(:,:,2))
+  IF (SIZE(sp3d,3) >=3 )   CALL FIELD_NEW(wrap_fields%F_SPSCALARS,    DATA=sp3d(:,:,3:))
+  IF (SIZE(zspsc2,2) >=1 ) CALL FIELD_NEW(wrap_fields%F_SPSCALARS2,  DATA=zspsc2(:,:))
 
-  CALL FIELD_NEW(wrap_fields%F_U,           DATA=zgmv(:,:,1,:))
-  CALL FIELD_NEW(wrap_fields%F_V,           DATA=zgmv(:,:,2,:))
-  CALL FIELD_NEW(wrap_fields%F_UDM,         DATA=zgmv(:,:,3,:))
-  CALL FIELD_NEW(wrap_fields%F_VDM,         DATA=zgmv(:,:,4,:))
-  CALL FIELD_NEW(wrap_fields%F_SCALARS,     DATA=zgmv(:,:,1:3,:))
-  CALL FIELD_NEW(wrap_fields%F_SCALARS_EW,  DATA=zgmv(:,:,1:3,:))
-  CALL FIELD_NEW(wrap_fields%F_SCALARS_NS,  DATA=zgmv(:,:,1:3,:))
-  CALL FIELD_NEW(wrap_fields%F_VOR,         DATA=zgmv(:,:,1,:))
-  CALL FIELD_NEW(wrap_fields%F_DIV,         DATA=zgmv(:,:,1,:))
+  !CALL FIELD_NEW(wrap_fields%F_U,           DATA=zgmv(:,:,1,:))
+  !CALL FIELD_NEW(wrap_fields%F_V,           DATA=zgmv(:,:,2,:))
+  IF (jend_uder_EW>=jbegin_uder_EW )   CALL FIELD_NEW(wrap_fields%F_UDM,         DATA=zgmv(:,:,jbegin_uder_EW:jend_uder_EW,:))
+  IF (jend_vder_EW>=jbegin_vder_EW )   CALL FIELD_NEW(wrap_fields%F_VDM,         DATA=zgmv(:,:,jbegin_vder_EW:jend_vder_EW,:))
+  IF (jend_sc>=jbegin_sc )             CALL FIELD_NEW(wrap_fields%F_SCALARS,     DATA=zgmv(:,:,jbegin_sc:jend_sc,:))
+  IF (jend_scder_EW>=jbegin_scder_EW ) CALL FIELD_NEW(wrap_fields%F_SCALARS_EW,  DATA=zgmv(:,:,jbegin_scder_EW:jend_scder_EW,:))
+  IF (jend_scder_NS>=jbegin_scder_NS ) CALL FIELD_NEW(wrap_fields%F_SCALARS_NS,  DATA=zgmv(:,:,jbegin_scder_NS:jend_scder_NS,:))
+  IF (jbegin_uv>0 )                   CALL FIELD_NEW(wrap_fields%F_VOR,         DATA=zgmv(:,:,jbegin_uv,:))
+  IF (jend_uv>0 )                     CALL FIELD_NEW(wrap_fields%F_DIV,         DATA=zgmv(:,:,jend_uv,:))
 
-  CALL FIELD_NEW(wrap_fields%F_SCALARS2,    DATA=zgmvs(:,1:3,:))
-  CALL FIELD_NEW(wrap_fields%F_SCALARS2_EW, DATA=zgmvs(:,1:3,:))
-  CALL FIELD_NEW(wrap_fields%F_SCALARS2_NS, DATA=zgmvs(:,1:3,:))
+  IF (SIZE(ZGMVS,2)>=1)                CALL FIELD_NEW(wrap_fields%F_SCALARS2,    DATA=zgmvs(:,1:1,:))
+  IF (SIZE(ZGMVS,2)>=2)                CALL FIELD_NEW(wrap_fields%F_SCALARS2_EW, DATA=zgmvs(:,2:2,:))
+  IF (SIZE(ZGMVS,2)>=3)                CALL FIELD_NEW(wrap_fields%F_SCALARS2_NS, DATA=zgmvs(:,3:3,:))
+  
 end function wrap_fields
+
 
 subroutine delete_wrapped_fields(wrap_fields)
   type(WRAPPED_FIELDS), ALLOCATABLE :: wrap_fields
@@ -1577,17 +1620,42 @@ subroutine delete_wrapped_fields(wrap_fields)
   CALL FIELD_DELETE(wrap_fields%F_SCALARS2_NS)
 end subroutine delete_wrapped_fields
 
-function create_fields_lists(wrap_fields)
-  
-  type(WRAPPED_FIELDS), ALLOCATABLE :: wrap_fields
+function create_fields_lists(wf,NBSETLEV,NBSETSC)
+  type(WRAPPED_FIELDS), INTENT(IN), ALLOCATABLE :: wf
+  INTEGER(KIND=JPIM) :: NBSETLEV(:)
+  INTEGER(KIND=JPIM) :: NBSETSC(:)
+
   type(FIELDS_LISTS), ALLOCATABLE ::create_fields_lists
   
-  ASSOCIATE(l=>create_fields_lists)
+  ASSOCIATE(ylf=>create_fields_lists,f=>wf)
+  
   ALLOCATE(create_fields_lists)
 
-  l%YLFSPVOR= [B(wrap_fields%F_SPVOR,'SP_VOR')]
-  l%YLFSPVOR= [B(wrap_fields%F_SPDIV,'SP_VOR')]
+  IF(ASSOCIATED(f%F_SPVOR)) ylf%SPVOR= [B(f%F_SPVOR,'SP_VOR')]
+  IF(ASSOCIATED(f%F_SPDIV)) ylf%SPVOR= [B(f%F_SPDIV,'SP_VOR')]
 
+  IF(ASSOCIATED(f%F_U)) ylf%U = [B(f%F_U,'U',NBSETLEV)]
+  IF(ASSOCIATED(f%F_V)) ylf%V = [B(f%F_V,'V',NBSETLEV)]
+    
+  IF(ASSOCIATED(f%F_UDM)) ylf%UDM=[B(f%F_UDM,'U_FDM', NBSETLEV)]
+  IF(ASSOCIATED(f%F_VDM)) ylf%VDM=[B(f%F_VDM,'V_FDM', NBSETLEV)]
+  
+  IF(ASSOCIATED(f%F_VOR))  ylf%VOR = [B(f%F_VOR,'VOR', NBSETLEV)]
+  IF(ASSOCIATED(f%F_DIV))  ylf%DIV = [B(f%F_DIV,'DIV', NBSETLEV)]
+  
+  !l%SPSCALAR = []
+  !l%SCALAR  = []
+  !l%SPSCALARDM = []
+  !l%SCALARDL  = []
+
+  IF (ASSOCIATED(f%F_SPSCALARS))    ylf%SPSCALAR = [ylf%SPSCALAR, B(f%F_SPSCALARS,'SP_SCALARS')]
+  IF (ASSOCIATED(f%F_SPSCALARS))    ylf%SCALAR   = [ylf%SCALAR, B(f%F_SCALARS,'SCALARS',NBSETLEV)]  
+  IF (ASSOCIATED(f%F_SPSCALARS2))   ylf%SPSCALAR = [ylf%SPSCALAR, B(f%F_SPSCALARS2,'SP_SCALARS2')]
+  IF (ASSOCIATED(f%F_SCALARS2))     ylf%SCALAR   = [ylf%SCALAR, B(f%F_SCALARS2,'SCALARS2',NBSETSC)]    
+  IF (ASSOCIATED(f%F_SCALARS_EW))   ylf%SCALARDM = [ylf%SCALARDM, B(f%F_SCALARS_EW,'SCALARS_EW',NBSETLEV)]
+  IF (ASSOCIATED(f%F_SCALARS2_EW))  ylf%SCALARDM = [ylf%SCALARDM, B(f%F_SCALARS2_EW,'SCALARS2_EW',NBSETSC)]
+  IF (ASSOCIATED(f%F_SCALARS_NS))   ylf%SCALARDL = [ylf%SCALARDL, B(f%F_SCALARS_NS,'F_SCALARS_NS',NBSETLEV)]
+  IF (ASSOCIATED(f%F_SCALARS2_NS))  ylf%SCALARDM = [ylf%SCALARDM, B(f%F_SCALARS2_NS,'SCALARS2_NS',NBSETSC)]
   
   
 END ASSOCIATE
@@ -1598,81 +1666,3 @@ end program ectrans_benchmark
 
 !===================================================================================================
 
-
-#if 0
-  YLFSPVOR= [B(F_VOR,'SP_VOR')]
-  YLFSPDIV= [B(F_DIV,'SP_DIV')]
-  
-  YLFU = [B(F_U,'U',NBSETLEV)]
-  YLFV = [B(F_V,'V',NBSETLEV)]
-  
-  IF (kuvders) THEN
-    YLFUDM=[B(F_UDL,'U_FDM', NBSETLEV)]
-    YLFVDM=[B(F_VDL,'V_FDM', NBSETLEV)]
-  ENDIF
-  
-  IF (LDVOR)    YLFVOR = [B(F_VOR_FT0,'VOR', NBSETLEV)]
-  IF (LLDIVGP)  YLFDIV = [B(F_DIV_FT0,'DIV', NBSETLEV)]
-  
-  ! Hydrostatic: T
-  YLFSPSCALAR= [B(F_SP,'SP_SP'),B(F_T,'SP_T')]
-  YLFSCALAR=[B(F_SP_FT0,'SP',[NBSETSP]),B(F_T_FT0,'T',NBSETLEV)]
-  IF (kscders) THEN
-    YLFSCALARDM=[B(F_SP_FDM,'SP_FDM',[NBSETSP]),B(F_T_FDM,'T_FDM',NBSETLEV)]
-    YLFSCALARDL=[B(F_SP_FDL,'SP_FDL',[NBSETSP]),B(F_T_FDL,'T_FDL',NBSETLEV)]
-  ENDIF
-  
-  !Non Hydrostatic: SPD, SVD and NHx
-  IF(YDDYNA%LNHDYN) THEN
-    YLFSPSCALAR = [YLFSPSCALAR, B(F_SPD,'SP_SPD'), B(F_SVD,'SP_SVD')]
-    YLFSCALAR=[YLFSCALAR, B(F_SPD_FT0,'SPD',NBSETLEV), B(F_SVD_FT0,'SVD',NBSETLEV)]
-    IF (kscders) THEN
-      YLFSCALARDM=[YLFSCALARDM, B(F_SPD_FDM,'SPD_FDM',NBSETLEV), B(F_SVD_FDM,'SVD_FDM',NBSETLEV)]
-      YLFSCALARDL=[YLFSCALARDL, B(F_SPD_FDL,'SPD_FDL',NBSETLEV), B(F_SVD_FDL,'SVD_FDL',NBSETLEV)]
-    ENDIF
-    IF(YDDYNA%LNHX) THEN
-      YLFSPSCALAR=[YLFSPSCALAR, B(F_NHX,'SP_NHX')]
-      YLFSCALAR=[YLFSCALAR, B(F_NHX_FT0,'NHX',NBSETLEV)]
-      IF (YDDYNA%LNHXDER) THEN
-        YLFSCALARDM=[YLFSCALARDM, B(F_NHX_FDM,'NHX_FDM',NBSETLEV)]
-        YLFSCALARDL=[YLFSCALARDL, B(F_NHX_FDL,'NHX_FDL',NBSETLEV)]
-      ENDIF
-    ENDIF
-  ENDIF
-  
-  IF(YDML_GCONF%YGFL%YQ%LSP) THEN
-    YLFSPSCALAR=[YLFSPSCALAR, B(F_Q,'SP_Q')]
-    YLFSCALAR=[YLFSCALAR, B(F_Q_FT0,'Q',NBSETLEV)]
-    IF (kscders) THEN
-      YLFSCALARDM=[YLFSCALARDM, B(F_Q_FDM,'Q_FDM',NBSETLEV)]
-      YLFSCALARDL=[YLFSCALARDL, B(F_Q_FDL,'Q_FDL',NBSETLEV)]
-    ENDIF
-  ENDIF
-  
-  IF(YDML_GCONF%YGFL%YO3%LSP) THEN
-    YLFSPSCALAR=[YLFSPSCALAR, B(F_O3,'SP_O3')]
-    YLFSCALAR=[YLFSCALAR, B(F_O3_FT0,'O3',NBSETLEV)]
-    IF (kscders) THEN
-      YLFSCALARDM=[YLFSCALARDM, B(F_O3_FDM,'O3_FDM',NBSETLEV)]
-      YLFSCALARDL=[YLFSCALARDL, B(F_O3_FDL,'O3_FDL',NBSETLEV)]
-    ENDIF
-  ENDIF
-  
-  IF(YDML_GCONF%YGFL%YL%LSP) THEN
-    YLFSPSCALAR=[YLFSPSCALAR, B(F_L,'SP_L')]
-    YLFSCALAR=[YLFSCALAR, B(F_L_FT0,'L',NBSETLEV)]
-    IF (kscders) THEN
-      YLFSCALARDM=[YLFSCALARDM, B(F_L_FDM,'L_FDM',NBSETLEV)]
-      YLFSCALARDL=[YLFSCALARDL, B(F_L_FDL,'L_FDL',NBSETLEV)]
-    ENDIF
-  ENDIF
-  
-  IF(YDML_GCONF%YGFL%YI%LSP) THEN
-    YLFSPSCALAR=[YLFSPSCALAR, B(F_I,'SP_I')]
-    YLFSCALAR=[YLFSCALAR, B(F_I_FT0,'I',NBSETLEV)]
-    IF (kscders) THEN
-      YLFSCALARDM=[YLFSCALARDM, B(F_I_FDM,'I_FDM',NBSETLEV)]
-      YLFSCALARDL=[YLFSCALARDL, B(F_I_FDL,'I_FDL',NBSETLEV)]
-    ENDIF
-  ENDIF
-#endif 
