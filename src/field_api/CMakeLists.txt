@@ -54,6 +54,7 @@ function(generate_backend_sources)
     field_api_ectrans_mod.F90
     trans/dir_trans_field_api_mod.F90
     trans/inv_trans_field_api_mod.F90
+    field_api_basic_type_mod.F90      
   )
 
   set(outfiles)
@@ -71,31 +72,25 @@ function(generate_backend_sources)
   set(${_PAR_OUTPUT} ${outfiles} PARENT_SCOPE)
 endfunction(generate_backend_sources)
 
-
 set( BUILD_INTERFACE_INCLUDE_DIR ${CMAKE_BINARY_DIR}/include/ectrans )
 
 # loop over precisions
 foreach( prec dp sp)
   if( HAVE_${prec} )
    
-     generate_backend_includes(BACKEND ${prec} TARGET ectrans_field_api_${prec}_includes DESTINATION ${BUILD_INTERFACE_INCLUDE_DIR} INCLUDE_DIRECTORY ${PROJECT_SOURCE_DIR}/src/trans/include )
+#    generate_backend_includes(BACKEND ${prec} TARGET ectrans_field_api_${prec}_includes DESTINATION ${BUILD_INTERFACE_INCLUDE_DIR} INCLUDE_DIRECTORY ${PROJECT_SOURCE_DIR}/src/trans/include )
 
     generate_backend_sources(BACKEND ${prec} 
                              OUTPUT ectrans_field_api_${prec}_src  
                              DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_field_api_${prec})
-      set(files)
-      list( APPEND files
-        field_api_ectrans_mod.F90
-        trans/dir_trans_field_api_mod.F90
-        trans/inv_trans_field_api_mod.F90
-      )
-
+      
     ecbuild_add_library(
       TARGET           ectrans_field_api_${prec}
       LINKER_LANGUAGE  Fortran
       SOURCES          ${ectrans_field_api_${prec}_src}      
       PUBLIC_LIBS       ectrans_${prec} field_api_${prec} fiat parkind_${prec}
        PUBLIC_INCLUDES  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/trans/include/ectrans>       
+                        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/field_api/include>  
        )
 
     ectrans_target_fortran_module_directory(

@@ -1,36 +1,36 @@
-interface
+INTERFACE
 
-subroutine inv_trans_field_api(ydfspvor,ydfspdiv,ydfspscalar, &
-                             & ydfu, ydfv, ydfvor,ydfdiv,ydfscalar, &
-                             & ydfudm, ydfvdm, ydfscalardm, ydfscalardl,& 
-                             & kspec, kproma, kgpblks, kgptot, kflevg, kflevl,&
-                             & ldacc, ldverbose, &
-                             & fspgl_proc)
+SUBROUTINE INV_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
+                             & YDFU, YDFV, YDFVOR,YDFDIV,YDFSCALAR, &
+                             & YDFUDM, YDFVDM, YDFSCALARDM, YDFSCALARDL,& 
+                             & KSPEC, KPROMA, KGPBLKS, KGPTOT, KFLEVG, KFLEVL,&
+                             & LDACC, LDVERBOSE, &
+                             & FSPGL_PROC)
 
+USE FIELD_API_BASIC_TYPE_MOD, ONLY: FIELD_BASIC_PTR
+USE PARKIND1  , ONLY : JPIM, JPRB
+                                                     
+                             
+TYPE(FIELD_BASIC_PTR),INTENT(IN), OPTIONAL  :: YDFSPVOR(:), YDFSPDIV(:)        ! SPECTRAL VECTOR FIELDS : VORTICITY AND DIVERGENCE FIELDS (IN)
+TYPE(FIELD_BASIC_PTR),INTENT(IN), OPTIONAL  :: YDFSPSCALAR(:)                  ! SPECTRAL SCALAR FIELDS (IN)
 
-type(field_basic_ptr),intent(in), optional  :: ydfspvor(:), ydfspdiv(:)        ! spectral vector fields : vorticity and divergence fields (in)
-type(field_basic_ptr),intent(in), optional  :: ydfspscalar(:)                  ! spectral scalar fields (in)
+TYPE(FIELD_BASIC_PTR),INTENT(IN), OPTIONAL  :: YDFU(:),YDFV(:)                 ! GRID VECTOR FIELDS     (OUT)
+TYPE(FIELD_BASIC_PTR),INTENT(IN), OPTIONAL  :: YDFVOR(:),YDFDIV(:)             ! GRID VECTOR FIELDS :VORTICITY AND DIVERGENCE     (OUT)
+TYPE(FIELD_BASIC_PTR),INTENT(IN), OPTIONAL  :: YDFSCALAR(:)                    ! GRID SCALAR FIELDS     (OUT)
 
-type(field_basic_ptr),intent(in), optional  :: ydfu(:),ydfv(:)                 ! grid vector fields     (out)
-type(field_basic_ptr),intent(in), optional  :: ydfvor(:),ydfdiv(:)             ! grid vector fields :vorticity and divergence     (out)
-type(field_basic_ptr),intent(in), optional  :: ydfscalar(:)                    ! grid scalar fields     (out)
+TYPE(FIELD_BASIC_PTR),INTENT(IN), OPTIONAL  :: YDFUDM(:),YDFVDM(:)             ! GRID VECTOR FIELDS DERIVATIVES EW (OUT)
+TYPE(FIELD_BASIC_PTR),INTENT(IN), OPTIONAL  :: YDFSCALARDM(:), YDFSCALARDL(:)  ! GRID SCALAR FIELDS DERIVATIVES EW AND NS (OUT)
 
-type(field_basic_ptr),intent(in), optional  :: ydfudm(:),ydfvdm(:)             ! grid vector fields derivatives ew (out)
-type(field_basic_ptr),intent(in), optional  :: ydfscalardm(:), ydfscalardl(:)  ! grid scalar fields derivatives ew and ns (out)
+INTEGER(KIND=JPIM),   INTENT(IN)            :: KSPEC
+INTEGER(KIND=JPIM),   INTENT(IN)            :: KPROMA
+INTEGER(KIND=JPIM),   INTENT(IN)            :: KGPBLKS
+INTEGER(KIND=JPIM),   INTENT(IN)            :: KGPTOT
+INTEGER(KIND=JPIM),   INTENT(IN)            :: KFLEVG
+INTEGER(KIND=JPIM),   INTENT(IN)            :: KFLEVL
+LOGICAL,              INTENT(IN), OPTIONAL  :: LDACC
+LOGICAL,              INTENT(IN), OPTIONAL  :: LDVERBOSE
+PROCEDURE (FSPGL_INTF),           OPTIONAL  :: FSPGL_PROC
 
-integer(kind=jpim),   intent(in)            :: kspec
-integer(kind=jpim),   intent(in)            :: kproma
-integer(kind=jpim),   intent(in)            :: kgpblks
-integer(kind=jpim),   intent(in)            :: kgptot
-integer(kind=jpim),   intent(in)            :: kflevg
-integer(kind=jpim),   intent(in)            :: kflevl
-logical,              intent(in), optional  :: ldacc
-logical,              intent(in), optional  :: ldverbose
-procedure (fspgl_intf),           optional  :: fspgl_proc
+END SUBROUTINE INV_TRANS_FIELD_API
 
-#include "inv_trans.h"
-#include "abor1.intfb.h"
-
-end subroutine inv_trans_field_api
-
-end interface
+END INTERFACE

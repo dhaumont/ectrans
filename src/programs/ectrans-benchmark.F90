@@ -51,8 +51,9 @@ use oml_mod ,only : oml_max_threads
 use mpl_module
 use yomgstats, only: jpmaxstat, gstats_lstats => lstats
 use yomhook, only : dr_hook_init
-USE INV_TRANS_FIELD_API_MOD, ONLY : INV_TRANS_FIELD_API, FSPGL_INTF
-USE FIELD_API_ECTRANS_MOD, ONLY: FIELD_BASIC_PTR
+USE FIELD_MODULE, ONLY:FIELD_1RB, FIELD_2RB, FIELD_3RB, FIELD_4RB
+USE FIELD_FACTORY_MODULE
+#include "field_basic_type_ptr.h"
 implicit none
 
 ! Number of points in top/bottom latitudes
@@ -122,6 +123,22 @@ TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFVOR (:), YLFDIV (:)
 TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSPSCALAR (:)
 TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFUDM (:), YLFVDM (:)
 TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSCALARDM (:), YLFSCALARDL (:)
+
+CLASS (FIELD_3RB), POINTER :: F_U, F_V
+CLASS (FIELD_3RB), POINTER :: F_UDM, F_VDM
+
+CLASS (FIELD_4RB), POINTER :: F_SCALARS
+CLASS (FIELD_4RB), POINTER :: F_SCALARS_EW
+CLASS (FIELD_4RB), POINTER :: F_SCALARS_NS
+
+CLASS (FIELD_2RB), POINTER :: F_SCALAR2
+CLASS (FIELD_2RB), POINTER :: F_SCALAR2_EW
+CLASS (FIELD_2RB), POINTER :: F_SCALAR2_NS
+
+CLASS (FIELD_3RB), POINTER :: F_SPSCALARS
+CLASS (FIELD_2RB), POINTER :: F_SPVOR, F_SPDIV
+CLASS (FIELD_2RB), POINTER :: F_VOR, F_DIV
+
 
 
 logical :: lstack = .false. ! Output stack info
@@ -222,20 +239,14 @@ character(len=16) :: cgrid = ''
 integer(kind=jpim) :: ierr
 
 real(kind=jprb), allocatable :: global_field(:,:)
-!TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFU (:), YLFV (:)
-!TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSCALAR (:)
-!TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSPVOR (:), YLFSPDIV (:)
-!TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFVOR (:), YLFDIV (:)
-!TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSPSCALAR (:)
-!TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFUDM (:), YLFVDM (:)
-!TYPE (FIELD_BASIC_PTR), ALLOCATABLE:: YLFSCALARDM (:), YLFSCALARDL (:)
 
 !===================================================================================================
-
+#include "fspgl_intf.h"
 #include "setup_trans0.h"
 #include "setup_trans.h"
 #include "inv_trans.h"
 #include "dir_trans.h"
+#include "inv_trans_field_api.h"
 #include "trans_inq.h"
 #include "gath_grid.h"
 #include "specnorm.h"
@@ -488,6 +499,11 @@ zspvor  => sp3d(:,:,1)
 zspdiv  => sp3d(:,:,2)
 zspsc3a => sp3d(:,:,3:3+(nfld-1))
 
+CALL FIELD_NEW(F_SPVOR,      DATA=zspvor)
+CALL FIELD_NEW(F_SPDIV,      DATA=zspdiv)
+CALL FIELD_NEW(F_SPSCALARS,  DATA=zspsc3a)
+
+
 !===================================================================================================
 ! Allocate gridpoint arrays
 !===================================================================================================
@@ -503,12 +519,12 @@ do jb = 1, nprtrv
   enddo
 enddo
 
-!init_field_api(lvordiv, luvders,lscders)
+call init_field_api(lvordiv, luvders,lscders)
 
 ! Allocate grid-point arrays
 if (lvordiv) then
   jbegin_uv = 1
-  jend_uv = 2
+  jend_uv = 2  
 endif
 if (luvders) then
   jbegin_uder_EW  = jend_uv + 1
@@ -547,6 +563,17 @@ allocate(zgmvs(nproma,ndimgmvs,ngpblks))
 zgpuv => zgmv(:,:,1:jend_vder_EW,:)
 zgp3a => zgmv(:,:,jbegin_sc:jend_scder_EW,:)
 zgp2  => zgmvs(:,:,:)
+
+
+CALL FIELD_NEW(F_UDM,   DATA=zgmv(:,:,3,:))
+CALL FIELD_NEW(F_VDM,   DATA=zgmv(:,:,4,:))
+CALL FIELD_NEW(F_SCALARS,    DATA=zgmv(:,:,1:1,:))
+CALL FIELD_NEW(F_SCALARS_EW, DATA=zgmv(:,:,1:1,:))
+CALL FIELD_NEW(F_SCALARS_NS, DATA=zgmv(:,:,1:1,:))
+!CALL FIELD_NEW(F_VOR,   DATA=zgmv(:,:,1:1,:))
+!CALL FIELD_NEW(F_DIV,   DATA=zgmv(:,:,1:1,:))
+
+
 
 !===================================================================================================
 ! Allocate norm arrays
@@ -1498,6 +1525,95 @@ subroutine init_field_api(kvordiv, kuvders,kscders)
   logical, intent(in) :: kvordiv
   logical, intent(in) :: kuvders
   logical, intent(in) :: kscders
+
+#if 0
+  CLASS (FIELD_2RB), POINTER :: F_SPVOR
+  CLASS (FIELD_2RB), POINTER :: F_I
+  CLASS (FIELD_2RB), POINTER :: F_SPD
+  CLASS (FIELD_2RB), POINTER :: F_SVD
+  CLASS (FIELD_2RB), POINTER :: F_NHX
+  CLASS (FIELD_1RB), POINTER :: F_SP
+  CLASS (FIELD_1RB), POINTER :: F_OROG
+
+  YLFSPVOR= [B(F_VOR,'SP_VOR')]
+  YLFSPDIV= [B(F_DIV,'SP_DIV')]
+  
+  YLFU = [B(F_U,'U',NBSETLEV)]
+  YLFV = [B(F_V,'V',NBSETLEV)]
+  
+  IF (kuvders) THEN
+    YLFUDM=[B(F_UDL,'U_FDM', NBSETLEV)]
+    YLFVDM=[B(F_VDL,'V_FDM', NBSETLEV)]
+  ENDIF
+  
+  IF (LDVOR)    YLFVOR = [B(F_VOR_FT0,'VOR', NBSETLEV)]
+  IF (LLDIVGP)  YLFDIV = [B(F_DIV_FT0,'DIV', NBSETLEV)]
+  
+  ! Hydrostatic: T
+  YLFSPSCALAR= [B(F_SP,'SP_SP'),B(F_T,'SP_T')]
+  YLFSCALAR=[B(F_SP_FT0,'SP',[NBSETSP]),B(F_T_FT0,'T',NBSETLEV)]
+  IF (kscders) THEN
+    YLFSCALARDM=[B(F_SP_FDM,'SP_FDM',[NBSETSP]),B(F_T_FDM,'T_FDM',NBSETLEV)]
+    YLFSCALARDL=[B(F_SP_FDL,'SP_FDL',[NBSETSP]),B(F_T_FDL,'T_FDL',NBSETLEV)]
+  ENDIF
+  
+  !Non Hydrostatic: SPD, SVD and NHx
+  IF(YDDYNA%LNHDYN) THEN
+    YLFSPSCALAR = [YLFSPSCALAR, B(F_SPD,'SP_SPD'), B(F_SVD,'SP_SVD')]
+    YLFSCALAR=[YLFSCALAR, B(F_SPD_FT0,'SPD',NBSETLEV), B(F_SVD_FT0,'SVD',NBSETLEV)]
+    IF (kscders) THEN
+      YLFSCALARDM=[YLFSCALARDM, B(F_SPD_FDM,'SPD_FDM',NBSETLEV), B(F_SVD_FDM,'SVD_FDM',NBSETLEV)]
+      YLFSCALARDL=[YLFSCALARDL, B(F_SPD_FDL,'SPD_FDL',NBSETLEV), B(F_SVD_FDL,'SVD_FDL',NBSETLEV)]
+    ENDIF
+    IF(YDDYNA%LNHX) THEN
+      YLFSPSCALAR=[YLFSPSCALAR, B(F_NHX,'SP_NHX')]
+      YLFSCALAR=[YLFSCALAR, B(F_NHX_FT0,'NHX',NBSETLEV)]
+      IF (YDDYNA%LNHXDER) THEN
+        YLFSCALARDM=[YLFSCALARDM, B(F_NHX_FDM,'NHX_FDM',NBSETLEV)]
+        YLFSCALARDL=[YLFSCALARDL, B(F_NHX_FDL,'NHX_FDL',NBSETLEV)]
+      ENDIF
+    ENDIF
+  ENDIF
+  
+  IF(YDML_GCONF%YGFL%YQ%LSP) THEN
+    YLFSPSCALAR=[YLFSPSCALAR, B(F_Q,'SP_Q')]
+    YLFSCALAR=[YLFSCALAR, B(F_Q_FT0,'Q',NBSETLEV)]
+    IF (kscders) THEN
+      YLFSCALARDM=[YLFSCALARDM, B(F_Q_FDM,'Q_FDM',NBSETLEV)]
+      YLFSCALARDL=[YLFSCALARDL, B(F_Q_FDL,'Q_FDL',NBSETLEV)]
+    ENDIF
+  ENDIF
+  
+  IF(YDML_GCONF%YGFL%YO3%LSP) THEN
+    YLFSPSCALAR=[YLFSPSCALAR, B(F_O3,'SP_O3')]
+    YLFSCALAR=[YLFSCALAR, B(F_O3_FT0,'O3',NBSETLEV)]
+    IF (kscders) THEN
+      YLFSCALARDM=[YLFSCALARDM, B(F_O3_FDM,'O3_FDM',NBSETLEV)]
+      YLFSCALARDL=[YLFSCALARDL, B(F_O3_FDL,'O3_FDL',NBSETLEV)]
+    ENDIF
+  ENDIF
+  
+  IF(YDML_GCONF%YGFL%YL%LSP) THEN
+    YLFSPSCALAR=[YLFSPSCALAR, B(F_L,'SP_L')]
+    YLFSCALAR=[YLFSCALAR, B(F_L_FT0,'L',NBSETLEV)]
+    IF (kscders) THEN
+      YLFSCALARDM=[YLFSCALARDM, B(F_L_FDM,'L_FDM',NBSETLEV)]
+      YLFSCALARDL=[YLFSCALARDL, B(F_L_FDL,'L_FDL',NBSETLEV)]
+    ENDIF
+  ENDIF
+  
+  IF(YDML_GCONF%YGFL%YI%LSP) THEN
+    YLFSPSCALAR=[YLFSPSCALAR, B(F_I,'SP_I')]
+    YLFSCALAR=[YLFSCALAR, B(F_I_FT0,'I',NBSETLEV)]
+    IF (kscders) THEN
+      YLFSCALARDM=[YLFSCALARDM, B(F_I_FDM,'I_FDM',NBSETLEV)]
+      YLFSCALARDL=[YLFSCALARDL, B(F_I_FDL,'I_FDL',NBSETLEV)]
+    ENDIF
+  ENDIF
+#endif 
+  
+  
+
 
 end subroutine
 
