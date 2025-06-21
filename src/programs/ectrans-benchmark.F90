@@ -246,6 +246,7 @@ TYPE (FIELD_BASIC_PTR), ALLOCATABLE,TARGET:: UDM (:), VDM (:)
 TYPE (FIELD_BASIC_PTR), ALLOCATABLE,TARGET:: SCALARDM (:), SCALARDL (:)
 
 logical :: ldump_values = .false.
+logical :: lcrc_check = .false.
 
 integer, external :: ec_mpirank
 logical :: luse_mpi = .true.
@@ -277,7 +278,7 @@ luse_mpi = detect_mpirun()
 
 ! Setup
 call get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, nlev, lvordiv, lscders, luvders, &
-  & luseflt, nopt_mem_tr, nproma, verbosity, ldump_values, lprint_norms, lmeminfo, nprtrv, nprtrw, ncheck)
+  & luseflt, nopt_mem_tr, nproma, verbosity, ldump_values, lcrc_check, lprint_norms, lmeminfo, nprtrv, nprtrw, ncheck,lfield_api)
 if (cgrid == '') cgrid = cubic_octahedral_gaussian_grid(nsmax)
 call parse_grid(cgrid, ndgl, nloen)
 nflevg = nlev
@@ -702,8 +703,11 @@ do jstep = 1, iters+iters_warmup
   ztstep1(jstep) = timef()
   call gstats(4,0)
 
-  if (.NOT. lfield_api) then
-  write(nout,*) "INV_TRANS"
+  if (lcrc_check .OR. (.NOT. lfield_api)) then
+  !if (lcrc_check) then
+   ! zgmv(:,:,:,:) = 0
+    !zgmvs(:,:,:) = 0
+  !endif
   if (lvordiv) then
     call inv_trans(kresol=1, kproma=nproma, &
        & pspsc2=zspsc2,                     & ! spectral surface pressure
@@ -730,8 +734,14 @@ do jstep = 1, iters+iters_warmup
        & pgp2=zgp2,                         &
        & pgp3a=zgp3a)
   endif
-else
-  write(nout,*) "INV_TRANS_FIELD_API"
+
+if (lcrc_check) call dump_crc("inv_trans.txt", iter=jstep,zgmv=zgmv, zgmvs=zgmvs)
+endif
+  if (lcrc_check .OR. (lfield_api)) then
+  !if (lcrc_check) then
+   !   zgmv(:,:,:,:) = 0
+    !  zgmvs(:,:,:) = 0
+  !endif
   CALL INV_TRANS_FIELD_API (YDFSPVOR=ylf%SPVOR, YDFSPDIV=ylf%SPDIV, YDFSPSCALAR=ylf%SPSCALAR, &
                         & YDFU=ylf%U, YDFV=ylf%V, YDFSCALAR=ylf%SCALAR, &
                         & YDFUDM=ylf%UDM, YDFVDM=ylf%VDM, &
@@ -739,6 +749,8 @@ else
                         & YDFVOR=ylf%VOR, YDFDIV=ylf%DIV, &
                         & KSPEC=NSPEC2, KPROMA=NPROMA, KGPBLKS=NGPBLKS, KGPTOT=NGPTOT, KFLEVG=NFLEVG, KFLEVL=NFLEVL,& 
                         & LDACC=LLACC, LDVERBOSE =.TRUE.)
+
+ if (lcrc_check) call dump_crc("inv_trans_field_api.txt", jstep,zgmv, zgmvs)
 endif
   call gstats(4,1)
 
@@ -789,6 +801,7 @@ endif
       & kvsetsc2=ivsetsc,                   &
       & kvsetsc3a=ivset)
   endif
+  if (lcrc_check) call dump_crc("dir_trans.txt", iter=jstep,sp3d=sp3d,zspc2=zspsc2)
   call gstats(5,1)
 
   if (lfield_api) then
@@ -1253,8 +1266,8 @@ end subroutine
 !===================================================================================================
 
 subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, nlev, lvordiv, lscders, luvders, &
-  &                                   luseflt, nopt_mem_tr, nproma, verbosity, ldump_values, lprint_norms, &
-  &                                   lmeminfo, nprtrv, nprtrw, ncheck)
+  &                                   luseflt, nopt_mem_tr, nproma, verbosity, ldump_values, lcrc_check, lprint_norms, &
+  &                                   lmeminfo, nprtrv, nprtrw, ncheck,lfield_api)
 
 #ifdef _OPENACC
   use openacc, only: acc_init, acc_get_device_type
@@ -1274,6 +1287,7 @@ subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, n
   integer, intent(inout) :: nproma          ! NPROMA
   integer, intent(inout) :: verbosity       ! Level of verbosity
   logical, intent(inout) :: ldump_values    ! Dump values of grid point fields for debugging
+  logical, intent(inout) :: lcrc_check   !
   logical, intent(inout) :: lprint_norms    ! Calculate and print spectral norms of fields
   logical, intent(inout) :: lmeminfo        ! Show information from FIAT ec_meminfo routine at the
                                             ! end
@@ -1282,6 +1296,7 @@ subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, n
   integer, intent(inout) :: ncheck          ! The multiplier of the machine epsilon used as a
                                             ! tolerance for correctness checking
 
+  logical, intent(inout) :: lfield_api
   character(len=128) :: carg          ! Storage variable for command line arguments
   integer            :: iarg = 1      ! Argument index
 
@@ -1329,12 +1344,14 @@ subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, n
       case('--mem-tr'); nopt_mem_tr = get_int_value('--mem-tr', iarg)
       case('--nproma'); nproma = get_int_value('--nproma', iarg)
       case('--dump-values'); ldump_values = .true.
+      case('--crc-check'); lcrc_check = .true.
       case('--norms'); lprint_norms = .true.
       case('--meminfo'); lmeminfo = .true.
       case('--nprtrv'); nprtrv = get_int_value('--nprtrv', iarg)
       case('--nprtrw'); nprtrw = get_int_value('--nprtrw', iarg)
       case('-c', '--check'); ncheck = get_int_value('-c', iarg)
       case('--field-api'); lfield_api = .True.
+              
       case default
         call parsing_failed("Unrecognised argument: " // trim(carg))
 
@@ -1492,6 +1509,66 @@ subroutine dump_gridpoint_field(jstep, myproc, nproma, gfld, fld, fldchar, noutd
   endif
 
 end subroutine dump_gridpoint_field
+
+!===================================================================================================
+
+subroutine dump_crc(filename,iter, zgmv, zgmvs,sp3d,zspc2)
+  real(kind=jprb), optional :: zgmv   (:,:,:,:) 
+  real(kind=jprb), optional :: zgmvs   (:,:,:) 
+  real(kind=jprb), optional :: sp3d  (:,:,:) 
+  real(kind=jprb), optional :: zspc2   (:,:) 
+  INTEGER(KIND = JPIM):: iter
+  INTEGER*8 :: ICRC
+  INTEGER(KIND = JPIM):: JLEV, JFLD
+  character(len=*):: filename
+  LOGICAL:: EXIST = .False.
+  
+  IF (iter>1)  INQUIRE(FILE = filename, EXIST = EXIST)
+  IF (EXIST) THEN
+    OPEN(10, FILE = filename, STATUS="OLD", POSITION="APPEND", ACTION="WRITE")
+  ELSE
+    OPEN(10, FILE = filename, ACTION="WRITE")
+  END IF
+
+  WRITE(10,*) "===================="
+  WRITE(10,*) "iteration", iter  
+  WRITE(10,*) "===================="
+
+  IF (PRESENT(ZGMV)) THEN
+    ICRC = 0
+    DO JFLD = 1, SIZE (zgmv, 3)
+      DO JLEV = 1, SIZE (zgmv, 2)
+        CALL CRC64 (zgmv (:, JLEV, JFLD, :), INT (SIZE (zgmv (:, JLEV, JFLD, :)) * KIND (zgmv), 8), ICRC)
+        WRITE (10, '(A," (",I0,", ",I0,") = ",Z16.16)') "zgmv", JLEV, JFLD, ICRC 
+      ENDDO
+    ENDDO
+    ENDIF
+  
+  IF (PRESENT(ZGMVS)) THEN
+  ICRC = 0
+  DO JFLD = 1, SIZE (zgmvs, 2)
+       CALL CRC64 (zgmvs (:, JFLD, :), INT (SIZE (zgmvs (:, JFLD, :)) * KIND (zgmvs), 8), ICRC)
+       WRITE (10, '(A," (",I0,") = ",Z16.16)') "zgmvs", JFLD, ICRC     
+  ENDDO
+  ENDIF
+  IF (PRESENT(sp3d)) THEN
+  ICRC = 0
+  DO JFLD = 1, SIZE (sp3d, 3)
+    DO JLEV = 1, SIZE (sp3d, 1)
+       CALL CRC64 (sp3d (JLEV,:, JFLD), INT (SIZE (sp3d (JLEV, :, JFLD)) * KIND (sp3d), 8), ICRC)
+       WRITE (10, '(A," (",I0,", ",I0,") = ",Z16.16)') "sp3d", JLEV, JFLD, ICRC 
+    ENDDO
+  ENDDO
+ENDIF
+IF (PRESENT(zspc2)) THEN
+  ICRC = 0
+  DO JFLD = 1, SIZE (zspc2, 1)
+       CALL CRC64 (zspc2 (JFLD, :), INT (SIZE (zspc2 (JFLD, :)) * KIND (zspc2), 8), ICRC)
+       WRITE (10, '(A," (",I0,") = ",Z16.16)') "zspc2", JFLD, ICRC     
+  ENDDO
+ENDIF
+  CLOSE(10)
+end subroutine dump_crc
 
 !===================================================================================================
 
