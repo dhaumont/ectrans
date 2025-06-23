@@ -52,27 +52,27 @@ REAL(KIND=JPRB), POINTER :: ZPSPSC2(:,:)                          ! SPECTRAL SUR
 REAL(KIND=JPRB), POINTER :: ZPGPUV(:,:,:,:)                       ! GRID VECTOR FIELDS (OUT)
 REAL(KIND=JPRB), POINTER :: ZPGP2(:,:,:)                          ! GRID SURFACE SCALAR FIELDS (OUT)
 
-INTEGER(KIND=JPIM)          :: ISPUV                                  ! NUMBER OF INPUT SPECTRAL VECTOR FIELDS
-INTEGER(KIND=JPIM)          :: IFLDXG
-INTEGER(KIND=JPIM)          :: IFLDXL
-INTEGER(KIND=JPIM)          :: IFLDXGUV
-INTEGER(KIND=JPIM)          :: IFLDXLUV
-INTEGER(KIND=JPIM)          :: IUVG                                   ! NUMBER OF OUTPUT VECTOR FIELDS
-INTEGER(KIND=JPIM)          :: ISCDIM                                 ! SIZE OF OUTPUT SCALAR FIELDS ARRAY
-INTEGER(KIND=JPIM)          :: IUVDIM                                 ! SIZE OF OUTPUT VECTOR FIELDS ARRAY
-INTEGER(KIND=JPIM)          :: ID,IOFFSET,JLEV
-INTEGER(KIND=JPIM)          :: IEND
+INTEGER(KIND=JPIM)          :: ISPUV = 0                                 ! NUMBER OF INPUT SPECTRAL VECTOR FIELDS
+INTEGER(KIND=JPIM)          :: IFLDXG= 0
+INTEGER(KIND=JPIM)          :: IFLDXL= 0
+INTEGER(KIND=JPIM)          :: IFLDXGUV= 0
+INTEGER(KIND=JPIM)          :: IFLDXLUV= 0
+INTEGER(KIND=JPIM)          :: IUVG       = 0                            ! NUMBER OF OUTPUT VECTOR FIELDS
+INTEGER(KIND=JPIM)          :: ISCDIM  = 0                               ! SIZE OF OUTPUT SCALAR FIELDS ARRAY
+INTEGER(KIND=JPIM)          :: IUVDIM     = 0                            ! SIZE OF OUTPUT VECTOR FIELDS ARRAY
+INTEGER(KIND=JPIM)          :: ID= 0,IOFFSET= 0,JLEV= 0
+INTEGER(KIND=JPIM)          :: IEND= 0
 
 
 INTEGER(KIND=JPIM),ALLOCATABLE :: IVSETUV(:)
 INTEGER(KIND=JPIM),ALLOCATABLE :: IVSETSC2(:)
 
-INTEGER(KIND=JPIM)          :: JFLD                                   ! FIELD COUNTER
-LOGICAL                     :: LLSCDERS                               ! INDICATING IF DERIVATIVES OF SCALAR VARIABLES ARE REQ.
-LOGICAL                     :: LLVORGP                                ! INDICATING IF GRID-POINT VORTICITY IS REQ.
-LOGICAL                     :: LLDIVGP                                ! INDICATING IF GRID-POINT DIVERGENCE IS REQ.
-LOGICAL                     :: LLUVDER                                ! INDICATING IF E-W DERIVATIVES OF U AND V ARE REQ.
-LOGICAL                     :: LLVERBOSE                              ! INDICATING IF VERBOSE OUTPUT IS REQ.
+INTEGER(KIND=JPIM)          :: JFLD =0                                   ! FIELD COUNTER
+LOGICAL                     :: LLSCDERS  = .FALSE.                              ! INDICATING IF DERIVATIVES OF SCALAR VARIABLES ARE REQ.
+LOGICAL                     :: LLVORGP = .FALSE.                                ! INDICATING IF GRID-POINT VORTICITY IS REQ.
+LOGICAL                     :: LLDIVGP = .FALSE.                                ! INDICATING IF GRID-POINT DIVERGENCE IS REQ.
+LOGICAL                     :: LLUVDER = .FALSE.                                ! INDICATING IF E-W DERIVATIVES OF U AND V ARE REQ.
+LOGICAL                     :: LLVERBOSE  = .FALSE.                             ! INDICATING IF VERBOSE OUTPUT IS REQ.
 
 LLVERBOSE = .FALSE.
 

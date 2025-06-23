@@ -12,11 +12,16 @@ foreach( program ectrans-benchmark )
   list( APPEND util_src
     util/ectrans_memory.F90
     util/ectrans_memory.c
+    util/ectrans_field_api_helper.F90
   )
 
   if ( HAVE_CPU )
     foreach( prec dp sp )
       if( HAVE_${prec} )
+        if (HAVE_FIELD_API)
+          set(field_api_libs ectrans_field_api_${prec})
+        endif()
+  
         ecbuild_add_executable( TARGET  ${program}-cpu-${prec}
                                 SOURCES ${program}.F90 ${util_src}
                                 LINKER_LANGUAGE Fortran
@@ -24,10 +29,12 @@ foreach( program ectrans-benchmark )
                                   fiat
                                   parkind_${prec}
                                   trans_${prec}
-                                  ectrans_field_api_${prec}
+                                  ${field_api_libs}
                                 DEFINITIONS
                                   VERSION="cpu"
-        )
+                                  USE_FIELD_API=${HAVE_FIELD_API}
+                                  )
+        
         ectrans_target_fortran_module_directory(TARGET ${program}-cpu-${prec} MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/module/${program}-cpu-${prec} )
       endif()
     endforeach( prec)
