@@ -230,6 +230,7 @@ real(kind=jprb), allocatable :: global_field(:,:)
 #include "dir_trans.h"
 #if USE_FIELD_API
 #include "inv_trans_field_api.h"
+#include "dir_trans_field_api.h"
 #endif
 #include "trans_inq.h"
 #include "gath_grid.h"
@@ -755,6 +756,20 @@ endif
   ztstep2(jstep) = timef()
 
   call gstats(5,0)
+
+  if (lfield_api) then
+#if USE_FIELD_API
+        CALL DIR_TRANS_FIELD_API (YDFSPVOR=ylf%SPVOR, YDFSPDIV=ylf%SPDIV, YDFSPSCALAR=ylf%SPSCALAR, &
+                                & YDFU=ylf%U, YDFV=ylf%V, YDFSCALAR=ylf%SCALAR, &                                
+                                & YDFVOR=ylf%VOR, YDFDIV=ylf%DIV, &
+                                & KSPEC=NSPEC2, KPROMA=NPROMA, KGPBLKS=NGPBLKS, KGPTOT=NGPTOT, KFLEVG=NFLEVG, KFLEVL=NFLEVL,& 
+                                & LDACC=LLACC, LDVERBOSE =.TRUE.)
+
+
+#else
+      call abor1('ectrans_benchmark: No field API support')
+#endif
+  else
   if (lvordiv) then
     call dir_trans(kresol=1, kproma=nproma, &
       & pgp2=zgmvs(:,1:1,:),                &
@@ -776,7 +791,19 @@ endif
       & kvsetsc2=ivsetsc,                   &
       & kvsetsc3a=ivset)
   endif
-  if (ldump_crcs) call dump_crc("dir_trans.txt", iter=jstep,sp3d=sp3d,zspc2=zspsc2)
+endif
+  
+if (ldump_crcs) then  
+  if (lfield_api) then        
+    write (clfile,'(A)') 'dir_trans_field_api.txt'
+  else
+    write (clfile,'(A)') 'dir_trans.txt'    
+  endif
+  
+  call dump_crc(clfile, iter=jstep,sp3d=sp3d,zspc2=zspsc2)
+endif
+
+
   call gstats(5,1)
 
   ztstep2(jstep) = (timef() - ztstep2(jstep))/1000.0_jprd
