@@ -9,12 +9,6 @@
 
 program ectrans_benchmark
 
-#ifdef USE_PINNED
-#define PINNED_TAG , pinned
-#else
-#define PINNED_TAG
-#endif
-
 !
 ! Spectral transform test
 !
@@ -51,6 +45,8 @@ use oml_mod ,only : oml_max_threads
 use mpl_module
 use yomgstats, only: jpmaxstat, gstats_lstats => lstats
 use yomhook, only : dr_hook_init
+use ectrans_memory, only : allocator
+
 USE FIELD_MODULE, ONLY:FIELD_1RB, FIELD_2RB, FIELD_3RB, FIELD_4RB
 USE FIELD_FACTORY_MODULE
 #include "field_basic_type_ptr.h"
@@ -132,18 +128,18 @@ real(kind=jprb), allocatable :: znormvor(:), znormvor1(:), znormt(:), znormt1(:)
 real(kind=jprd) :: zaveave(0:jpmaxstat)
 
 ! Grid-point space data structures
-real(kind=jprb), allocatable, target PINNED_TAG :: zgmv   (:,:,:,:) ! Multilevel fields at t and t-dt
-real(kind=jprb), allocatable, target PINNED_TAG :: zgmvs  (:,:,:)   ! Single level fields at t and t-dt
+real(kind=jprb), pointer :: zgmv   (:,:,:,:) ! Multilevel fields at t and t-dt
+real(kind=jprb), pointer :: zgmvs  (:,:,:)   ! Single level fields at t and t-dt
 real(kind=jprb), pointer :: zgp3a (:,:,:,:) ! Multilevel fields at t and t-dt
 real(kind=jprb), pointer :: zgpuv   (:,:,:,:) ! Multilevel fields at t and t-dt
 real(kind=jprb), pointer :: zgp2 (:,:,:) ! Single level fields at t and t-dt
 
 ! Spectral space data structures
-real(kind=jprb), allocatable, target PINNED_TAG :: sp3d(:,:,:)
+real(kind=jprb), pointer :: sp3d(:,:,:)
 real(kind=jprb), pointer :: zspvor(:,:) => null()
 real(kind=jprb), pointer :: zspdiv(:,:) => null()
 real(kind=jprb), pointer :: zspsc3a(:,:,:) => null()
-real(kind=jprb), allocatable PINNED_TAG :: zspsc2(:,:)
+real(kind=jprb), pointer :: zspsc2(:,:)
 
 TYPE(WRAPPED_FIELDS), ALLOCATABLE :: wf
 TYPE(FIELDS_LISTS), ALLOCATABLE :: ylf
@@ -249,6 +245,7 @@ TYPE (FIELD_BASIC_PTR), ALLOCATABLE,TARGET:: UDM (:), VDM (:)
 TYPE (FIELD_BASIC_PTR), ALLOCATABLE,TARGET:: SCALARDM (:), SCALARDL (:)
 
 logical :: ldump_values = .false.
+logical :: lpinning = .false.
 logical :: ldump_crcs = .false.
 
 integer, external :: ec_mpirank
@@ -278,10 +275,14 @@ real(kind=jprb), allocatable :: global_field(:,:)
 !===================================================================================================
 
 luse_mpi = detect_mpirun()
+if (VERSION == "gpu") then
+  lpinning = .true.
+endif
 
 ! Setup
 call get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, nlev, lvordiv, lscders, luvders, &
-  & luseflt, nopt_mem_tr, nproma, verbosity, ldump_values, ldump_crcs, lprint_norms, lmeminfo, nprtrv, nprtrw, ncheck,lfield_api)
+  & luseflt, nopt_mem_tr, nproma, verbosity, ldump_values, ldump_crcs, lprint_norms, lmeminfo, nprtrv, nprtrw,&
+  & ncheck, lpinning, lfield_api)
 if (cgrid == '') cgrid = cubic_octahedral_gaussian_grid(nsmax)
 call parse_grid(cgrid, ndgl, nloen)
 nflevg = nlev
@@ -417,6 +418,15 @@ ivsetsc(1) = iprused
 ifld = 0
 
 !===================================================================================================
+! Setup allocation strategy
+!===================================================================================================
+if (verbosity >= 1 .and. myproc == 1) then
+  call allocator%set_logging(.true.)
+  call allocator%set_logging_output_unit(nout)
+endif
+call allocator%set_pinning(lpinning)
+
+!===================================================================================================
 ! Setup gstats
 !===================================================================================================
 
@@ -510,8 +520,8 @@ end if
 nullify(zspvor)
 nullify(zspdiv)
 nullify(zspsc3a)
-allocate(sp3d(nflevl,nspec2,2+nfld))
-allocate(zspsc2(1,nspec2))
+call allocator%allocate('sp3d',   sp3d,   [nflevl,nspec2,2+nfld])
+call allocator%allocate('zspsc2', zspsc2, [1,nspec2])
 
 call initialize_spectral_arrays(nsmax, zspsc2, sp3d)
 
@@ -571,9 +581,8 @@ endif
 
 ndimgmv = jend_scder_EW
 
-allocate(zgmv(nproma,nflevg,ndimgmv,ngpblks))
-allocate(zgmvs(nproma,ndimgmvs,ngpblks))
-
+call allocator%allocate('zgmv',  zgmv,  [nproma,nflevg,ndimgmv,ngpblks])
+call allocator%allocate('zgmvs', zgmvs, [nproma,ndimgmvs,ngpblks])
 zgpuv => zgmv(:,:,1:jend_vder_EW,:)
 zgp3a => zgmv(:,:,jbegin_sc:jend_scder_EW,:)
 zgp2  => zgmvs(:,:,:)
@@ -1064,8 +1073,10 @@ endif
 ! Cleanup
 !===================================================================================================
 
-deallocate(zgmv)
-deallocate(zgmvs)
+call allocator%deallocate('zgmv',   zgmv)
+call allocator%deallocate('zgmvs',  zgmvs)
+call allocator%deallocate('sp3d',   sp3d)
+call allocator%deallocate('zspsc2', zspsc2)
 
 if (lfield_api) then
   call delete_wrapped_fields(wf)
@@ -1252,6 +1263,8 @@ subroutine print_help(unit)
   write(nout, "(a)") "    --field-api         Use field API interface"
   write(nout, "(a)") "    -c, --check VALUE   The multiplier of the machine epsilon used as a&
    & tolerance for correctness checking"
+  write(nout, "(a)") "    --no-pinning        Disable memory-pinning (a.k.a. page-locked memory) &
+   & to allocate fields for GPU version"
   write(nout, "(a)") ""
   write(nout, "(a)") "DEBUGGING"
   write(nout, "(a)") "    --dump-values       Output gridpoint fields in unformatted binary file"
@@ -1279,7 +1292,7 @@ end subroutine
 
 subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, nlev, lvordiv, lscders, luvders, &
   &                                   luseflt, nopt_mem_tr, nproma, verbosity, ldump_values, ldump_crcs, lprint_norms, &
-  &                                   lmeminfo, nprtrv, nprtrw, ncheck,lfield_api)
+  &                                   lmeminfo, nprtrv, nprtrw, ncheck, lpinning, lfield_api)
 
 #ifdef _OPENACC
   use openacc, only: acc_init, acc_get_device_type
@@ -1299,7 +1312,7 @@ subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, n
   integer, intent(inout) :: nproma          ! NPROMA
   integer, intent(inout) :: verbosity       ! Level of verbosity
   logical, intent(inout) :: ldump_values    ! Dump values of grid point fields for debugging
-  logical, intent(inout) :: ldump_crcs   !
+  logical, intent(inout) :: ldump_crcs      ! Dump CRC checksums
   logical, intent(inout) :: lprint_norms    ! Calculate and print spectral norms of fields
   logical, intent(inout) :: lmeminfo        ! Show information from FIAT ec_meminfo routine at the
                                             ! end
@@ -1307,8 +1320,9 @@ subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, n
   integer, intent(inout) :: nprtrw          ! Size of W set (spectral decomposition)
   integer, intent(inout) :: ncheck          ! The multiplier of the machine epsilon used as a
                                             ! tolerance for correctness checking
+  logical, intent(inout) :: lpinning        ! Use memory-pinning (a.k.a. page-locked memory) to allocate fields for GPU version
 
-  logical, intent(inout) :: lfield_api
+  logical, intent(inout) :: lfield_api      ! Use field API interface
   character(len=128) :: carg          ! Storage variable for command line arguments
   integer            :: iarg = 1      ! Argument index
 
@@ -1362,8 +1376,8 @@ subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, n
       case('--nprtrv'); nprtrv = get_int_value('--nprtrv', iarg)
       case('--nprtrw'); nprtrw = get_int_value('--nprtrw', iarg)
       case('-c', '--check'); ncheck = get_int_value('-c', iarg)
-      case('--field-api'); lfield_api = .True.
-              
+      case('--no-pinning'); lpinning = .False.
+      case('--field-api'); lfield_api = .False.
       case default
         call parsing_failed("Unrecognised argument: " // trim(carg))
 

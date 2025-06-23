@@ -6,8 +6,6 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
-find_package( MPI )
-
 # --------------------------------------------------------------------------------------------------
 # Add a test for installation of ecTrans
 # --------------------------------------------------------------------------------------------------
@@ -60,27 +58,138 @@ foreach( mpi ${ntasks} )
 endforeach()
 
 # --------------------------------------------------------------------------------------------------
-# Add a test for tangent-linear/adjoint correspondence (CPU version only)
+# Add a test for tangent-linear/adjoint correspondence of INV_TRANS and DIR_TRANS combined (CPU
+# version only)
 # --------------------------------------------------------------------------------------------------
 
 if( HAVE_CPU )
+  set( precisions "" )
   if( HAVE_DOUBLE_PRECISION )
-    set( trans trans_dp )
+    list( APPEND precisions "dp" )
+  endif()
+  if( HAVE_SINGLE_PRECISION )
+    list( APPEND precisions "sp" )
+  endif()
+
+  set( ntasks 0 )
+  if( HAVE_MPI )
+    list( APPEND ntasks 1 2 )
+  endif()
+
+  foreach( precision ${precisions} )
+    foreach( mpi ${ntasks} )
+      set( test_name ectrans_test_adjoint_mpi${mpi}_${precision} )
+      ecbuild_add_test(TARGET ${test_name}
+        SOURCES trans/test_adjoint.F90
+        LIBS trans_${precision} parkind_${precision}
+        LINKER_LANGUAGE Fortran
+        MPI ${mpi}
+      )
+      if( TEST ${test_name} AND HAVE_OMP )
+        target_link_libraries( ${test_name} OpenMP::OpenMP_Fortran )
+      endif()
+    endforeach()
+  endforeach()
+endif()
+
+set( platforms )
+if( HAVE_CPU )
+  list( APPEND platforms cpu )
+endif()
+if( HAVE_GPU )
+  list( APPEND platforms gpu )
+endif()
+
+foreach( platform ${platforms} )
+  
+  if( "${platform}" MATCHES "cpu" )
+    set( platform_tag "" )
+  endif()
+  if( "${platform}" MATCHES "gpu" )
+    set( platform_tag "_gpu" )
+  endif()
+  
+  if( HAVE_DOUBLE_PRECISION )
+    set( trans trans${platform_tag}_dp )
     set( parkind parkind_dp )
   else()
-    set( trans trans_sp )
+    set( trans trans${platform_tag}_sp )
     set( parkind parkind_sp )
   endif()
 
-  ecbuild_add_test(TARGET ectrans_test_adjoint
-    SOURCES trans/test_adjoint.F90
-    LIBS ${trans} ${parkind}
-    LINKER_LANGUAGE Fortran
-  )
-  if( TEST ectrans_test_adjoint AND HAVE_OMP )
-    target_link_libraries( ectrans_test_adjoint OpenMP::OpenMP_Fortran )
+  set( ntasks 0 )
+  if( HAVE_MPI )
+    list( APPEND ntasks 1 2 )
   endif()
+
+  foreach( mpi ${ntasks} )
+    
+    ecbuild_add_test(TARGET ectrans_test_dirtrans_adjoint_${platform}_mpi${mpi}
+      SOURCES trans/test_dirtrans_adjoint.F90
+      LIBS ${trans} ${parkind}
+      LINKER_LANGUAGE Fortran
+      MPI ${mpi}
+      OMP 1
+    )
+    if( TEST ectrans_test_dirtrans_adjoint_${platform}_mpi${mpi} AND HAVE_OMP )
+      target_link_libraries( ectrans_test_dirtrans_adjoint_${platform}_mpi${mpi} OpenMP::OpenMP_Fortran )
+    endif()
+    set_tests_properties(ectrans_test_dirtrans_adjoint_${platform}_mpi${mpi} PROPERTIES LABELS "${platform};Fortran")
+    
+  endforeach() # mpi comm size
+
+endforeach() # platform
+
+# --------------------------------------------------------------------------------------------------
+# Add a test for tangent-linear/adjoint correspondence of INV_TRANS alone
+# --------------------------------------------------------------------------------------------------
+
+set( platforms )
+if( HAVE_CPU )
+  list( APPEND platforms cpu )
 endif()
+if( HAVE_GPU )
+  list( APPEND platforms gpu )
+endif()
+
+foreach( platform ${platforms} )
+  
+  if( "${platform}" MATCHES "cpu" )
+    set( platform_tag "" )
+  endif()
+  if( "${platform}" MATCHES "gpu" )
+    set( platform_tag "_gpu" )
+  endif()
+  
+  if( HAVE_DOUBLE_PRECISION )
+    set( trans trans${platform_tag}_dp )
+    set( parkind parkind_dp )
+  else()
+    set( trans trans${platform_tag}_sp )
+    set( parkind parkind_sp )
+  endif()
+
+  set( ntasks 0 )
+  if( HAVE_MPI )
+    list( APPEND ntasks 1 2 )
+  endif()
+
+  foreach( mpi ${ntasks} )
+    ecbuild_add_test(TARGET ectrans_test_invtrans_adjoint_${platform}_mpi${mpi}
+      SOURCES trans/test_invtrans_adjoint.F90
+      LIBS ${trans} ${parkind}
+      LINKER_LANGUAGE Fortran
+      MPI ${mpi}
+      OMP 1
+    )
+    if( TEST ectrans_test_invtrans_adjoint_${platform}_mpi${mpi} AND HAVE_OMP )
+      target_link_libraries( ectrans_test_invtrans_adjoint_${platform}_mpi${mpi} OpenMP::OpenMP_Fortran )
+    endif()
+    set_tests_properties(ectrans_test_invtrans_adjoint_${platform}_mpi${mpi} PROPERTIES LABELS "${platform};Fortran")
+    
+  endforeach() # mpi comm size
+
+endforeach() # platform
 
 # --------------------------------------------------------------------------------------------------
 # Add a test for tangent-linear/adjoint correspondence of GPNORM_TRANSTL/AD (CPU version only)
@@ -365,6 +474,22 @@ if( HAVE_TRANSI )
       DEFINITIONS GPU_VERSION
       ENVIRONMENT TRANS_USE_MPI=0 )
     set_tests_properties(ectrans_test_transi_program_gpu PROPERTIES LABELS gpu)
+    
+    ecbuild_add_test( TARGET ectrans_test_transi_invtrans_adjoint_gpu
+      SOURCES   transi/transi_test_invtrans_adjoint.c
+      LIBS      ectrans_test_gpu
+      LINKER_LANGUAGE C
+      DEFINITIONS GPU_VERSION
+      ENVIRONMENT TRANS_USE_MPI=0 )
+    set_tests_properties(ectrans_test_transi_invtrans_adjoint_gpu PROPERTIES LABELS gpu)
+
+    ecbuild_add_test( TARGET ectrans_test_transi_dirtrans_adjoint_gpu
+      SOURCES   transi/transi_test_dirtrans_adjoint.c
+      LIBS      ectrans_test_gpu
+      LINKER_LANGUAGE C
+      DEFINITIONS GPU_VERSION
+      ENVIRONMENT TRANS_USE_MPI=0 )
+    set_tests_properties(ectrans_test_transi_dirtrans_adjoint_gpu PROPERTIES LABELS gpu)
   endif()
 
   ecbuild_add_test( TARGET ectrans_test_transi_timings
