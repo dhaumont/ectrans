@@ -249,7 +249,7 @@ TYPE (FIELD_BASIC_PTR), ALLOCATABLE,TARGET:: UDM (:), VDM (:)
 TYPE (FIELD_BASIC_PTR), ALLOCATABLE,TARGET:: SCALARDM (:), SCALARDL (:)
 
 logical :: ldump_values = .false.
-logical :: ldump_crc = .false.
+logical :: ldump_crcs = .false.
 
 integer, external :: ec_mpirank
 logical :: luse_mpi = .true.
@@ -281,7 +281,7 @@ luse_mpi = detect_mpirun()
 
 ! Setup
 call get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, nlev, lvordiv, lscders, luvders, &
-  & luseflt, nopt_mem_tr, nproma, verbosity, ldump_values, ldump_crc, lprint_norms, lmeminfo, nprtrv, nprtrw, ncheck,lfield_api)
+  & luseflt, nopt_mem_tr, nproma, verbosity, ldump_values, ldump_crcs, lprint_norms, lmeminfo, nprtrv, nprtrw, ncheck,lfield_api)
 if (cgrid == '') cgrid = cubic_octahedral_gaussian_grid(nsmax)
 call parse_grid(cgrid, ndgl, nloen)
 nflevg = nlev
@@ -706,7 +706,7 @@ do jstep = 1, iters+iters_warmup
   ztstep1(jstep) = timef()
   call gstats(4,0)
 
-  if (ldump_crc) then
+  if (ldump_crcs) then
     zgmv(:,:,:,:) = 0
     zgmvs(:,:,:) = 0
   endif
@@ -749,7 +749,7 @@ else
   endif  
 endif
 
-if (ldump_crc) then  
+if (ldump_crcs) then  
     if (lfield_api) then        
       write (clfile,'(A)') 'inv_trans_field_api.txt'
     else
@@ -812,7 +812,7 @@ endif
       & kvsetsc2=ivsetsc,                   &
       & kvsetsc3a=ivset)
   endif
-  if (ldump_crc) call dump_crc("dir_trans.txt", iter=jstep,sp3d=sp3d,zspc2=zspsc2)
+  if (ldump_crcs) call dump_crc("dir_trans.txt", iter=jstep,sp3d=sp3d,zspc2=zspsc2)
   call gstats(5,1)
 
   ztstep2(jstep) = (timef() - ztstep2(jstep))/1000.0_jprd
@@ -1255,6 +1255,7 @@ subroutine print_help(unit)
   write(nout, "(a)") ""
   write(nout, "(a)") "DEBUGGING"
   write(nout, "(a)") "    --dump-values       Output gridpoint fields in unformatted binary file"
+  write(nout, "(a)") "    --dump-crcs          Output CRC64 checksums of fields in text file"
   write(nout, "(a)") ""
 
 end subroutine print_help
@@ -1277,7 +1278,7 @@ end subroutine
 !===================================================================================================
 
 subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, nlev, lvordiv, lscders, luvders, &
-  &                                   luseflt, nopt_mem_tr, nproma, verbosity, ldump_values, ldump_crc, lprint_norms, &
+  &                                   luseflt, nopt_mem_tr, nproma, verbosity, ldump_values, ldump_crcs, lprint_norms, &
   &                                   lmeminfo, nprtrv, nprtrw, ncheck,lfield_api)
 
 #ifdef _OPENACC
@@ -1298,7 +1299,7 @@ subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, n
   integer, intent(inout) :: nproma          ! NPROMA
   integer, intent(inout) :: verbosity       ! Level of verbosity
   logical, intent(inout) :: ldump_values    ! Dump values of grid point fields for debugging
-  logical, intent(inout) :: ldump_crc   !
+  logical, intent(inout) :: ldump_crcs   !
   logical, intent(inout) :: lprint_norms    ! Calculate and print spectral norms of fields
   logical, intent(inout) :: lmeminfo        ! Show information from FIAT ec_meminfo routine at the
                                             ! end
@@ -1355,7 +1356,7 @@ subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, n
       case('--mem-tr'); nopt_mem_tr = get_int_value('--mem-tr', iarg)
       case('--nproma'); nproma = get_int_value('--nproma', iarg)
       case('--dump-values'); ldump_values = .true.
-      case('--dump-crc'); ldump_crc = .true.
+      case('--dump-crcs'); ldump_crcs = .true.
       case('--norms'); lprint_norms = .true.
       case('--meminfo'); lmeminfo = .true.
       case('--nprtrv'); nprtrv = get_int_value('--nprtrv', iarg)
