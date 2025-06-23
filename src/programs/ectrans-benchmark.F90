@@ -1749,7 +1749,7 @@ function wrap_fields(lvordiv, lscders, luvders,&
 
   if (luvders) then
     CALL FIELD_NEW(wrap_fields%F_UDM,         DATA=zgmv(:,:,jbegin_uder_EW,:))
-    CALL FIELD_NEW(wrap_fields%F_VDM,         DATA=zgmv(:,:,jbegin_vder_EW,:))
+    CALL FIELD_NEW(wrap_fields%F_VDM,         DATA=zgmv(:,:,jend_uder_EW,:))
   endif
 
   IF (jend_sc>0 .AND. jend_sc>=jbegin_sc )  CALL FIELD_NEW(wrap_fields%F_SCALARS,     DATA=zgmv(:,:,jbegin_sc:jend_sc,:))
