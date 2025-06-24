@@ -9,7 +9,8 @@ SUBROUTINE INV_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
 
 USE FIELD_API_BASIC_TYPE_MOD, ONLY: FIELD_BASIC_PTR
 USE PARKIND1  , ONLY : JPIM, JPRB
-                                                     
+
+#include "fspgl_intf.h"                                                     
                              
 TYPE(FIELD_BASIC_PTR),INTENT(IN), OPTIONAL  :: YDFSPVOR(:), YDFSPDIV(:)        ! SPECTRAL VECTOR FIELDS : VORTICITY AND DIVERGENCE FIELDS (IN)
 TYPE(FIELD_BASIC_PTR),INTENT(IN), OPTIONAL  :: YDFSPSCALAR(:)                  ! SPECTRAL SCALAR FIELDS (IN)
