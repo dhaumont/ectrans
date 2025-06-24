@@ -761,7 +761,6 @@ endif
 #if USE_FIELD_API
         CALL DIR_TRANS_FIELD_API (YDFSPVOR=ylf%SPVOR, YDFSPDIV=ylf%SPDIV, YDFSPSCALAR=ylf%SPSCALAR, &
                                 & YDFU=ylf%U, YDFV=ylf%V, YDFSCALAR=ylf%SCALAR, &                                
-                                & YDFVOR=ylf%VOR, YDFDIV=ylf%DIV, &
                                 & KSPEC=NSPEC2, KPROMA=NPROMA, KGPBLKS=NGPBLKS, KGPTOT=NGPTOT, KFLEVG=NFLEVG, KFLEVL=NFLEVL,& 
                                 & LDACC=LLACC, LDVERBOSE =.TRUE.)
 
