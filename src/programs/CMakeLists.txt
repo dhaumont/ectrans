@@ -11,9 +11,12 @@ foreach( program ectrans-benchmark )
 
   list( APPEND util_src
     util/ectrans_memory.F90
-    util/ectrans_memory.c
-    util/ectrans_field_api_helper.F90
+    util/ectrans_memory.c    
   )
+
+  if (HAVE_FIELD_API)
+    list(APPEND util_src util/ectrans_field_api_helper.F90)
+  endif()
 
   if ( HAVE_CPU )
     foreach( prec dp sp )

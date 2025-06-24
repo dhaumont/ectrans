@@ -206,8 +206,10 @@ integer(kind=jpim) :: jbegin_vder_EW = 0
 integer(kind=jpim) :: jend_vder_EW = 0
 integer(kind=jpim) :: iend = 0 
 
+#if USE_FIELD_API
 TYPE(WRAPPED_FIELDS) :: flds
 TYPE(FIELDS_LISTS) :: ylf
+#endif
 
 logical :: ldump_values = .false.
 logical :: lpinning = .false.
