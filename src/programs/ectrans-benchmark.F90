@@ -48,7 +48,7 @@ use yomhook, only : dr_hook_init
 use ectrans_memory, only : allocator
 
 #if USE_FIELD_API
-USE ectrans_field_api_helper, only : WRAPPED_FIELDS, FIELDS_LISTS, wrap_fields, create_fields_lists, &
+USE ectrans_field_api_helper, only : wrapped_fields, fields_lists, wrap_fields, create_fields_lists, &
                                   & delete_wrapped_fields,delete_fields_lists, output_wrapped_fields, output_fields_lists, &
                                   & nullify_wrapped_fields,nullify_fields_lists
 #endif
@@ -207,8 +207,8 @@ integer(kind=jpim) :: jend_vder_EW = 0
 integer(kind=jpim) :: iend = 0 
 
 #if USE_FIELD_API
-TYPE(WRAPPED_FIELDS) :: flds
-TYPE(FIELDS_LISTS) :: ylf
+type(wrapped_fields) :: flds
+type(fields_lists) :: ylf
 #endif
 
 logical :: ldump_values = .false.
@@ -568,11 +568,9 @@ if (lfield_api) then
                   & jbegin_scder_EW, jend_scder_EW, &
                   & jbegin_uder_EW, jend_uder_EW, &
                   & jbegin_vder_EW, jend_vder_EW)
-  call output_wrapped_fields(nout,flds)
    
   call nullify_fields_lists(ylf)
-  call create_fields_lists(flds,ylf,ivset,ivsetsc)
-  call output_fields_lists(nout,ylf)
+  call create_fields_lists(flds,ylf,ivset,ivsetsc)  
 endif
 #endif
 !===================================================================================================
@@ -677,13 +675,13 @@ do jstep = 1, iters+iters_warmup
 
   if (lfield_api) then
 #if USE_FIELD_API
-    CALL INV_TRANS_FIELD_API (YDFSPVOR=ylf%SPVOR, YDFSPDIV=ylf%SPDIV, YDFSPSCALAR=ylf%SPSCALAR, &
-                            & YDFU=ylf%U, YDFV=ylf%V, YDFSCALAR=ylf%SCALAR, &
-                            & YDFUDM=ylf%UDM, YDFVDM=ylf%VDM, &
-                            & YDFSCALARDM=ylf%SCALARDM, YDFSCALARDL=ylf%SCALARDL, &
-                            & YDFVOR=ylf%VOR, YDFDIV=ylf%DIV, &
-                            & KSPEC=NSPEC2, KPROMA=NPROMA, KGPBLKS=NGPBLKS, KGPTOT=NGPTOT, KFLEVG=NFLEVG, KFLEVL=NFLEVL,& 
-                            & LDACC=LLACC, LDVERBOSE =.TRUE.)
+    CALL inv_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
+                            & ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
+                            & ydfudm=ylf%udm, ydfvdm=ylf%vdm, &
+                            & ydfscalardm=ylf%scalardm, ydfscalardl=ylf%scalardl, &
+                            & ydfvor=ylf%vor, ydfdiv=ylf%div, &
+                            & kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,& 
+                            & ldacc=llacc)
 #else
   call abor1('ectrans_benchmark: No field API support')
 #endif
@@ -719,12 +717,11 @@ endif
 if (ldump_crcs) then  
     if (lfield_api) then        
       write (clfile,'(A)') 'inv_trans_field_api.txt'
-    else
-      write (clfile,'(A)') 'inv_trans.txt'
+    else      
       ! Remove trash at end of last block    
-      IEND = NGPTOT - NPROMA * (NGPBLKS - 1)
-      !iend = nproma * ngpblks - ngptot      
+      iend = ngptot - nproma * (ngpblks - 1)      
       zgmvs (iend+1:, :, ngpblks) = 0
+      write (clfile,'(A)') 'inv_trans.txt'
     endif
     
     call dump_crc(clfile, iter=jstep,zgmv=zgmv, zgmvs=zgmvs)
@@ -761,12 +758,10 @@ endif
 
   if (lfield_api) then
 #if USE_FIELD_API
-        CALL DIR_TRANS_FIELD_API (YDFSPVOR=ylf%SPVOR, YDFSPDIV=ylf%SPDIV, YDFSPSCALAR=ylf%SPSCALAR, &
-                                & YDFU=ylf%U, YDFV=ylf%V, YDFSCALAR=ylf%SCALAR, &                                
-                                & KSPEC=NSPEC2, KPROMA=NPROMA, KGPBLKS=NGPBLKS, KGPTOT=NGPTOT, KFLEVG=NFLEVG, KFLEVL=NFLEVL,& 
-                                & LDACC=LLACC, LDVERBOSE =.TRUE.)
-
-
+        call dir_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
+                                & ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &                                
+                                & kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,& 
+                                & ldacc=llacc)
 #else
       call abor1('ectrans_benchmark: No field API support')
 #endif
@@ -1067,7 +1062,6 @@ if (lfield_api) then
   call delete_fields_lists(ylf)
   !deallocate(ylf)
   !deallocate(flds)
-
 endif
 #endif
 !===================================================================================================

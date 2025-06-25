@@ -3,7 +3,7 @@ SUBROUTINE INV_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
                              & YDFU, YDFV, YDFVOR,YDFDIV,YDFSCALAR, &
                              & YDFUDM, YDFVDM, YDFSCALARDM, YDFSCALARDL,& 
                              & KSPEC, KPROMA, KGPBLKS, KGPTOT, KFLEVG, KFLEVL,&
-                             & LDACC, LDVERBOSE, &
+                             & LDACC, &
                              & FSPGL_PROC)
 
 USE FIELD_API_BASIC_TYPE_MOD, ONLY: FIELD_BASIC_PTR
@@ -31,7 +31,6 @@ INTEGER(KIND=JPIM),   INTENT(IN)            :: KGPTOT
 INTEGER(KIND=JPIM),   INTENT(IN)            :: KFLEVG
 INTEGER(KIND=JPIM),   INTENT(IN)            :: KFLEVL
 LOGICAL,              INTENT(IN), OPTIONAL  :: LDACC
-LOGICAL,              INTENT(IN), OPTIONAL  :: LDVERBOSE
 PROCEDURE (FSPGL_INTF),           OPTIONAL  :: FSPGL_PROC
 
 #include "inv_trans.h"
@@ -72,11 +71,6 @@ LOGICAL                     :: LLSCDERS  = .FALSE.                              
 LOGICAL                     :: LLVORGP = .FALSE.                                ! INDICATING IF GRID-POINT VORTICITY IS REQ.
 LOGICAL                     :: LLDIVGP = .FALSE.                                ! INDICATING IF GRID-POINT DIVERGENCE IS REQ.
 LOGICAL                     :: LLUVDER = .FALSE.                                ! INDICATING IF E-W DERIVATIVES OF U AND V ARE REQ.
-LOGICAL                     :: LLVERBOSE  = .FALSE.                             ! INDICATING IF VERBOSE OUTPUT IS REQ.
-
-LLVERBOSE = .FALSE.
-
-IF (PRESENT(LDVERBOSE))  LLVERBOSE = LDVERBOSE
 
 ! 1. VECTOR FIELDS TRANSFORMATION
 
