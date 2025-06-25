@@ -207,7 +207,7 @@ integer(kind=jpim) :: jend_vder_EW = 0
 integer(kind=jpim) :: iend = 0 
 
 #if USE_FIELD_API
-type(wrapped_fields) :: flds
+type(wrapped_fields) :: ywflds
 type(fields_lists) :: ylf
 #endif
 
@@ -559,8 +559,8 @@ zgp2  => zgmvs(:,:,:)
 
 #if USE_FIELD_API
 if (lfield_api) then  
-  call nullify_wrapped_fields(flds) 
-  call wrap_fields(flds,lvordiv, lscders, luvders, &
+  call nullify_wrapped_fields(ywflds) 
+  call wrap_fields(ywflds,lvordiv, lscders, luvders, &
                   & sp3d, zspsc2, zgmv, zgmvs, zgp2, &
                   & jbegin_uv,jend_uv, &
                   & jbegin_sc,jend_sc, &
@@ -569,7 +569,7 @@ if (lfield_api) then
                   & jbegin_uder_EW, jend_uder_EW, &
                   & jbegin_vder_EW, jend_vder_EW)
   
-  call create_fields_lists(flds,ylf,ivset,ivsetsc)  
+  call create_fields_lists(ywflds,ylf,ivset,ivsetsc)  
 endif
 #endif
 !===================================================================================================
@@ -1057,10 +1057,10 @@ call allocator%deallocate('zspsc2', zspsc2)
 
 #if USE_FIELD_API
 if (lfield_api) then
-  call delete_wrapped_fields(flds)
+  call delete_wrapped_fields(ywflds)
   call delete_fields_lists(ylf)
   !deallocate(ylf)
-  !deallocate(flds)
+  !deallocate(ywflds)
 endif
 #endif
 !===================================================================================================
