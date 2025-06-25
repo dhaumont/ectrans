@@ -27,21 +27,13 @@ type wrapped_fields
 end type wrapped_fields
 
 type fields_lists
-  type (field_basic_ptr), allocatable:: alloc_u (:), alloc_v (:)
-  type (field_basic_ptr), allocatable:: alloc_scalar (:)
-  type (field_basic_ptr), allocatable:: alloc_spvor (:), alloc_spdiv (:)
-  type (field_basic_ptr), allocatable:: alloc_vor (:), alloc_div (:)
-  type (field_basic_ptr), allocatable:: alloc_spscalar (:)
-  type (field_basic_ptr), allocatable:: alloc_udm (:), alloc_vdm (:)
-  type (field_basic_ptr), allocatable:: alloc_scalardm (:), alloc_scalardl (:)  
-
-  type (field_basic_ptr), pointer:: u (:), v (:)
-  type (field_basic_ptr), pointer:: scalar (:)
-  type (field_basic_ptr), pointer:: spvor (:), spdiv (:)
-  type (field_basic_ptr), pointer:: vor (:), div (:)
-  type (field_basic_ptr), pointer:: spscalar (:)
-  type (field_basic_ptr), pointer:: udm (:), vdm (:)
-  type (field_basic_ptr), pointer:: scalardm (:), scalardl (:)  
+  type (field_basic_ptr), allocatable:: u (:), v (:)
+  type (field_basic_ptr), allocatable:: scalar (:)
+  type (field_basic_ptr), allocatable:: spvor (:), spdiv (:)
+  type (field_basic_ptr), allocatable:: vor (:), div (:)
+  type (field_basic_ptr), allocatable:: spscalar (:)
+  type (field_basic_ptr), allocatable:: udm (:), vdm (:)
+  type (field_basic_ptr), allocatable:: scalardm (:), scalardl (:)  
   end type fields_lists
   
 contains
@@ -124,6 +116,7 @@ subroutine wrap_fields(flds, lvordiv, lscders, luvders,&
   integer(kind=jpim) :: jbegin_vder_ew
   integer(kind=jpim) :: jend_vder_ew
     
+  call delete_wrapped_fields(flds)
   call nullify_wrapped_fields(flds)
 
   
@@ -180,57 +173,38 @@ subroutine delete_wrapped_fields(wflds)
   if(associated(wflds%f_scalars2_ns)) call field_delete(wflds%f_scalars2_ns) 
 end subroutine delete_wrapped_fields
 
-subroutine nullify_fields_lists(fl)
-  type(fields_lists), intent(inout) :: fl
-    
-  nullify(fl%u)
-  nullify(fl%v)
-  nullify(fl%scalar)
-  nullify(fl%spscalar)
-  nullify(fl%spvor)
-  nullify(fl%spdiv)
-  nullify(fl%vor)
-  nullify(fl%div)
-  nullify(fl%udm)
-  nullify(fl%vdm)
-  nullify(fl%scalardm)
-  nullify(fl%scalardl)
-  
-end subroutine nullify_fields_lists
-
 subroutine delete_fields_lists(fl)
   type(fields_lists), intent(inout) ::fl
-  if (associated(fl%u)) deallocate(fl%u)
-  if (associated(fl%v)) deallocate(fl%v)
-  if (associated(fl%scalar)) deallocate(fl%scalar)
-  if (associated(fl%spscalar)) deallocate(fl%spscalar)
-  if (associated(fl%spvor)) deallocate(fl%spvor)
-  if (associated(fl%spdiv)) deallocate(fl%spdiv)
-  if (associated(fl%vor)) deallocate(fl%vor)
-  if (associated(fl%div)) deallocate(fl%div)
-  if (associated(fl%udm)) deallocate(fl%udm)
-  if (associated(fl%vdm)) deallocate(fl%vdm) 
-  if (associated(fl%scalardm)) deallocate(fl%scalardm)
-  if (associated(fl%scalardl)) deallocate(fl%scalardl)
-  call nullify_fields_lists(fl) 
+  if (allocated(fl%u)) deallocate(fl%u)
+  if (allocated(fl%v)) deallocate(fl%v)
+  if (allocated(fl%scalar)) deallocate(fl%scalar)
+  if (allocated(fl%spscalar)) deallocate(fl%spscalar)
+  if (allocated(fl%spvor)) deallocate(fl%spvor)
+  if (allocated(fl%spdiv)) deallocate(fl%spdiv)
+  if (allocated(fl%vor)) deallocate(fl%vor)
+  if (allocated(fl%div)) deallocate(fl%div)
+  if (allocated(fl%udm)) deallocate(fl%udm)
+  if (allocated(fl%vdm)) deallocate(fl%vdm) 
+  if (allocated(fl%scalardm)) deallocate(fl%scalardm)
+  if (allocated(fl%scalardl)) deallocate(fl%scalardl)
 end subroutine delete_fields_lists
 
 subroutine output_fields_lists(nout,fl)
   integer(kind=jpim), intent(in) :: nout
   type(fields_lists), intent(in) :: fl
   
-  if (associated(fl%u)) write(nout,*) "fl%u", size(fl%u)  
-  if (associated(fl%v)) write(nout,*) "fl%v", size(fl%v)
-  if (associated(fl%scalar)) write(nout,*) "fl%scalar", size(fl%scalar)
-  if (associated(fl%spscalar)) write(nout,*) "fl%spscalar", size(fl%spscalar)
-  if (associated(fl%spvor)) write(nout,*) "fl%spvor", size(fl%spvor)
-  if (associated(fl%spdiv)) write(nout,*) "fl%spdiv", size(fl%spdiv)
-  if (associated(fl%vor)) write(nout,*) "fl%vor", size(fl%vor)
-  if (associated(fl%div)) write(nout,*) "fl%div", size(fl%div)
-  if (associated(fl%udm)) write(nout,*) "fl%udm", size(fl%udm)
-  if (associated(fl%vdm)) write(nout,*) "fl%vdm", size(fl%vdm)
-  if (associated(fl%scalardm)) write(nout,*) "fl%scalardm", size(fl%scalardm)
-  if (associated(fl%scalardl)) write(nout,*) "fl%scalardl", size(fl%scalardl)
+  if (allocated(fl%u)) write(nout,*) "fl%u", size(fl%u)  
+  if (allocated(fl%v)) write(nout,*) "fl%v", size(fl%v)
+  if (allocated(fl%scalar)) write(nout,*) "fl%scalar", size(fl%scalar)
+  if (allocated(fl%spscalar)) write(nout,*) "fl%spscalar", size(fl%spscalar)
+  if (allocated(fl%spvor)) write(nout,*) "fl%spvor", size(fl%spvor)
+  if (allocated(fl%spdiv)) write(nout,*) "fl%spdiv", size(fl%spdiv)
+  if (allocated(fl%vor)) write(nout,*) "fl%vor", size(fl%vor)
+  if (allocated(fl%div)) write(nout,*) "fl%div", size(fl%div)
+  if (allocated(fl%udm)) write(nout,*) "fl%udm", size(fl%udm)
+  if (allocated(fl%vdm)) write(nout,*) "fl%vdm", size(fl%vdm)
+  if (allocated(fl%scalardm)) write(nout,*) "fl%scalardm", size(fl%scalardm)
+  if (allocated(fl%scalardl)) write(nout,*) "fl%scalardl", size(fl%scalardl)
 end subroutine output_fields_lists
 
 subroutine create_fields_lists(flds,ylf, nbsetlev,nbsetsc)
@@ -239,63 +213,51 @@ subroutine create_fields_lists(flds,ylf, nbsetlev,nbsetsc)
   integer(kind=jpim) :: nbsetlev(:)
   integer(kind=jpim) :: nbsetsc(:)
     
-  if(associated(flds%f_spvor)) ylf%alloc_spvor=[b(flds%f_spvor,'sp_vor')]
+  if(associated(flds%f_spvor)) ylf%spvor=[b(flds%f_spvor,'sp_vor')]
   
-  if(associated(flds%f_spdiv)) ylf%alloc_spdiv= [b(flds%f_spdiv,'spdiv')]
+  if(associated(flds%f_spdiv)) ylf%spdiv= [b(flds%f_spdiv,'spdiv')]
   
-  if(associated(flds%f_u)) ylf%alloc_u = [b(flds%f_u,'u',nbsetlev)]
-  if(associated(flds%f_v)) ylf%alloc_v = [b(flds%f_v,'v',nbsetlev)]
+  if(associated(flds%f_u)) ylf%u = [b(flds%f_u,'u',nbsetlev)]
+  if(associated(flds%f_v)) ylf%v = [b(flds%f_v,'v',nbsetlev)]
       
-  if(associated(flds%f_udm)) ylf%alloc_udm=[b(flds%f_udm,'u_fdm', nbsetlev)]
-  if(associated(flds%f_vdm)) ylf%alloc_vdm=[b(flds%f_vdm,'v_fdm', nbsetlev)]
+  if(associated(flds%f_udm)) ylf%udm=[b(flds%f_udm,'u_fdm', nbsetlev)]
+  if(associated(flds%f_vdm)) ylf%vdm=[b(flds%f_vdm,'v_fdm', nbsetlev)]
     
-  if(associated(flds%f_vor))  ylf%alloc_vor = [b(flds%f_vor,'vor', nbsetlev)]
-  if(associated(flds%f_div))  ylf%alloc_div = [b(flds%f_div,'div', nbsetlev)]
+  if(associated(flds%f_vor))  ylf%vor = [b(flds%f_vor,'vor', nbsetlev)]
+  if(associated(flds%f_div))  ylf%div = [b(flds%f_div,'div', nbsetlev)]
   
   if (associated(flds%f_spscalars) .and. associated(flds%f_spscalars2) ) then
-    ylf%alloc_spscalar = [b(flds%f_spscalars,'sp_scalars'), b(flds%f_spscalars2,'sp_scalars2')]
+    ylf%spscalar = [b(flds%f_spscalars,'sp_scalars'), b(flds%f_spscalars2,'sp_scalars2')]
   else if (associated(flds%f_spscalars)) then
-    ylf%alloc_spscalar = [b(flds%f_spscalars,'sp_scalars')]    
+    ylf%spscalar = [b(flds%f_spscalars,'sp_scalars')]    
   else if (associated(flds%f_spscalars2)) then
-    ylf%alloc_spscalar = [b(flds%f_spscalars2,'sp_scalars2')]  
+    ylf%spscalar = [b(flds%f_spscalars2,'sp_scalars2')]  
   endif
     
   if (associated(flds%f_scalars) .and. associated(flds%f_scalars2) ) then
-    ylf%alloc_scalar = [b(flds%f_scalars,'scalars', nbsetlev), b(flds%f_scalars2,'scalars2', nbsetsc)]
+    ylf%scalar = [b(flds%f_scalars,'scalars', nbsetlev), b(flds%f_scalars2,'scalars2', nbsetsc)]
   else if (associated(flds%f_scalars)) then
-    ylf%alloc_scalar = [b(flds%f_scalars,'scalars', nbsetlev)]    
+    ylf%scalar = [b(flds%f_scalars,'scalars', nbsetlev)]    
   else if (associated(flds%f_scalars2)) then
-    ylf%alloc_scalar = [b(flds%f_scalars2,'scalars2', nbsetsc)]  
+    ylf%scalar = [b(flds%f_scalars2,'scalars2', nbsetsc)]  
   endif
   
   if (associated(flds%f_scalars_ns) .and. associated(flds%f_scalars2_ns) ) then
-    ylf%alloc_scalardm = [b(flds%f_scalars_ns,'scalars_ns', nbsetlev), b(flds%f_scalars2_ns,'scalars2_ns', nbsetsc)]
+    ylf%scalardm = [b(flds%f_scalars_ns,'scalars_ns', nbsetlev), b(flds%f_scalars2_ns,'scalars2_ns', nbsetsc)]
   else if (associated(flds%f_scalars_ns)) then
-    ylf%alloc_scalardm = [b(flds%f_scalars_ns,'scalars_ns', nbsetlev)]
+    ylf%scalardm = [b(flds%f_scalars_ns,'scalars_ns', nbsetlev)]
   else if (associated(flds%f_scalars2_ns)) then
-    ylf%alloc_scalardm = [b(flds%f_scalars2_ns,'scalars2_ns', nbsetsc)]  
+    ylf%scalardm = [b(flds%f_scalars2_ns,'scalars2_ns', nbsetsc)]  
   endif
   
   if (associated(flds%f_scalars_ew) .and. associated(flds%f_scalars2_ew) ) then
-    ylf%alloc_scalardl = [b(flds%f_scalars_ew,'scalars_ew', nbsetlev), b(flds%f_scalars2_ew,'scalars2_ew', nbsetsc)]
+    ylf%scalardl = [b(flds%f_scalars_ew,'scalars_ew', nbsetlev), b(flds%f_scalars2_ew,'scalars2_ew', nbsetsc)]
   else if (associated(flds%f_scalars_ew)) then
-    ylf%alloc_scalardl = [b(flds%f_scalars_ew,'scalars_ew', nbsetlev)]    
+    ylf%scalardl = [b(flds%f_scalars_ew,'scalars_ew', nbsetlev)]    
   else if (associated(flds%f_scalars2_ew)) then
-    ylf%alloc_scalardl = [b(flds%f_scalars2_ew,'scalars2_ew', nbsetsc)]  
+    ylf%scalardl = [b(flds%f_scalars2_ew,'scalars2_ew', nbsetsc)]  
   endif
 
-  if (allocated(ylf%alloc_u)) ylf%u=>ylf%alloc_u
-  if (allocated(ylf%alloc_v)) ylf%v=>ylf%alloc_v
-  if (allocated(ylf%alloc_scalar)) ylf%scalar=>ylf%alloc_scalar
-  if (allocated(ylf%alloc_spscalar)) ylf%spscalar=>ylf%alloc_spscalar
-  if (allocated(ylf%alloc_spvor)) ylf%spvor=>ylf%alloc_spvor
-  if (allocated(ylf%alloc_spdiv)) ylf%spdiv=>ylf%alloc_spdiv
-  if (allocated(ylf%alloc_vor)) ylf%vor=>ylf%alloc_vor
-  if (allocated(ylf%alloc_div)) ylf%div=>ylf%alloc_div
-  if (allocated(ylf%alloc_udm)) ylf%udm=>ylf%alloc_udm
-  if (allocated(ylf%alloc_vdm)) ylf%vdm=>ylf%alloc_vdm 
-  if (allocated(ylf%alloc_scalardm)) ylf%scalardm=>ylf%alloc_scalardm
-  if (allocated(ylf%alloc_scalardl)) ylf%scalardl=>ylf%alloc_scalardl
-end subroutine create_fields_lists
+ end subroutine create_fields_lists
 
 end module ectrans_field_api_helper

@@ -50,7 +50,7 @@ use ectrans_memory, only : allocator
 #if USE_FIELD_API
 USE ectrans_field_api_helper, only : wrapped_fields, fields_lists, wrap_fields, create_fields_lists, &
                                   & delete_wrapped_fields,delete_fields_lists, output_wrapped_fields, output_fields_lists, &
-                                  & nullify_wrapped_fields,nullify_fields_lists
+                                  & nullify_wrapped_fields
 #endif
 
 implicit none
@@ -568,8 +568,7 @@ if (lfield_api) then
                   & jbegin_scder_EW, jend_scder_EW, &
                   & jbegin_uder_EW, jend_uder_EW, &
                   & jbegin_vder_EW, jend_vder_EW)
-   
-  call nullify_fields_lists(ylf)
+  
   call create_fields_lists(flds,ylf,ivset,ivsetsc)  
 endif
 #endif
