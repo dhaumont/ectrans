@@ -52,8 +52,8 @@ function(generate_backend_sources)
   set(files)
   list( APPEND files
     field_api_ectrans_mod.F90
-    trans/dir_trans_field_api_mod.F90
-    trans/inv_trans_field_api_mod.F90
+    trans/dir_trans_field_api.F90
+    trans/inv_trans_field_api.F90
     field_api_basic_type_mod.F90      
   )
 
