@@ -9,31 +9,37 @@ use parkind1, only: jpim, jprb, jprd
 implicit none
 
 type wrapped_fields
-  class (field_3rb), pointer :: spscalars
-  class (field_2rb), pointer :: spscalars2
-  class (field_2rb), pointer :: spvor, spdiv
 
-  class (field_3rb), pointer :: vor, div
-  class (field_3rb), pointer :: u, v
-  class (field_3rb), pointer :: udm, vdm
+! Set of fields for spectral transform
 
-  class (field_4rb), pointer :: scalars
-  class (field_4rb), pointer :: scalars_ew
-  class (field_4rb), pointer :: scalars_ns
+  class (field_3rb), pointer :: spscalars     ! spectral scalar fields
+  class (field_2rb), pointer :: spscalars2    ! spectral surfacic scalar fields
+  class (field_2rb), pointer :: spvor, spdiv  ! spectral vorticity and divergence
 
-  class (field_3rb), pointer :: scalars2
-  class (field_3rb), pointer :: scalars2_ew
-  class (field_3rb), pointer :: scalars2_ns
+  class (field_3rb), pointer :: vor, div      ! grid-point vorticity and divergence
+  class (field_3rb), pointer :: u, v          ! grid-point u and v fields  
+  class (field_3rb), pointer :: udm, vdm      ! grid-point u and derivatives
+
+  class (field_4rb), pointer :: scalars       ! grid-point scalar fields
+  class (field_4rb), pointer :: scalars_ew    ! grid-point scalar fields derivatives ew
+  class (field_4rb), pointer :: scalars_ns    ! grid-point scalar fields derivatives ns
+
+  class (field_3rb), pointer :: scalars2      ! grid-point surfacic scalar fields
+  class (field_3rb), pointer :: scalars2_ew   ! grid-point surfacic scalar fields derivatives ew
+  class (field_3rb), pointer :: scalars2_ns   ! grid-point surfacic scalar fields derivatives ns
 end type wrapped_fields
 
 type fields_lists
-  type (field_basic_ptr), allocatable:: u (:), v (:)
-  type (field_basic_ptr), allocatable:: scalar (:)
-  type (field_basic_ptr), allocatable:: spvor (:), spdiv (:)
-  type (field_basic_ptr), allocatable:: vor (:), div (:)
-  type (field_basic_ptr), allocatable:: spscalar (:)
-  type (field_basic_ptr), allocatable:: udm (:), vdm (:)
-  type (field_basic_ptr), allocatable:: scalardm (:), scalardl (:)  
+
+! List of field lists that will be used as parameter to inv_trans_field_api and dir_trans_field_api
+
+  type (field_basic_ptr), allocatable:: u (:), v (:)                ! grid-point u and v fields
+  type (field_basic_ptr), allocatable:: scalar (:)                  ! grid-point scalar fields
+  type (field_basic_ptr), allocatable:: spvor (:), spdiv (:)        ! spectral vorticity and divergence
+  type (field_basic_ptr), allocatable:: vor (:), div (:)            ! grid-point vorticity and diverence
+  type (field_basic_ptr), allocatable:: spscalar (:)                ! spectral scalar fields
+  type (field_basic_ptr), allocatable:: udm (:), vdm (:)            ! grid-point u and derivatives
+  type (field_basic_ptr), allocatable:: scalardm (:), scalardl (:)  ! grid space scalar derivatives
   end type fields_lists
   
 contains
@@ -47,27 +53,29 @@ subroutine wrap_benchmark_fields(ywflds, lvordiv, lscders, luvders,&
                                & jbegin_uder_ew, jend_uder_ew,     & 
                                & jbegin_vder_ew, jend_vder_ew)
 
-  type(wrapped_fields), intent(inout) :: ywflds
-  logical :: lvordiv
-  logical :: lscders
-  logical :: luvders
-  real(kind=jprb), intent(in) :: sp3d(:,:,:)
-  real(kind=jprb), intent(in) :: spc2(:,:)
-  real(kind=jprb), intent(in) :: zgmv(:,:,:,:)
-  real(kind=jprb), intent(in) :: zgmvs(:,:,:)
-  real(kind=jprb), intent(in) :: zgp2 (:,:,:)
-  integer(kind=jpim) :: jbegin_uv
-  integer(kind=jpim) :: jend_uv
-  integer(kind=jpim) :: jbegin_sc
-  integer(kind=jpim) :: jend_sc
-  integer(kind=jpim) :: jbegin_scder_ns
-  integer(kind=jpim) :: jend_scder_ns
-  integer(kind=jpim) :: jbegin_scder_ew
-  integer(kind=jpim) :: jend_scder_ew
-  integer(kind=jpim) :: jbegin_uder_ew
-  integer(kind=jpim) :: jend_uder_ew
-  integer(kind=jpim) :: jbegin_vder_ew
-  integer(kind=jpim) :: jend_vder_ew
+  ! Wrap the arrays given as input in field API objects
+
+    type(wrapped_fields), intent(inout) :: ywflds
+    logical, intent(in) :: lvordiv
+    logical, intent(in) :: lscders
+    logical, intent(in) :: luvders
+    real(kind=jprb), intent(in) :: sp3d(:,:,:)
+    real(kind=jprb), intent(in) :: spc2(:,:)
+    real(kind=jprb), intent(in) :: zgmv(:,:,:,:)
+    real(kind=jprb), intent(in) :: zgmvs(:,:,:)
+    real(kind=jprb), intent(in) :: zgp2 (:,:,:)
+    integer(kind=jpim), intent(in) :: jbegin_uv
+    integer(kind=jpim), intent(in) :: jend_uv
+    integer(kind=jpim), intent(in) :: jbegin_sc
+    integer(kind=jpim), intent(in) :: jend_sc
+    integer(kind=jpim), intent(in) :: jbegin_scder_ns
+    integer(kind=jpim), intent(in) :: jend_scder_ns
+    integer(kind=jpim), intent(in) :: jbegin_scder_ew
+    integer(kind=jpim), intent(in) :: jend_scder_ew
+    integer(kind=jpim), intent(in) :: jbegin_uder_ew
+    integer(kind=jpim), intent(in) :: jend_uder_ew
+    integer(kind=jpim), intent(in) :: jbegin_vder_ew
+    integer(kind=jpim), intent(in) :: jend_vder_ew
   
   if (lvordiv) then
       if (jbegin_uv>0 )      call field_new(ywflds%u, data=zgmv(:,:,jbegin_uv,:))
@@ -78,34 +86,45 @@ subroutine wrap_benchmark_fields(ywflds, lvordiv, lscders, luvders,&
       !call field_new(ywflds%div,         data=zgmv(:,:,jend_uv,:))
   endif
   
+  ! spectral vector fields
   if (size(sp3d,3) >=1 ) call field_new(ywflds%spvor,      data=sp3d(:,:,1))
   if (size(sp3d,3) >=2 ) call field_new(ywflds%spdiv,      data=sp3d(:,:,2))
+  
+  ! spectral scalar fields
   if (size(sp3d,3) >=3 ) call field_new(ywflds%spscalars,  data=sp3d(:,:,3:))
   if (size(spc2,2) >=1 ) call field_new(ywflds%spscalars2, data=spc2(:,:))
   
+  ! spectral surfacic scalar fields
   if (size(zgmvs,2)>=1)  call field_new(ywflds%scalars2,   data=zgmvs(:,1:1,:))
 
+  ! grid-point vector derivatives
   if (luvders) then
     call field_new(ywflds%udm, data=zgmv(:,:,jbegin_uder_ew,:))
     call field_new(ywflds%vdm, data=zgmv(:,:,jend_uder_ew,:))
   endif
 
+  ! grid-point scalars fields
   if (jend_sc>0 .and. jend_sc>=jbegin_sc ) call field_new(ywflds%scalars,  data=zgmv(:,:,jbegin_sc:jend_sc,:))
 
+  ! grid-point scalars derivatives fields
   if (lscders) then    
     if (jend_scder_ew>0 .and. jend_scder_ew>=jbegin_scder_ew ) call field_new(ywflds%scalars_ew,  data=zgmv(:,:,jbegin_scder_ew:jend_scder_ew,:))
     if (jend_scder_ns>0 .and. jend_scder_ns>=jbegin_scder_ns ) call field_new(ywflds%scalars_ns,  data=zgmv(:,:,jbegin_scder_ns:jend_scder_ns,:))
   
+    ! grid-point surfacic scalars derivatives fields
     if (size(zgmvs,2)>=2)     call field_new(ywflds%scalars2_ns, data=zgmvs(:,2:2,:))
     if (size(zgmvs,2)>=3)     call field_new(ywflds%scalars2_ew, data=zgmvs(:,3:3,:))      
   endif
 end subroutine wrap_benchmark_fields
 
-subroutine create_fields_lists(ywflds,ylf, nbsetlev,nbsetsc)
-  type(wrapped_fields), intent(in) :: ywflds
-  type(fields_lists), intent(inout), target :: ylf
-  integer(kind=jpim) :: nbsetlev(:)
-  integer(kind=jpim) :: nbsetsc(:)
+subroutine create_fields_lists(ywflds,ylf, nbsetlev,nbsetsc2)
+
+  ! Create field lists in ylf from field API objects in ywflds
+
+  type(wrapped_fields), intent(in) :: ywflds       !input fields api objects
+  type(fields_lists), intent(inout), target :: ylf ! output field lists
+  integer(kind=jpim), intent(in) :: nbsetlev(:)    ! 'b-set' for vector fields
+  integer(kind=jpim), intent(in) :: nbsetsc2(:)    ! 'b-set' for surfacic fields
   
   if(associated(ywflds%spvor)) ylf%spvor=[b(ywflds%spvor,'sp_vor')]
   
@@ -129,31 +148,34 @@ subroutine create_fields_lists(ywflds,ylf, nbsetlev,nbsetsc)
   endif
     
   if (associated(ywflds%scalars) .and. associated(ywflds%scalars2) ) then
-    ylf%scalar = [b(ywflds%scalars,'scalars', nbsetlev), b(ywflds%scalars2,'scalars2', nbsetsc)]
+    ylf%scalar = [b(ywflds%scalars,'scalars', nbsetlev), b(ywflds%scalars2,'scalars2', nbsetsc2)]
   else if (associated(ywflds%scalars)) then
     ylf%scalar = [b(ywflds%scalars,'scalars', nbsetlev)]    
   else if (associated(ywflds%scalars2)) then
-    ylf%scalar = [b(ywflds%scalars2,'scalars2', nbsetsc)]  
+    ylf%scalar = [b(ywflds%scalars2,'scalars2', nbsetsc2)]  
   endif
   
   if (associated(ywflds%scalars_ns) .and. associated(ywflds%scalars2_ns) ) then
-    ylf%scalardm = [b(ywflds%scalars_ns,'scalars_ns', nbsetlev), b(ywflds%scalars2_ns,'scalars2_ns', nbsetsc)]
+    ylf%scalardm = [b(ywflds%scalars_ns,'scalars_ns', nbsetlev), b(ywflds%scalars2_ns,'scalars2_ns', nbsetsc2)]
   else if (associated(ywflds%scalars_ns)) then
     ylf%scalardm = [b(ywflds%scalars_ns,'scalars_ns', nbsetlev)]
   else if (associated(ywflds%scalars2_ns)) then
-    ylf%scalardm = [b(ywflds%scalars2_ns,'scalars2_ns', nbsetsc)]  
+    ylf%scalardm = [b(ywflds%scalars2_ns,'scalars2_ns', nbsetsc2)]  
   endif
   
   if (associated(ywflds%scalars_ew) .and. associated(ywflds%scalars2_ew) ) then
-    ylf%scalardl = [b(ywflds%scalars_ew,'scalars_ew', nbsetlev), b(ywflds%scalars2_ew,'scalars2_ew', nbsetsc)]
+    ylf%scalardl = [b(ywflds%scalars_ew,'scalars_ew', nbsetlev), b(ywflds%scalars2_ew,'scalars2_ew', nbsetsc2)]
   else if (associated(ywflds%scalars_ew)) then
     ylf%scalardl = [b(ywflds%scalars_ew,'scalars_ew', nbsetlev)]    
   else if (associated(ywflds%scalars2_ew)) then
-    ylf%scalardl = [b(ywflds%scalars2_ew,'scalars2_ew', nbsetsc)]  
+    ylf%scalardl = [b(ywflds%scalars2_ew,'scalars2_ew', nbsetsc2)]  
   endif
  end subroutine create_fields_lists
 
  subroutine delete_wrapped_fields(ywflds)
+  
+  ! Delete  all fields in ywflds
+
   type(wrapped_fields), intent(inout) :: ywflds
    
   if(associated(ywflds%spvor)) call field_delete(ywflds%spvor)
@@ -177,6 +199,9 @@ subroutine create_fields_lists(ywflds,ylf, nbsetlev,nbsetsc)
 end subroutine delete_wrapped_fields
 
 subroutine delete_fields_lists(yfl)
+
+  ! Delete  all field lists in yfl
+
   type(fields_lists), intent(inout) ::yfl
   if (allocated(yfl%u)) deallocate(yfl%u)
   if (allocated(yfl%v)) deallocate(yfl%v)
@@ -193,6 +218,9 @@ subroutine delete_fields_lists(yfl)
 end subroutine delete_fields_lists
 
 subroutine nullify_wrapped_fields(ywflds)
+
+    ! Nullify all pointers in ywflds
+
   type(wrapped_fields), intent(inout) :: ywflds
     
   nullify(ywflds%spvor)
@@ -217,6 +245,9 @@ end subroutine nullify_wrapped_fields
 
 
 subroutine output_wrapped_fields(nout, ywflds)
+  
+  ! output the adress of all data fields in ywflds
+
   type(wrapped_fields), intent(in) :: ywflds
   integer(kind=jpim), intent(in) :: nout
 
@@ -243,6 +274,9 @@ end subroutine output_wrapped_fields
 
 
 subroutine output_fields_lists(nout,yfl)
+
+  ! output the size of all field lists in yfl
+
   integer(kind=jpim), intent(in) :: nout
   type(fields_lists), intent(in) :: yfl
   

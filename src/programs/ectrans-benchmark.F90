@@ -48,9 +48,11 @@ use yomhook, only : dr_hook_init
 use ectrans_memory, only : allocator
 
 #if USE_FIELD_API
-USE ectrans_field_api_helper, only : wrapped_fields, fields_lists, wrap_benchmark_fields, create_fields_lists, &
-                                  & delete_wrapped_fields,delete_fields_lists, output_wrapped_fields, output_fields_lists, &
-                                  & nullify_wrapped_fields
+USE ectrans_field_api_helper, only : wrapped_fields, fields_lists, &
+                                   & wrap_benchmark_fields, create_fields_lists, &
+                                   & delete_wrapped_fields,delete_fields_lists, &
+                                   & output_wrapped_fields, output_fields_lists, &
+                                   & nullify_wrapped_fields
 #endif
 
 implicit none
@@ -136,8 +138,8 @@ logical :: lscders = .false.
 logical :: luvders = .false.
 logical :: lprint_norms = .false. ! Calculate and print spectral norms
 logical :: lmeminfo = .false. ! Show information from FIAT routine ec_meminfo at the end
-logical :: LLACC = .false.
-logical :: lfield_api = .false.
+logical :: llacc = .false.      ! retrieve data on device
+logical :: lfield_api = .false. ! use field API interface
 
 integer(kind=jpim) :: nstats_mem = 0
 integer(kind=jpim) :: ntrace_stats = 0
@@ -561,13 +563,13 @@ zgp2  => zgmvs(:,:,:)
 if (lfield_api) then   
   call nullify_wrapped_fields(ywflds) 
   call wrap_benchmark_fields(ywflds,lvordiv, lscders, luvders, &
-                  & sp3d, zspsc2, zgmv, zgmvs, zgp2, &
-                  & jbegin_uv,jend_uv, &
-                  & jbegin_sc,jend_sc, &
-                  & jbegin_scder_NS, jend_scder_NS, &
-                  & jbegin_scder_EW, jend_scder_EW, &
-                  & jbegin_uder_EW, jend_uder_EW, &
-                  & jbegin_vder_EW, jend_vder_EW)
+                          & sp3d, zspsc2, zgmv, zgmvs, zgp2, &
+                          & jbegin_uv,jend_uv, &
+                          & jbegin_sc,jend_sc, &
+                          & jbegin_scder_NS, jend_scder_NS, &
+                          & jbegin_scder_EW, jend_scder_EW, &
+                          & jbegin_uder_EW, jend_uder_EW, &
+                          & jbegin_vder_EW, jend_vder_EW)
     
   call create_fields_lists(ywflds,ylf,ivset,ivsetsc)  
 endif
@@ -1300,8 +1302,8 @@ subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, n
   integer, intent(inout) :: ncheck          ! The multiplier of the machine epsilon used as a
                                             ! tolerance for correctness checking
   logical, intent(inout) :: lpinning        ! Use memory-pinning (a.k.a. page-locked memory) to allocate fields for GPU version
-
   logical, intent(inout) :: lfield_api      ! Use field API interface
+
   character(len=128) :: carg          ! Storage variable for command line arguments
   integer            :: iarg = 1      ! Argument index
 
