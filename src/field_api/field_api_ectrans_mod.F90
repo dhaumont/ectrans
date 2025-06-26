@@ -102,9 +102,9 @@ B4RB%NAME = NAME
 END FUNCTION B4RB
 
 FUNCTION LG2RB (YLF,NAME,IVSET, LDACC)
-! Creation of a list of GRID_VIEW encapsulating an input FIELD_2RB field
+! Creation of a list of GRID_VIEW encapsulating the layer of an input FIELD_2RB field
 ! Given YLF dimensioned(NPROMA, NBLKS) as input,
-! the output list size will contain one GRID_VIEW containing a VIEW dimensioned(NPROMA, NBLKS)
+! the output list size will contain one element, its view beeing dimensioned(NPROMA, NBLKS)
 CLASS (FIELD_2RB), POINTER, INTENT (IN) :: YLF
 CHARACTER(LEN=*) ::NAME
 INTEGER :: IVSET(:)
@@ -113,7 +113,6 @@ LOGICAL, OPTIONAL :: LDACC
 TYPE (GRID_VIEW), ALLOCATABLE :: LG2RB (:)
 
 REAL(KIND=JPRB), POINTER :: ZZ2 (:,:)
-INTEGER(KIND=JPIM) :: I2, I3, J
 LOGICAL :: LLACC = .FALSE.
 CHARACTER(LEN=6) CLOUT
 
@@ -136,7 +135,9 @@ LG2RB(1)%NAME = TRIM(NAME)//TRIM(CLOUT)
 END FUNCTION
 
 FUNCTION LG3RB (YLF,NAME, IVSET,LDACC)
-! Creation of a GRID_VIEW encapsulating a FIELD_3RB field
+! Creation of a list of GRID_VIEW encapsulating the layers of an input FIELD_3RB field
+! Given YLF dimensioned(NPROMA, NLEVS, NBLKS) as input,
+! the output list size will contain  (NLEVS) elements, their view beeing dimensioned(NPROMA, NBLKS)
 CLASS (FIELD_3RB), POINTER, INTENT (IN) :: YLF
 CHARACTER(LEN=*) ::NAME
 INTEGER :: IVSET(:)
@@ -145,7 +146,7 @@ LOGICAL, OPTIONAL :: LDACC
 TYPE (GRID_VIEW), ALLOCATABLE :: LG3RB (:)
 
 REAL(KIND=JPRB), POINTER :: ZZ3 (:,:,:)
-INTEGER(KIND=JPIM) :: I2, J
+INTEGER(KIND=JPIM) :: JLEV, JCOUNT
 LOGICAL :: LLACC = .FALSE.
 
 CHARACTER(LEN=6) CLOUT
@@ -161,18 +162,21 @@ ENDIF
 
 ALLOCATE (LG3RB (SIZE (ZZ3, 2)))
 
-J = 1
-DO I2 = LBOUND (ZZ3, 2), UBOUND (ZZ3, 2)
-  LG3RB (J)%VIEW%P => ZZ3 (:, I2, :)
-  LG3RB (J)%IVSET = IVSET(I2)
-  LG3RB(J)%NAME = TRIM(NAME)//TRIM(CLOUT)
-  J = J + 1
+JCOUNT = 1
+DO JLEV = LBOUND (ZZ3, 2), UBOUND (ZZ3, 2)
+  LG3RB (JCOUNT)%VIEW%P => ZZ3 (:, JLEV, :)
+  LG3RB (JCOUNT)%IVSET = IVSET(JLEV)
+  LG3RB(JCOUNT)%NAME = TRIM(NAME)//TRIM(CLOUT)
+  JCOUNT = JCOUNT + 1
 ENDDO
 
 END FUNCTION
 
 FUNCTION LG4RB (YLF,NAME,IVSET,LDACC)
-! Creation of a GRID_VIEW encapsulating a FIELD_4RB field
+! Creation of a list of GRID_VIEW encapsulating the layers of an input FIELD_4RB field
+! Given YLF dimensioned(NPROMA, NLEVS, NFIELDS, NBLKS) as input,
+! the output list size will contain  (NLEVS*NFIELDS) elementa, their view beeing dimensioned(NPROMA, NBLKS)
+
 CLASS (FIELD_4RB), POINTER, INTENT (IN) :: YLF
 CHARACTER(LEN=*) ::NAME
 INTEGER :: IVSET(:)
@@ -181,7 +185,7 @@ LOGICAL, OPTIONAL :: LDACC
 TYPE (GRID_VIEW), ALLOCATABLE :: LG4RB (:)
 
 REAL(KIND=JPRB), POINTER :: ZZ4 (:,:,:,:)
-INTEGER(KIND=JPIM) :: I2, I3, J
+INTEGER(KIND=JPIM) :: JLEV, JFLD, JCOUNT
 LOGICAL :: LLACC = .FALSE.
 
 CHARACTER(LEN=6) CLOUT
@@ -197,33 +201,39 @@ ENDIF
 
 ALLOCATE (LG4RB (SIZE (ZZ4, 2) * SIZE (ZZ4, 3)))
 
-J = 1
+JCOUNT = 1
 
-DO I3 = LBOUND (ZZ4, 3), UBOUND (ZZ4, 3)
-  DO I2 = LBOUND (ZZ4, 2), UBOUND (ZZ4, 2)
-    LG4RB (J)%VIEW%P => ZZ4(:, I2, I3, :)
-    LG4RB (J)%IVSET = IVSET(I2) 
-    LG4RB(J)%NAME = TRIM(NAME)//TRIM(CLOUT)
-    J = J + 1
+DO JFLD = LBOUND (ZZ4, 3), UBOUND (ZZ4, 3)
+  DO JLEV = LBOUND (ZZ4, 2), UBOUND (ZZ4, 2)
+    LG4RB (JCOUNT)%VIEW%P => ZZ4(:, JLEV, JFLD, :)
+    LG4RB (JCOUNT)%IVSET = IVSET(JLEV) 
+    LG4RB(JCOUNT)%NAME = TRIM(NAME)//TRIM(CLOUT)
+    JCOUNT = JCOUNT + 1
   ENDDO
 ENDDO
 
 END FUNCTION
 
 FUNCTION LG (YLFL, LDACC)
-! Creation of a list of GRID_VIEW from a list FIELD_BASIC_PTR
-TYPE (FIELD_BASIC_PTR) :: YLFL (:) ! input list of FIELD_BASIC_PTR
-LOGICAL, OPTIONAL :: LDACC         ! data on device
-TYPE (GRID_VIEW), ALLOCATABLE :: LG (:) !output list of GRID_VIEW
+! Creation of a list of GRID_VIEW from a list YLFL of FIELD_BASIC_PTR
+TYPE (FIELD_BASIC_PTR) :: YLFL (:)      ! input list of FIELD_BASIC_PTR
+LOGICAL, OPTIONAL :: LDACC              ! retrieve data on device
+TYPE (GRID_VIEW), ALLOCATABLE :: LG (:) ! output list of GRID_VIEW
 
 INTEGER(KIND=JPIM) :: IOFF, ILEN, JFLD, JPASS
 INTEGER(KIND=JPIM) :: ILBOUNDS (5), IUBOUNDS (5)
 
+! First pass: determination of the output size list
+! Second pass: allocate and instanciate the GRID_VIEW types
 DO JPASS = 1, 2
 
   IOFF = 0
 
+  ! iterate over YLFL LIST
   DO JFLD = 1, SIZE (YLFL)
+  
+   ! Phase 1: compute number of GRID_VIEW that will be generated for each field of the list
+   ! Phase 2: call the correct routine to create the GRID_VIEW for each field of the list
     SELECT TYPE (YLF => YLFL (JFLD)%PTR)
       CLASS IS (FIELD_1RB)
         ILEN = 1
@@ -239,8 +249,7 @@ DO JPASS = 1, 2
         CALL YLF%GET_DIMS (LBOUNDS=ILBOUNDS, UBOUNDS=IUBOUNDS)
         ILEN = (IUBOUNDS (2) - ILBOUNDS (2) + 1) * (IUBOUNDS (3) - ILBOUNDS (3) + 1)
         IF (JPASS == 2) LG (IOFF+1:IOFF+ILEN) = LG4RB (YLF,YLFL(JFLD)%NAME,YLFL(JFLD)%IVSET,LDACC)
-      CLASS DEFAULT
-        WRITE(20,*) YLFL(JFLD)%NAME
+      CLASS DEFAULT        
         CALL ABOR1("LG FAILURE: CLASS UNKNOWN")
     END SELECT
 
@@ -248,6 +257,7 @@ DO JPASS = 1, 2
 
   ENDDO
 
+  ! at the end of the first pass, allocation of the list of GRID_VIEW
   IF (JPASS == 1) THEN
     ALLOCATE (LG (IOFF))
   ENDIF
@@ -257,7 +267,9 @@ ENDDO
 END FUNCTION LG
 
 FUNCTION LS1RB (YLF, NAME,LDACC)
-! Creation of a SPEC_VIEW encapsulating a FIELD_1RB field
+! Creation of a list of SPEC_VIEW encapsulating the layer of an input FIELD_1RB field
+! Given YLF dimensioned(NSPEC) as input,
+! the output list size will contain one element, its view beeing dimensioned(NSPEC)
 CLASS (FIELD_1RB), POINTER, INTENT (IN) :: YLF
 CHARACTER(LEN=*) ::NAME
 LOGICAL, OPTIONAL :: LDACC
@@ -280,14 +292,14 @@ ENDIF
 
 ALLOCATE (LS1RB (1))
 
-LS1RB (1)%VIEW%P => ZZ1
+LS1RB(1)%VIEW%P => ZZ1
 LS1RB(1)%NAME=TRIM(NAME)//TRIM(CLOUT)
 
 END FUNCTION
 
 FUNCTION LS2RB (YLF,NAME,LDACC)
 ! Creation of a list of SPEC_VIEW, each of them encapsulating a layer of an input FIELD_2RB field.
-! Given YLF dimensioned(NSPEC, NLEVS) as input,
+! Given YLF dimensioned(NLEVS, NSPEC) as input,
 ! the output list size will contain (NLEVS) elements dimensioned(NSPEC)
 CLASS (FIELD_2RB), POINTER, INTENT (IN) :: YLF
 CHARACTER(LEN=*) ::NAME
@@ -297,7 +309,7 @@ CHARACTER(LEN=6) CLOUT
 TYPE (SPEC_VIEW), ALLOCATABLE :: LS2RB (:)
 
 REAL(KIND=JPRB), POINTER :: ZZ2 (:,:)
-INTEGER(KIND=JPIM) :: I1, J
+INTEGER(KIND=JPIM) :: JLEV, JCOUNT
 LOGICAL :: LLACC = .FALSE.
 
 IF (PRESENT(LDACC)) THEN
@@ -311,29 +323,29 @@ ELSE
 ENDIF
 ALLOCATE (LS2RB (SIZE (ZZ2, 1)))
 
-J = 1
+JCOUNT = 1
 
-DO I1 = LBOUND (ZZ2, 1), UBOUND (ZZ2, 1)
-  LS2RB (J)%VIEW%P => ZZ2 (I1, :)
-  LS2RB(J)%NAME=TRIM(NAME)//TRIM(CLOUT)
-  J = J + 1
+DO JLEV = LBOUND (ZZ2, 1), UBOUND (ZZ2, 1)
+  LS2RB (JCOUNT)%VIEW%P => ZZ2 (JLEV, :)
+  LS2RB(JCOUNT)%NAME=TRIM(NAME)//TRIM(CLOUT)
+  JCOUNT = JCOUNT + 1
 ENDDO
 
 END FUNCTION
 
 FUNCTION LS3RB (YLF,NAME,LDACC)
 ! Creation of a list of SPEC_VIEW, each of them encapsulating a layer of an input FIELD_3RB field.
-! Given YLF dimensioned(NPROMA, NLEVS, NBLKS) as input,
-! the output list size will contain (NLEVS) SPEC_VIEW, each of them dimensioned(NPROMA, NBLKS)
+! Given YLF dimensioned(NLEVS, NSPEC, NFIELDS) as input,
+! the output list size will contain (NLEVS*NFIELDS) SPEC_VIEW, each of them dimensioned(NSPEC)
   CLASS (FIELD_3RB), POINTER, INTENT (IN) :: YLF
-CHARACTER(LEN=*) ::NAME
+CHARACTER(LEN=*) :: NAME
 LOGICAL, OPTIONAL :: LDACC
 
 CHARACTER(LEN=6) CLOUT
 TYPE (SPEC_VIEW), ALLOCATABLE :: LS3RB (:)
 
 REAL(KIND=JPRB), POINTER :: ZZ3 (:,:,:)
-INTEGER(KIND=JPIM) :: I1, I3, J
+INTEGER(KIND=JPIM) :: JLEV, JFLD, JCOUNT
 LOGICAL :: LLACC = .FALSE.
 
 IF (PRESENT(LDACC)) THEN
@@ -348,65 +360,24 @@ ENDIF
 
 ALLOCATE (LS3RB (SIZE (ZZ3, 1) * SIZE (ZZ3, 3)))
 
-J = 1
+JCOUNT = 1
 
-DO I3 = LBOUND (ZZ3, 3), UBOUND (ZZ3, 3)
-  DO I1 = LBOUND (ZZ3, 1), UBOUND (ZZ3, 1)
-    LS3RB (J)%VIEW%P => ZZ3 (I1, :, I3)
-    LS3RB(J)%NAME=TRIM(NAME)//TRIM(CLOUT)
-    J = J + 1
-  ENDDO
-ENDDO
-
-END FUNCTION
-
-FUNCTION LS4RB (YLF, NAME,LDACC)
-! Creation of a list of SPEC_VIEW, each of them encapsulating a layer of an input FIELD_4RB field.
-! Given YLF dimensioned(NPROMA, NLEVS, NFLDS, NBLKS) as input,
-! the output list size will contain (NLEVS * NFLDS) SPEC_VIEW, each of them dimensioned(NPROMA, NBLKS)
-CLASS (FIELD_4RB), POINTER, INTENT (IN) :: YLF
-CHARACTER(LEN=*) ::NAME
-LOGICAL, OPTIONAL :: LDACC
-
-CHARACTER(LEN=6) CLOUT
-TYPE (SPEC_VIEW), ALLOCATABLE :: LS4RB (:)
-
-REAL(KIND=JPRB), POINTER :: ZZ4 (:,:,:,:)
-INTEGER(KIND=JPIM) :: I1, I3, I4,  J
-LOGICAL :: LLACC = .FALSE.
-
-IF (PRESENT(LDACC)) THEN
-  LLACC = LDACC
-END IF
-
-IF (LLACC) THEN
-  ZZ4 => GET_DEVICE_DATA_RDWR(YLF)
-ELSE
-  ZZ4 => GET_HOST_DATA_RDWR(YLF)
-ENDIF
-
-ALLOCATE (LS4RB (SIZE (ZZ4, 1) * SIZE (ZZ4, 3) * SIZE (ZZ4, 4)))
-
-J = 1
-
-DO I4 = LBOUND (ZZ4, 4), UBOUND (ZZ4, 4)
-  DO I3 = LBOUND (ZZ4, 3), UBOUND (ZZ4, 3)
-    DO I1 = LBOUND (ZZ4, 1), UBOUND (ZZ4, 1)
-      LS4RB (J)%VIEW%P => ZZ4 (I1, :, I3, I4)
-      LS4RB(J)%NAME=TRIM(NAME)//TRIM(CLOUT)
-      J = J + 1
-    ENDDO
+DO JFLD = LBOUND (ZZ3, 3), UBOUND (ZZ3, 3)
+  DO JLEV = LBOUND (ZZ3, 1), UBOUND (ZZ3, 1)
+    LS3RB(JCOUNT)%VIEW%P => ZZ3 (JLEV, :, JFLD)
+    LS3RB(JCOUNT)%NAME=TRIM(NAME)//TRIM(CLOUT)
+    JCOUNT = JCOUNT + 1
   ENDDO
 ENDDO
 
 END FUNCTION
 
 FUNCTION LS (YLFL, LDACC)
-! Creation of a list of SPEC_VIEW from a list  YLFL of FIELD_BASIC_PTR
-TYPE (SPEC_VIEW), ALLOCATABLE :: LS (:)
-LOGICAL, OPTIONAL :: LDACC
+! Creation of a list of SPEC_VIEW from a list YLFL of FIELD_BASIC_PTR
+  TYPE (FIELD_BASIC_PTR) :: YLFL (:)       ! input list of FIELD_BASIC_PTR
+  TYPE (SPEC_VIEW), ALLOCATABLE :: LS (:)  ! output list of SPEC_VIEW
+LOGICAL, OPTIONAL :: LDACC                 ! retrieve data on device
 
-TYPE (FIELD_BASIC_PTR) :: YLFL (:)
 INTEGER(KIND=JPIM) :: IOFF, ILEN, JFLD, JPASS
 INTEGER(KIND=JPIM) :: ILBOUNDS (5), IUBOUNDS (5)
 
@@ -420,7 +391,7 @@ DO JPASS = 1, 2
   ! iterate over YLFL LIST
   DO JFLD = 1, SIZE (YLFL)
 
-   ! Phase 1: compute number of field_view that will be generated for each field of the list
+   ! Phase 1: compute number of SPEC_VIEW that will be generated for each field of the list
    ! Phase 2: call the correct routine to create the SPEC_VIEW for each field of the list
     SELECT TYPE (YLF => YLFL (JFLD)%PTR)
       CLASS IS (FIELD_1RB)
@@ -435,7 +406,7 @@ DO JPASS = 1, 2
          ILEN =  (IUBOUNDS (1) - ILBOUNDS (1) + 1)* (IUBOUNDS (3) - ILBOUNDS (3) + 1)
         IF (JPASS == 2) LS (IOFF+1:IOFF+ILEN) = LS3RB (YLF ,YLFL(JFLD)%NAME,LDACC)
       CLASS IS (FIELD_4RB)
-          CALL ABOR1("LS not implemeted for field_4rb")
+          CALL ABOR1("LS not implemeted for FIELD_4RB")
       CLASS DEFAULT
          ! Skip the spectral field as it is not present on this processor
          ILEN = 1
@@ -447,7 +418,7 @@ DO JPASS = 1, 2
 
   ! at the end of the first pass, allocation of the list of SPEC_VIEW
   IF (JPASS == 1) THEN
-    ALLOCATE (LS (IOFF))
+    ALLOCATE (LS(IOFF))
   ENDIF
 
 ENDDO
