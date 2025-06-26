@@ -1,3 +1,12 @@
+! (C) Copyright 2001- ECMWF.
+! (C) Copyright 2001- Meteo-France.
+! 
+! This software is licensed under the terms of the Apache Licence Version 2.0
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
+! granted to it by virtue of its status as an intergovernmental organisation
+! nor does it submit to any jurisdiction.
+
 MODULE FIELD_API_ECTRANS_MOD
 
 USE PARKIND1, ONLY : JPIM, JPRB
@@ -8,11 +17,13 @@ USE FIELD_API_BASIC_TYPE_MOD, ONLY: FIELD_BASIC_PTR
 IMPLICIT NONE
 
 TYPE SPEC_VIEW
+  ! Spectral field view
   TYPE (FIELD_2RB_VIEW) :: VIEW
   CHARACTER(LEN=12)     :: NAME
 END TYPE
 
 TYPE GRID_VIEW
+! Grid point field view
   TYPE (FIELD_3RB_VIEW) :: VIEW
   INTEGER               :: IVSET
   CHARACTER(LEN=12)     :: NAME
@@ -24,10 +35,10 @@ END INTERFACE
 
 CONTAINS
 
-FUNCTION B1RB (YLF,NAME, IVSET)
-
+FUNCTION B1RB(YLF,NAME, IVSET)
+! Creation of a FIELD_BASIC_PTR encapsulating a FIELD_1RB field
 CLASS (FIELD_1RB), POINTER :: YLF
-CHARACTER(LEN=*) ::NAME
+CHARACTER(LEN=*) :: NAME
 INTEGER, OPTIONAL :: IVSET(:)
 TYPE (FIELD_BASIC_PTR) :: B1RB
 
@@ -38,12 +49,12 @@ IF (PRESENT(IVSET)) THEN
 ENDIF
 B1RB%NAME = NAME
 
-END FUNCTION
+END FUNCTION B1RB
 
-FUNCTION B2RB (YLF,NAME,IVSET)
-
+FUNCTION B2RB(YLF,NAME,IVSET)
+! Creation of a FIELD_BASIC_PTR encapsulating a FIELD_2RB field
 CLASS (FIELD_2RB), POINTER :: YLF
-CHARACTER(LEN=*) ::NAME
+CHARACTER(LEN=*) :: NAME
 
 INTEGER, OPTIONAL :: IVSET(:)
 TYPE (FIELD_BASIC_PTR) :: B2RB
@@ -55,10 +66,10 @@ IF (PRESENT(IVSET)) THEN
 ENDIF
 B2RB%NAME = NAME
 
-END FUNCTION
+END FUNCTION B2RB
 
-FUNCTION B3RB (YLF,NAME,IVSET)
-
+FUNCTION B3RB(YLF,NAME,IVSET)
+! Creation of a FIELD_BASIC_PTR encapsulating a FIELD_3RB field
 CLASS (FIELD_3RB), POINTER :: YLF
 CHARACTER(LEN=*) ::NAME
 INTEGER, OPTIONAL :: IVSET(:)
@@ -71,9 +82,10 @@ IF (PRESENT(IVSET)) THEN
 ENDIF
 B3RB%NAME = NAME
 
-END FUNCTION
+END FUNCTION B3RB
 
-FUNCTION B4RB (YLF,NAME, IVSET)
+FUNCTION B4RB(YLF,NAME,IVSET)
+! Creation of a FIELD_BASIC_PTR encapsulating a FIELD_4RB field
 CLASS (FIELD_4RB), POINTER :: YLF
 CHARACTER(LEN=*) ::NAME
 INTEGER, OPTIONAL :: IVSET(:)
@@ -87,10 +99,12 @@ IF (PRESENT(IVSET)) THEN
 ENDIF
 B4RB%NAME = NAME
 
-END FUNCTION
+END FUNCTION B4RB
 
 FUNCTION LG2RB (YLF,NAME,IVSET, LDACC)
-
+! Creation of a list of GRID_VIEW encapsulating an input FIELD_2RB field
+! Given YLF dimensioned(NPROMA, NBLKS) as input,
+! the output list size will contain one GRID_VIEW containing a VIEW dimensioned(NPROMA, NBLKS)
 CLASS (FIELD_2RB), POINTER, INTENT (IN) :: YLF
 CHARACTER(LEN=*) ::NAME
 INTEGER :: IVSET(:)
@@ -122,7 +136,7 @@ LG2RB(1)%NAME = TRIM(NAME)//TRIM(CLOUT)
 END FUNCTION
 
 FUNCTION LG3RB (YLF,NAME, IVSET,LDACC)
-
+! Creation of a GRID_VIEW encapsulating a FIELD_3RB field
 CLASS (FIELD_3RB), POINTER, INTENT (IN) :: YLF
 CHARACTER(LEN=*) ::NAME
 INTEGER :: IVSET(:)
@@ -158,7 +172,7 @@ ENDDO
 END FUNCTION
 
 FUNCTION LG4RB (YLF,NAME,IVSET,LDACC)
-
+! Creation of a GRID_VIEW encapsulating a FIELD_4RB field
 CLASS (FIELD_4RB), POINTER, INTENT (IN) :: YLF
 CHARACTER(LEN=*) ::NAME
 INTEGER :: IVSET(:)
@@ -197,11 +211,10 @@ ENDDO
 END FUNCTION
 
 FUNCTION LG (YLFL, LDACC)
-
-TYPE (FIELD_BASIC_PTR) :: YLFL (:)
-LOGICAL, OPTIONAL :: LDACC
-
-TYPE (GRID_VIEW), ALLOCATABLE :: LG (:)
+! Creation of a list of GRID_VIEW from a list FIELD_BASIC_PTR
+TYPE (FIELD_BASIC_PTR) :: YLFL (:) ! input list of FIELD_BASIC_PTR
+LOGICAL, OPTIONAL :: LDACC         ! data on device
+TYPE (GRID_VIEW), ALLOCATABLE :: LG (:) !output list of GRID_VIEW
 
 INTEGER(KIND=JPIM) :: IOFF, ILEN, JFLD, JPASS
 INTEGER(KIND=JPIM) :: ILBOUNDS (5), IUBOUNDS (5)
@@ -244,7 +257,7 @@ ENDDO
 END FUNCTION LG
 
 FUNCTION LS1RB (YLF, NAME,LDACC)
-
+! Creation of a SPEC_VIEW encapsulating a FIELD_1RB field
 CLASS (FIELD_1RB), POINTER, INTENT (IN) :: YLF
 CHARACTER(LEN=*) ::NAME
 LOGICAL, OPTIONAL :: LDACC
@@ -273,7 +286,9 @@ LS1RB(1)%NAME=TRIM(NAME)//TRIM(CLOUT)
 END FUNCTION
 
 FUNCTION LS2RB (YLF,NAME,LDACC)
-
+! Creation of a list of SPEC_VIEW, each of them encapsulating a layer of an input FIELD_2RB field.
+! Given YLF dimensioned(NSPEC, NLEVS) as input,
+! the output list size will contain (NLEVS) elements dimensioned(NSPEC)
 CLASS (FIELD_2RB), POINTER, INTENT (IN) :: YLF
 CHARACTER(LEN=*) ::NAME
 LOGICAL, OPTIONAL :: LDACC
@@ -307,8 +322,10 @@ ENDDO
 END FUNCTION
 
 FUNCTION LS3RB (YLF,NAME,LDACC)
-
-CLASS (FIELD_3RB), POINTER, INTENT (IN) :: YLF
+! Creation of a list of SPEC_VIEW, each of them encapsulating a layer of an input FIELD_3RB field.
+! Given YLF dimensioned(NPROMA, NLEVS, NBLKS) as input,
+! the output list size will contain (NLEVS) SPEC_VIEW, each of them dimensioned(NPROMA, NBLKS)
+  CLASS (FIELD_3RB), POINTER, INTENT (IN) :: YLF
 CHARACTER(LEN=*) ::NAME
 LOGICAL, OPTIONAL :: LDACC
 
@@ -344,7 +361,9 @@ ENDDO
 END FUNCTION
 
 FUNCTION LS4RB (YLF, NAME,LDACC)
-
+! Creation of a list of SPEC_VIEW, each of them encapsulating a layer of an input FIELD_4RB field.
+! Given YLF dimensioned(NPROMA, NLEVS, NFLDS, NBLKS) as input,
+! the output list size will contain (NLEVS * NFLDS) SPEC_VIEW, each of them dimensioned(NPROMA, NBLKS)
 CLASS (FIELD_4RB), POINTER, INTENT (IN) :: YLF
 CHARACTER(LEN=*) ::NAME
 LOGICAL, OPTIONAL :: LDACC
@@ -383,7 +402,7 @@ ENDDO
 END FUNCTION
 
 FUNCTION LS (YLFL, LDACC)
-
+! Creation of a list of SPEC_VIEW from a list  YLFL of FIELD_BASIC_PTR
 TYPE (SPEC_VIEW), ALLOCATABLE :: LS (:)
 LOGICAL, OPTIONAL :: LDACC
 
@@ -391,14 +410,18 @@ TYPE (FIELD_BASIC_PTR) :: YLFL (:)
 INTEGER(KIND=JPIM) :: IOFF, ILEN, JFLD, JPASS
 INTEGER(KIND=JPIM) :: ILBOUNDS (5), IUBOUNDS (5)
 
-
+! First pass: determination of the output size list
+! Second pass: allocate and instanciate the SPEC_VIEW types
 DO JPASS = 1, 2
   
   IOFF = 0
   ILEN = -1
 
+  ! iterate over YLFL LIST
   DO JFLD = 1, SIZE (YLFL)
-  
+
+   ! Phase 1: compute number of field_view that will be generated for each field of the list
+   ! Phase 2: call the correct routine to create the SPEC_VIEW for each field of the list
     SELECT TYPE (YLF => YLFL (JFLD)%PTR)
       CLASS IS (FIELD_1RB)
         ILEN = 1
@@ -414,7 +437,7 @@ DO JPASS = 1, 2
       CLASS IS (FIELD_4RB)
           CALL ABOR1("LS not implemeted for field_4rb")
       CLASS DEFAULT
-         ! Spectral field not present on this proc
+         ! Skip the spectral field as it is not present on this processor
          ILEN = 1
     END SELECT
 
@@ -422,6 +445,7 @@ DO JPASS = 1, 2
 
   ENDDO
 
+  ! at the end of the first pass, allocation of the list of SPEC_VIEW
   IF (JPASS == 1) THEN
     ALLOCATE (LS (IOFF))
   ENDIF

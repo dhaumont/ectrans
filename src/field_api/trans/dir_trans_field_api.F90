@@ -31,9 +31,9 @@ SUBROUTINE DIR_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
 !       YDFSPDIV(:)    - List of spectral vector fields (divergence)
 !       YDFSPSCALAR(:) - List of spectral scalar fields 
 !      input
-!       YDFU(:)        - List of vector fields (u)
-!       YDFV(:)        - List of vector fields (v)
-!       YDFSCALAR(:)   - List of scalar fields
+!       YDFU(:)        - List of grid-point vector fields (u)
+!       YDFV(:)        - List of grid-point vector fields (v)
+!       YDFSCALAR(:)   - List of grid-point scalar fields
 !       KSPEC          - Number of spectral coefficients
 !       KPROMA         - Blocking factor
 !       KGPBLKS        - Number of blocks
@@ -78,6 +78,7 @@ REAL(KIND=JPRB),POINTER :: ZPSPSC2(:,:)               ! spectral scalar fields(o
 REAL(KIND=JPRB),POINTER :: ZPGPUV(:,:,:,:)            ! grid vector fields (in)
 REAL(KIND=JPRB),POINTER :: ZPGP2(:,:,:)               ! grid scalar fields (in)
 
+! b-set for dir-trans
 INTEGER(KIND=JPIM),ALLOCATABLE :: IVSETUV(:)
 INTEGER(KIND=JPIM),ALLOCATABLE :: IVSETSC2(:)
 
@@ -100,7 +101,6 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 #include "abor1.intfb.h"
 
 !     ------------------------------------------------------------------
-
 IF (LHOOK) CALL DR_HOOK('DIR_TRANS_FIELD_API',0,ZHOOK_HANDLE)
 
 ISPUV = 0 
@@ -120,27 +120,28 @@ JFLD = 0
 ! 1. Vector fields transformation to spectral space
 
 ! Preliminary checks
-IF (PRESENT(YDFU) .NEQV. PRESENT(YDFV)) CALL ABOR1("[ECTRANS_FIELD_API] YDFU and YDFV must be provided together")
+IF (PRESENT(YDFU) .NEQV. PRESENT(YDFV)) CALL ABOR1("[DIR_TRANS_FIELD_API] YDFU and YDFV must be provided together")
 
 ! Do we have vector fields?
 IF (PRESENT(YDFU)) THEN
 
   IF ((SIZE(YDFU)/= SIZE(YDFV)).OR.(SIZE(YDFU)/= SIZE(YDFSPDIV)).OR.(SIZE(YDFU)/= SIZE(YDFSPVOR))) THEN
-     CALL ABOR1("[ECTRANS_FIELD_API] The vector arrays have inconsitent sizes: YDFU, YDFV, YDFSPDIV, YDFSPVOR")
+     CALL ABOR1("[DIR_TRANS_FIELD_API] The vector arrays have inconsitent sizes: YDFU, YDFV, YDFSPDIV, YDFSPVOR")
   ENDIF
 
   ! Convert list of spectral vector fields into a list of 2d FIELD_VIEW
   YLSPVVOR = LS(YDFSPVOR, LDACC)
   YLSPVDIV = LS(YDFSPDIV, LDACC)
 
+  ! Convert list of grid-point vector fields into a list of 2d FIELD_VIEW
   YLGVU = LG(YDFU, LDACC)
   YLGVV = LG(YDFV, LDACC)
 
   IF ((SIZE (YLGVU) /= SIZE (YLGVV)) .OR. (SIZE (YLSPVVOR) /= SIZE (YLSPVDIV))) THEN
-     CALL ABOR1("[ECTRANS_FIELD_API] inconsistent number of field_view for vectors")
+     CALL ABOR1("[DIR_TRANS_FIELD_API] inconsistent number of field_view for vectors")
   ENDIF
    IF (((SIZE (YLGVU) / SIZE (YDFU)) /= KFLEVG) .OR. ((SIZE (YLSPVVOR) / SIZE (YDFSPVOR)) /= KFLEVL)) THEN
-     CALL ABOR1("[ECTRANS_FIELD_API] inconsistent kflevg or kflevl")
+     CALL ABOR1("[DIR_TRANS_FIELD_API] inconsistent kflevg or kflevl")
   ENDIF
 
   IUVG = SIZE(YDFU)          
@@ -155,19 +156,19 @@ IF (PRESENT(YDFU)) THEN
   ! allocate temporary vector field array in grid space
   ALLOCATE(ZPGPUV(KPROMA,KFLEVG, IUVG * IUVDIM,KGPBLKS))
   
-  ! allocate 'b-set' for spectral vector fields
+  ! allocate 'b-set' for vector fields
   ALLOCATE(IVSETUV(KFLEVG))
 
   IOFFSET = 0
 
-  ! Copy list of 2d views of spectral vector fields into temporary arrays
+  ! Copy list of 2d views of grid point vector fields into temporary arrays
   DO JFLD=1,IUVG
     DO JLEV=1,KFLEVG
        ID = JLEV + (JFLD -1) * KFLEVG
        ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:) = YLGVU(ID)%VIEW%P(:,:) 
        ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:) = YLGVV(ID)%VIEW%P(:,:) 
        IF (JFLD .EQ. 1) IVSETUV(JLEV) = YLGVU(ID)%IVSET
-       IF (IVSETUV(JLEV) .NE. YLGVU(ID)%IVSET)  CALL ABOR1("[ECTRANS_FIELD_API] ivsetuv inconsistent with ylgvu%ivset")
+       IF (IVSETUV(JLEV) .NE. YLGVU(ID)%IVSET)  CALL ABOR1("[DIR_TRANS_FIELD_API] ivsetuv inconsistent with ylgvu%ivset")
     ENDDO
   ENDDO
     
@@ -182,15 +183,15 @@ ENDIF
 ! 2. scalar fields transformation
 
 ! Preliminary checks
-IF (PRESENT(YDFSPSCALAR) .NEQV. PRESENT(YDFSCALAR))  CALL ABOR1("[ECTRANS_FIELD_API]  YDFSPSCALAR and YDFSCALAR must be provided together")
+IF (PRESENT(YDFSPSCALAR) .NEQV. PRESENT(YDFSCALAR))  CALL ABOR1("[DIR_TRANS_FIELD_API]  YDFSPSCALAR and YDFSCALAR must be provided together")
 
 ! Do we have scalar fields?
 IF (PRESENT(YDFSPSCALAR)) THEN
-  IF ((SIZE(YDFSPSCALAR)/= SIZE(YDFSCALAR)))  CALL ABOR1("[ECTRANS_FIELD_API] Inconsistent size for YDFSPSCALAR and YDFSCALAR")
+  IF ((SIZE(YDFSPSCALAR)/= SIZE(YDFSCALAR)))  CALL ABOR1("[DIR_TRANS_FIELD_API] Inconsistent size for YDFSPSCALAR and YDFSCALAR")
 
   ! Convert list of spectral scalar fields of any domension into a list of 2d fields
-  YLGVSCALAR = LG (YDFSCALAR, LDACC)
-  YLSPVSCALAR = LS (YDFSPSCALAR, LDACC)
+  YLGVSCALAR = LG(YDFSCALAR, LDACC)
+  YLSPVSCALAR = LS(YDFSPSCALAR, LDACC)
 
   IFLDXG = SIZE(YLGVSCALAR) 
 
@@ -202,20 +203,23 @@ IF (PRESENT(YDFSPSCALAR)) THEN
 
   ISCDIM = 1
 
-   ! Allocate scalar field in spectral space
+   ! Allocate temporary scalar field array in spectral space
   ALLOCATE(ZPSPSC2(IFLDXL,KSPEC))
 
-  ! Allocate scalar field in grid space
+  ! Allocate temporary scalar field array in grid space
   ALLOCATE(ZPGP2(KPROMA,IFLDXG * ISCDIM,KGPBLKS))
+  
+  ! allocate 'b-set' for scalar fields
   ALLOCATE(IVSETSC2(IFLDXG))
 
-  ! Copy list of 2d views of spectral scalar fields into temporary arrays
+  ! Copy list ofscalar fields into temporary arrays (2d copy thanks to field_view)
  DO JFLD=1, IFLDXG
   ZPGP2(:,JFLD,:) = YLGVSCALAR(JFLD)%VIEW%P(:,:)
   IVSETSC2(JFLD) = YLGVSCALAR(JFLD)%IVSET
 ENDDO
 
 ELSE
+  !No scalar field provided
   ISPUV = 0
   IFLDXG = 0
   ZPGP2=>NULL()
@@ -267,7 +271,6 @@ IF (ALLOCATED(YLGVV))       DEALLOCATE(YLGVV)
 IF (ALLOCATED(YLGVSCALAR))  DEALLOCATE(YLGVSCALAR)
 
 IF (LHOOK) CALL DR_HOOK('DIR_TRANS_FIELD_API',1,ZHOOK_HANDLE)
-
 !     ------------------------------------------------------------------
 
 END SUBROUTINE DIR_TRANS_FIELD_API
