@@ -715,6 +715,8 @@ else
   endif  
 endif
 
+call gstats(4,1)
+
 if (ldump_crcs) then  
     if (lfield_api) then        
       write (clfile,'(A)') 'inv_trans_field_api.txt'
@@ -727,8 +729,7 @@ if (ldump_crcs) then
     
     call dump_crc(clfile, iter=jstep,zgmv=zgmv, zgmvs=zgmvs)
 endif
-
-  call gstats(4,1)
+ 
 
   ztstep1(jstep) = (timef() - ztstep1(jstep))/1000.0_jprd
 
@@ -756,6 +757,13 @@ endif
   ztstep2(jstep) = timef()
 
   call gstats(5,0)
+
+  if (ldump_crcs) then
+    zspvor(:,:) = 0
+    zspdiv(:,:) = 0
+    zspsc2(:,:) = 0
+    zspsc3a(:,:,:) = 0
+  endif
 
   if (lfield_api) then
 #if USE_FIELD_API
@@ -789,7 +797,9 @@ endif
       & kvsetsc3a=ivset)
   endif
 endif
-  
+
+call gstats(5,1)
+
 if (ldump_crcs) then  
   if (lfield_api) then        
     write (clfile,'(A)') 'dir_trans_field_api.txt'
@@ -800,9 +810,7 @@ if (ldump_crcs) then
   call dump_crc(clfile, iter=jstep,sp3d=sp3d,zspc2=zspsc2)
 endif
 
-
-  call gstats(5,1)
-
+ 
   ztstep2(jstep) = (timef() - ztstep2(jstep))/1000.0_jprd
 
   ztstep(jstep) = (timef() - ztstep(jstep))/1000.0_jprd
