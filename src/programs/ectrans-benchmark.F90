@@ -48,7 +48,7 @@ use yomhook, only : dr_hook_init
 use ectrans_memory, only : allocator
 
 #if USE_FIELD_API
-USE ectrans_field_api_helper, only : wrapped_fields, fields_lists, wrap_fields, create_fields_lists, &
+USE ectrans_field_api_helper, only : wrapped_fields, fields_lists, wrap_benchmark_fields, create_fields_lists, &
                                   & delete_wrapped_fields,delete_fields_lists, output_wrapped_fields, output_fields_lists, &
                                   & nullify_wrapped_fields
 #endif
@@ -558,9 +558,9 @@ zgp3a => zgmv(:,:,jbegin_sc:jend_scder_EW,:)
 zgp2  => zgmvs(:,:,:)
 
 #if USE_FIELD_API
-if (lfield_api) then  
+if (lfield_api) then   
   call nullify_wrapped_fields(ywflds) 
-  call wrap_fields(ywflds,lvordiv, lscders, luvders, &
+  call wrap_benchmark_fields(ywflds,lvordiv, lscders, luvders, &
                   & sp3d, zspsc2, zgmv, zgmvs, zgp2, &
                   & jbegin_uv,jend_uv, &
                   & jbegin_sc,jend_sc, &
@@ -568,7 +568,7 @@ if (lfield_api) then
                   & jbegin_scder_EW, jend_scder_EW, &
                   & jbegin_uder_EW, jend_uder_EW, &
                   & jbegin_vder_EW, jend_vder_EW)
-  
+    
   call create_fields_lists(ywflds,ylf,ivset,ivsetsc)  
 endif
 #endif
@@ -1058,9 +1058,7 @@ call allocator%deallocate('zspsc2', zspsc2)
 #if USE_FIELD_API
 if (lfield_api) then
   call delete_wrapped_fields(ywflds)
-  call delete_fields_lists(ylf)
-  !deallocate(ylf)
-  !deallocate(ywflds)
+  call delete_fields_lists(ylf)  
 endif
 #endif
 !===================================================================================================

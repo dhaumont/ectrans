@@ -14,7 +14,7 @@ END TYPE
 
 TYPE GRID_VIEW
   TYPE (FIELD_3RB_VIEW) :: VIEW
-  INTEGER               :: IVSET = -1
+  INTEGER               :: IVSET
   CHARACTER(LEN=12)     :: NAME
 END TYPE
 
@@ -412,7 +412,7 @@ DO JPASS = 1, 2
          ILEN =  (IUBOUNDS (1) - ILBOUNDS (1) + 1)* (IUBOUNDS (3) - ILBOUNDS (3) + 1)
         IF (JPASS == 2) LS (IOFF+1:IOFF+ILEN) = LS3RB (YLF ,YLFL(JFLD)%NAME,LDACC)
       CLASS IS (FIELD_4RB)
-          CALL ABOR1("LS NOT IMPLEMETED FOR FIELD_4RB")
+          CALL ABOR1("LS not implemeted for field_4rb")
       CLASS DEFAULT
          ! Spectral field not present on this proc
          ILEN = 1
