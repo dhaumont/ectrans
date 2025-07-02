@@ -130,12 +130,12 @@ IF (PRESENT(YDFU)) THEN
   ENDIF
 
   ! Convert list of spectral vector fields into a list of 2d FIELD_VIEW
-  YLSPVVOR = LS(YDFSPVOR, LDACC)
-  YLSPVDIV = LS(YDFSPDIV, LDACC)
+  YLSPVVOR = LS(YDFSPVOR, LDACC, .FALSE.)
+  YLSPVDIV = LS(YDFSPDIV, LDACC, .FALSE.)
 
   ! Convert list of grid-point vector fields into a list of 2d FIELD_VIEW
-  YLGVU = LG(YDFU, LDACC)
-  YLGVV = LG(YDFV, LDACC)
+  YLGVU = LG(YDFU, LDACC, .TRUE.)
+  YLGVV = LG(YDFV, LDACC, .TRUE.)
 
   IF ((SIZE (YLGVU) /= SIZE (YLGVV)) .OR. (SIZE (YLSPVVOR) /= SIZE (YLSPVDIV))) THEN
      CALL ABOR1("[DIR_TRANS_FIELD_API] inconsistent number of field_view for vectors")
@@ -159,19 +159,39 @@ IF (PRESENT(YDFU)) THEN
   ! allocate 'b-set' for vector fields
   ALLOCATE(IVSETUV(KFLEVG))
 
+
+! temporary copies on gpu
+   if ( LDACC ) THEN
+    !$ACC ENTER DATA CREATE(ZPSPVOR,ZPSPDIV,ZPGPUV)
+  ENDIF
+
+  
   IOFFSET = 0
 
   ! Copy list of 2d views of grid point vector fields into temporary arrays
-  DO JFLD=1,IUVG
-    DO JLEV=1,KFLEVG
-       ID = JLEV + (JFLD -1) * KFLEVG
-       ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:) = YLGVU(ID)%VIEW%P(:,:) 
-       ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:) = YLGVV(ID)%VIEW%P(:,:) 
-       IF (JFLD .EQ. 1) IVSETUV(JLEV) = YLGVU(ID)%IVSET
-       IF (IVSETUV(JLEV) .NE. YLGVU(ID)%IVSET)  CALL ABOR1("[DIR_TRANS_FIELD_API] ivsetuv inconsistent with ylgvu%ivset")
+  IF (LDACC) THEN
+    !$ACC KERNELS PRESENT(ZPGPUV)
+    DO JFLD=1,IUVG
+      DO JLEV=1,KFLEVG
+        ID = JLEV + (JFLD -1) * KFLEVG
+        ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:) = YLGVU(ID)%VIEW%P(:,:) 
+        ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:) = YLGVV(ID)%VIEW%P(:,:) 
+        IF (JFLD .EQ. 1) IVSETUV(JLEV) = YLGVU(ID)%IVSET
+        IF (IVSETUV(JLEV) .NE. YLGVU(ID)%IVSET)  CALL ABOR1("[DIR_TRANS_FIELD_API] ivsetuv inconsistent with ylgvu%ivset")        
+      ENDDO
     ENDDO
-  ENDDO
-    
+    !$ACC END KERNELS
+  ELSE      
+      DO JFLD=1,IUVG
+        DO JLEV=1,KFLEVG
+          ID = JLEV + (JFLD -1) * KFLEVG       
+          ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:) = YLGVU(ID)%VIEW%P(:,:) 
+          ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:) = YLGVV(ID)%VIEW%P(:,:) 
+          IF (JFLD .EQ. 1) IVSETUV(JLEV) = YLGVU(ID)%IVSET
+          IF (IVSETUV(JLEV) .NE. YLGVU(ID)%IVSET)  CALL ABOR1("[DIR_TRANS_FIELD_API] ivsetuv inconsistent with ylgvu%ivset")        
+        ENDDO
+      ENDDO      
+  ENDIF
 ELSE
   ! No vector field provided
   ISPUV = 0
@@ -189,9 +209,9 @@ IF (PRESENT(YDFSPSCALAR) .NEQV. PRESENT(YDFSCALAR))  CALL ABOR1("[DIR_TRANS_FIEL
 IF (PRESENT(YDFSPSCALAR)) THEN
   IF ((SIZE(YDFSPSCALAR)/= SIZE(YDFSCALAR)))  CALL ABOR1("[DIR_TRANS_FIELD_API] Inconsistent size for YDFSPSCALAR and YDFSCALAR")
 
-  ! Convert list of spectral scalar fields of any domension into a list of 2d fields
-  YLGVSCALAR = LG(YDFSCALAR, LDACC)
-  YLSPVSCALAR = LS(YDFSPSCALAR, LDACC)
+  ! Convert list of spectral scalar fields of any dimension into a list of 2d fields
+  YLGVSCALAR = LG(YDFSCALAR, LDACC,.TRUE.)
+  YLSPVSCALAR = LS(YDFSPSCALAR, LDACC,.FALSE.)
 
   IFLDXG = SIZE(YLGVSCALAR) 
 
@@ -212,11 +232,27 @@ IF (PRESENT(YDFSPSCALAR)) THEN
   ! allocate 'b-set' for scalar fields
   ALLOCATE(IVSETSC2(IFLDXG))
 
-  ! Copy list ofscalar fields into temporary arrays (2d copy thanks to field_view)
- DO JFLD=1, IFLDXG
-  ZPGP2(:,JFLD,:) = YLGVSCALAR(JFLD)%VIEW%P(:,:)
-  IVSETSC2(JFLD) = YLGVSCALAR(JFLD)%IVSET
-ENDDO
+  ! temporary copies on gpu
+   if ( LDACC ) THEN
+    !$ACC ENTER DATA CREATE(ZPSPSC2,ZPGP2)
+  ENDIF
+
+  
+  ! Copy list of scalar fields into temporary arrays (2d copy thanks to field_view)
+
+  IF (LDACC) THEN
+    !$ACC KERNELS PRESENT(ZPGP2)
+    DO JFLD=1, IFLDXG
+      ZPGP2(:,JFLD,:) = YLGVSCALAR(JFLD)%VIEW%P(:,:)
+      IVSETSC2(JFLD) = YLGVSCALAR(JFLD)%IVSET
+    ENDDO
+    !$ACC END KERNELS
+  ELSE
+    DO JFLD=1, IFLDXG
+      ZPGP2(:,JFLD,:) = YLGVSCALAR(JFLD)%VIEW%P(:,:)
+      IVSETSC2(JFLD) = YLGVSCALAR(JFLD)%IVSET
+    ENDDO
+  ENDIF
 
 ELSE
   !No scalar field provided
@@ -236,24 +272,63 @@ ENDIF
 
   ! copy spectral vorticity and divergence
   IF (IUVG>0) THEN
-    DO JFLD=1,SIZE(YLSPVVOR)
-      YLSPVVOR(JFLD)%VIEW%P(:) = ZPSPVOR(JFLD,:)  
-      YLSPVDIV(JFLD)%VIEW%P(:) = ZPSPDIV(JFLD,:)
-   ENDDO
+    IF (LDACC) THEN
+      !$ACC KERNELS PRESENT(ZPSPVOR)
+      DO JFLD=1,SIZE(YLSPVVOR)
+        YLSPVVOR(JFLD)%VIEW%P(:) = ZPSPVOR(JFLD,:)  
+        YLSPVDIV(JFLD)%VIEW%P(:) = ZPSPDIV(JFLD,:)
+      ENDDO   
+      !$ACC END KERNELS 
+    ELSE
+      DO JFLD=1,SIZE(YLSPVVOR)
+        YLSPVVOR(JFLD)%VIEW%P(:) = ZPSPVOR(JFLD,:)  
+        YLSPVDIV(JFLD)%VIEW%P(:) = ZPSPDIV(JFLD,:)
+      ENDDO
+    ENDIF
  ENDIF
 
  ! copy spectral scalar fields
  ID = 1
+ IF (LDACC) THEN
+ !$ACC KERNELS PRESENT(ZPSPVOR)
  DO JFLD = 1, SIZE(YLSPVSCALAR) 
     IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) THEN
       YLSPVSCALAR(JFLD)%VIEW%P(:) = ZPSPSC2(ID,:) 
       ID = ID + 1 
     ENDIF
  ENDDO
+ !$ACC END KERNELS 
+ ELSE
+  DO JFLD = 1, SIZE(YLSPVSCALAR) 
+    IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) THEN
+      YLSPVSCALAR(JFLD)%VIEW%P(:) = ZPSPSC2(ID,:) 
+      ID = ID + 1 
+    ENDIF
+  ENDDO
+ ENDIF
 
 ! 5. Final cleanup
 
 ! delete temporary arrays
+
+ IF ( LDACC ) THEN
+  IF (ASSOCIATED(ZPSPVOR))  THEN
+      !$ACC EXIT DATA DELETE(ZPSPVOR)
+  ENDIF
+  IF (ASSOCIATED(ZPSPDIV)) THEN
+   !$ACC EXIT DATA DELETE(ZPSPDIV)
+  ENDIF
+  IF (ASSOCIATED(ZPGPUV)) THEN
+     !$ACC EXIT DATA DELETE(ZPGPUV)
+  ENDIF
+  IF (ASSOCIATED(ZPSPSC2)) THEN
+   !$ACC EXIT DATA DELETE(ZPSPSC2)
+  ENDIF
+  IF (ASSOCIATED(ZPGP2)) THEN
+     !$ACC EXIT DATA DELETE(ZPGP2)
+  ENDIF
+ENDIF
+
 IF (ASSOCIATED(ZPSPVOR)) DEALLOCATE(ZPSPVOR)
 IF (ASSOCIATED(ZPSPDIV)) DEALLOCATE(ZPSPDIV)
 IF (ASSOCIATED(ZPSPSC2)) DEALLOCATE(ZPSPSC2)
