@@ -21,9 +21,6 @@ foreach( program ectrans-benchmark )
   if ( HAVE_CPU )
     foreach( prec dp sp )
       if( HAVE_${prec} )
-        if (HAVE_FIELD_API)
-          set(field_api_libs ectrans_field_api_${prec})
-        endif()
   
         ecbuild_add_executable( TARGET  ${program}-cpu-${prec}
                                 SOURCES ${program}.F90 ${util_src}
@@ -32,7 +29,7 @@ foreach( program ectrans-benchmark )
                                   fiat
                                   parkind_${prec}
                                   trans_${prec}
-                                  ${field_api_libs}
+                                  $<${HAVE_FIELD_API}:ectrans_field_api_${prec}>
                                 DEFINITIONS
                                   VERSION="cpu"
                                   USE_FIELD_API=${HAVE_FIELD_API}
@@ -64,9 +61,11 @@ foreach( program ectrans-benchmark )
                                   $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
                                   $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
                                   ${util_PRIVATE_LIBRARIES}
+                                  $<${HAVE_FIELD_API}:ectrans_field_api_gpu_${prec}>
                                 DEFINITIONS
                                   VERSION="gpu"
                                   ${util_PRIVATE_DEFINITIONS}
+                                  USE_FIELD_API=${HAVE_FIELD_API}
         )
         ectrans_target_fortran_module_directory(TARGET ${program}-gpu-${prec} MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/module/${program}-gpu-${prec} )
       endif()

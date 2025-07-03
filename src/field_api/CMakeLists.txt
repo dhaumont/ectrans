@@ -46,15 +46,13 @@ function(generate_backend_sources)
   cmake_parse_arguments(_PAR "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   set(backend ${_PAR_BACKEND})
   set(destination ${_PAR_DESTINATION})
-  file(MAKE_DIRECTORY ${destination}/field_api_${backend})
-  file(MAKE_DIRECTORY ${destination}/field_api_${backend}/trans)
 
   set(files)
   list( APPEND files
     field_api_ectrans_mod.F90
     trans/dir_trans_field_api.F90
     trans/inv_trans_field_api.F90
-    field_api_basic_type_mod.F90      
+    field_api_basic_type_mod.F90
   )
 
   set(outfiles)
@@ -74,32 +72,43 @@ endfunction(generate_backend_sources)
 
 set( BUILD_INTERFACE_INCLUDE_DIR ${CMAKE_BINARY_DIR}/include/ectrans )
 
-# loop over precisions
-foreach( prec dp sp)
-  if( HAVE_${prec} )
-   
-#    generate_backend_includes(BACKEND ${prec} TARGET ectrans_field_api_${prec}_includes DESTINATION ${BUILD_INTERFACE_INCLUDE_DIR} INCLUDE_DIRECTORY ${PROJECT_SOURCE_DIR}/src/trans/include )
+if (HAVE_GPU)
+   set (devices cpu gpu)
+else()
+   set (devices cpu)
+endif()
 
-    generate_backend_sources(BACKEND ${prec} 
-                             OUTPUT ectrans_field_api_${prec}_src  
-                             DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_field_api_${prec})
-      
-    ecbuild_add_library(
-      TARGET           ectrans_field_api_${prec}
-      LINKER_LANGUAGE  Fortran
-      SOURCES          ${ectrans_field_api_${prec}_src}      
-      PUBLIC_LIBS       ectrans_${prec} field_api_${prec} fiat parkind_${prec}
-       PUBLIC_INCLUDES  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/trans/include/ectrans>       
-                        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/field_api/include>  
-       )
+foreach(device ${devices})
+  foreach( prec dp sp)
+    if( HAVE_${prec})
+      set(field_api_library field_api_${prec})
+      set(parkind_library parkind_${prec})
 
-    ectrans_target_fortran_module_directory(
-      TARGET            ectrans_field_api_${prec}
-      MODULE_DIRECTORY  ${CMAKE_BINARY_DIR}/module/ectrans
-      INSTALL_DIRECTORY module/ectrans
-    )
-    
-    endif()
+      if (${device} MATCHES "gpu")
+        set (prec "gpu_${prec}")
+      endif()
+ 
+      generate_backend_sources(BACKEND ${prec}
+                               OUTPUT ectrans_field_api_${prec}_src
+                               DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_field_api_${prec})
+
+      ecbuild_add_library(
+          TARGET           ectrans_field_api_${prec}
+          LINKER_LANGUAGE  Fortran
+          SOURCES          ${ectrans_field_api_${prec}_src}
+          PUBLIC_LIBS      ectrans_${prec} ${field_api_library} fiat ${parkind_library}
+          PUBLIC_INCLUDES  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/trans/include/ectrans>
+                           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/field_api/include>
+                           )
+
+      ectrans_target_fortran_module_directory(
+          TARGET            ectrans_field_api_${prec}
+          MODULE_DIRECTORY  ${CMAKE_BINARY_DIR}/module/ectrans
+          INSTALL_DIRECTORY module/ectrans
+        )
+
+     endif()
+  endforeach()
 endforeach()
 
 
