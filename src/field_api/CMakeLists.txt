@@ -62,7 +62,6 @@ function(generate_backend_sources)
     get_filename_component(outfile_ext     ${file_i} EXT)
     get_filename_component(outfile_dir     ${file_i} DIRECTORY)
     set(outfile "${destination}/${file_i}")
-    #set(outfile "${destination}/${outfile_name_we}_${backend}${outfile_ext}")
 
     generate_file(BACKEND ${backend} INPUT ${CMAKE_CURRENT_SOURCE_DIR}/${file_i} OUTPUT ${outfile})
     list(APPEND outfiles ${outfile})
@@ -72,37 +71,32 @@ endfunction(generate_backend_sources)
 
 set( BUILD_INTERFACE_INCLUDE_DIR ${CMAKE_BINARY_DIR}/include/ectrans )
 
-if (HAVE_GPU)
-   set (devices cpu gpu)
-else()
-   set (devices cpu)
-endif()
+set (devices $<${HAVE_CPU}:cpu>  $<${HAVE_GPU}:gpu>)
 
 foreach(device ${devices})
   foreach( prec dp sp)
     if( HAVE_${prec})
-      set(field_api_library field_api_${prec})
-      set(parkind_library parkind_${prec})
-
       if (${device} MATCHES "gpu")
-        set (prec "gpu_${prec}")
-      endif()
+        set (device_prec "gpu_${prec}")
+      else()
+        set (device_prec "${prec}")
+     endif()
  
-      generate_backend_sources(BACKEND ${prec}
-                               OUTPUT ectrans_field_api_${prec}_src
-                               DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_field_api_${prec})
+      generate_backend_sources(BACKEND ${device_prec}
+                               OUTPUT ectrans_field_api_${device_prec}_src
+                               DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_field_api_${device_prec})
 
       ecbuild_add_library(
-          TARGET           ectrans_field_api_${prec}
+          TARGET           ectrans_field_api_${device_prec}
           LINKER_LANGUAGE  Fortran
-          SOURCES          ${ectrans_field_api_${prec}_src}
-          PUBLIC_LIBS      ectrans_${prec} ${field_api_library} fiat ${parkind_library}
+          SOURCES          ${ectrans_field_api_${device_prec}_src}
+          PUBLIC_LIBS      ectrans_${prec} field_api_${prec} fiat parkind_${prec}
           PUBLIC_INCLUDES  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/trans/include/ectrans>
                            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/field_api/include>
                            )
 
       ectrans_target_fortran_module_directory(
-          TARGET            ectrans_field_api_${prec}
+          TARGET            ectrans_field_api_${device_prec}
           MODULE_DIRECTORY  ${CMAKE_BINARY_DIR}/module/ectrans
           INSTALL_DIRECTORY module/ectrans
         )

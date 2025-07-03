@@ -30,7 +30,7 @@ foreach( program ectrans-benchmark )
                                   parkind_${prec}
                                   trans_${prec}
                                   $<${HAVE_FIELD_API}:ectrans_field_api_${prec}>
-                                  $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
+                                  $<$<AND:${HAVE_FIELD_API},${HAVE_ACC}>:OpenACC::OpenACC_Fortran>
                                 DEFINITIONS
                                   VERSION="cpu"
                                   USE_FIELD_API=${HAVE_FIELD_API}
