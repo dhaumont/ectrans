@@ -71,37 +71,37 @@ endfunction(generate_backend_sources)
 
 set( BUILD_INTERFACE_INCLUDE_DIR ${CMAKE_BINARY_DIR}/include/ectrans )
 
-set (devices)
+set (platforms)
 if (HAVE_CPU)
-    list(APPEND devices cpu)
+    list(APPEND platforms cpu)
 endif()
 if (HAVE_GPU)
-    list(APPEND devices gpu)
+    list(APPEND platforms gpu)
 endif()
-foreach(device ${devices})
+foreach(platform ${platforms})
   foreach( prec dp sp)
     if( HAVE_${prec})
-      if (${device} MATCHES "gpu")
-        set (device_prec "gpu_${prec}")
+      if (${platform} MATCHES "gpu")
+        set (platform_tag "gpu")
       else()
-        set (device_prec "${prec}")
+        set (platform_tag "")
      endif()
  
-      generate_backend_sources(BACKEND ${device_prec}
-                               OUTPUT ectrans_field_api_${device_prec}_src
-                               DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_field_api_${device_prec})
+      generate_backend_sources(BACKEND ${platform_tag}${prec}
+                               OUTPUT ectrans_field_api_${platform_tag}${prec}_src
+                               DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_field_api_${platform_tag}${prec})
 
       ecbuild_add_library(
-          TARGET           ectrans_field_api_${device_prec}
+          TARGET           ectrans_field_api_${platform_tag}${prec}
           LINKER_LANGUAGE  Fortran
-          SOURCES          ${ectrans_field_api_${device_prec}_src}
+          SOURCES          ${ectrans_field_api_${platform_tag}${prec}_src}
           PUBLIC_LIBS      ectrans_${prec} field_api_${prec} fiat parkind_${prec}
           PUBLIC_INCLUDES  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/trans/include/ectrans>
                            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/field_api/include>
                            )
 
       ectrans_target_fortran_module_directory(
-          TARGET            ectrans_field_api_${device_prec}
+          TARGET            ectrans_field_api_${platform_tag}${prec}
           MODULE_DIRECTORY  ${CMAKE_BINARY_DIR}/module/ectrans
           INSTALL_DIRECTORY module/ectrans
         )
