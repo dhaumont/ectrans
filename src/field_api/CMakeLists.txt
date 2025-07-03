@@ -71,8 +71,13 @@ endfunction(generate_backend_sources)
 
 set( BUILD_INTERFACE_INCLUDE_DIR ${CMAKE_BINARY_DIR}/include/ectrans )
 
-set (devices $<${HAVE_CPU}:cpu>  $<${HAVE_GPU}:gpu>)
-
+set (devices)
+if (HAVE_CPU)
+    list(APPEND devices cpu)
+endif()
+if (HAVE_GPU)
+    list(APPEND devices gpu)
+endif()
 foreach(device ${devices})
   foreach( prec dp sp)
     if( HAVE_${prec})
