@@ -146,8 +146,8 @@ integer(kind=jpim) :: ntrace_stats = 0
 integer(kind=jpim) :: nprnt_stats = 1
 integer(kind=jpim) :: nopt_mem_tr = 0
 
-==== BASE ====
-==== BASE ====
+character(len=256) :: checksums_filename
+
 ! The multiplier of the machine epsilon used as a tolerance for correctness checking
 ! ncheck = 0 (the default) means that correctness checking is disabled
 integer(kind=jpim) :: ncheck = 0
@@ -254,7 +254,7 @@ endif
 
 ! Setup
 call get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, nlev, lvordiv, lscders, luvders, &
-  & luseflt, nopt_mem_tr, nproma, verbosity, ldump_values, ldump_crcs, lprint_norms, lmeminfo, nprtrv, nprtrw,&
+  & luseflt, nopt_mem_tr, nproma, verbosity, ldump_values, ldump_checksums, lprint_norms, lmeminfo, nprtrv, nprtrw,&
   & ncheck, lpinning, lfield_api, cchecksums_path)
 if (cgrid == '') cgrid = cubic_octahedral_gaussian_grid(nsmax)
 call parse_grid(cgrid, ndgl, nloen)
@@ -714,6 +714,7 @@ else
        & pgp2=zgp2,                         &
        & pgp3a=zgp3a)
   endif
+endif
   call gstats(4,1)
 
 if (ldump_checksums) then  
@@ -788,6 +789,7 @@ endif
       & kvsetsc2=ivsetsc,                   &
       & kvsetsc3a=ivset)
   endif
+endif
   call gstats(5,1)
 
 
