@@ -670,11 +670,6 @@ do jstep = 1, iters+iters_warmup
   ztstep1(jstep) = timef()
   call gstats(4,0)
 
-  if (ldump_checksums) then
-    zgmv(:,:,:,:) = 0
-    zgmvs(:,:,:) = 0
-  endif
-
   if (lfield_api) then
 #if USE_FIELD_API
     CALL inv_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
@@ -750,13 +745,6 @@ endif
   ztstep2(jstep) = timef()
 
   call gstats(5,0)
-
-  if (ldump_checksums) then
-    zspvor(:,:) = 0
-    zspdiv(:,:) = 0
-    zspsc2(:,:) = 0
-    zspsc3a(:,:,:) = 0
-  endif
 
   if (lfield_api) then
 #if USE_FIELD_API
