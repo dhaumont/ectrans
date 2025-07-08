@@ -1265,7 +1265,7 @@ subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, n
   &                                   luseflt, nopt_mem_tr, nproma, verbosity, ldump_values, ldump_checksums, lprint_norms, &
   &                                   lmeminfo, nprtrv, nprtrw, ncheck, lpinning,lfield_api, cchecksums_path)
 
-#if _OPENACC
+#ifdef _OPENACC
   use openacc, only: acc_init, acc_get_device_type
 #endif
 
@@ -1298,7 +1298,7 @@ subroutine get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, n
   character(len=128) :: carg          ! Storage variable for command line arguments
   integer            :: iarg = 1      ! Argument index
 
-#if _OPENACC
+#ifdef _OPENACC
   call acc_init(acc_get_device_type())
 #endif
 
