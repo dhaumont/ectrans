@@ -264,9 +264,18 @@ ENDIF
 
 ! 3. CALL DIR_TRANS using the regular interface and the temporary arrays
 
+! We have to perform separated calls for nvfortran
+IF (ASSOCIATED(ZPGP2) .AND. ASSOCIATED(ZPGPUV)) THEN
 	CALL DIR_TRANS(PSPVOR = ZPSPVOR,PSPDIV = ZPSPDIV,PGPUV = ZPGPUV,KVSETUV = IVSETUV, &
 	             & PSPSC2 = ZPSPSC2,PGP2 = ZPGP2, KVSETSC2 = IVSETSC2, &
 	             & KPROMA = KPROMA)
+ELSE IF (ASSOCIATED(ZPGP2)) THEN
+	CALL DIR_TRANS(PSPSC2 = ZPSPSC2,PGP2 = ZPGP2, KVSETSC2 = IVSETSC2, &
+	             & KPROMA = KPROMA)
+ELSE IF (ASSOCIATED(ZPGPUV)) THEN
+	CALL DIR_TRANS(PSPVOR = ZPSPVOR,PSPDIV = ZPSPDIV,PGPUV = ZPGPUV,KVSETUV = IVSETUV, &
+	             & KPROMA = KPROMA)
+  ENDIF
 
 ! 4. Copy back temporary array data into spectral fields
 
