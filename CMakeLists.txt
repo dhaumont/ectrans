@@ -183,8 +183,6 @@ if (HAVE_FIELD_API)
     ecbuild_find_package(field_api)
 endif()
 
-ectrans_find_lapack()
-
 ### Add sources
 include( ectrans_compile_options )
 add_subdirectory( src )

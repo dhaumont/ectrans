@@ -11,7 +11,7 @@ foreach( program ectrans-benchmark )
 
   list( APPEND util_src
     util/ectrans_memory.F90
-    util/ectrans_memory.c    
+    util/ectrans_memory.c
   )
 
   if (HAVE_FIELD_API)
@@ -21,7 +21,6 @@ foreach( program ectrans-benchmark )
   if ( HAVE_CPU )
     foreach( prec dp sp )
       if( HAVE_${prec} )
-  
         ecbuild_add_executable( TARGET  ${program}-cpu-${prec}
                                 SOURCES ${program}.F90 ${util_src}
                                 LINKER_LANGUAGE Fortran
