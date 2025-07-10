@@ -1,6 +1,6 @@
 ! (C) Copyright 2001- ECMWF.
 ! (C) Copyright 2001- Meteo-France.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -218,7 +218,7 @@ JCOUNT = 1
 DO JFLD = LBOUND (ZZ4, 3), UBOUND (ZZ4, 3)
   DO JLEV = LBOUND (ZZ4, 2), UBOUND (ZZ4, 2)
     LG4RB (JCOUNT)%VIEW%P => ZZ4(:, JLEV, JFLD, :)
-    LG4RB (JCOUNT)%IVSET = IVSET(JLEV) 
+    LG4RB (JCOUNT)%IVSET = IVSET(JLEV)
     LG4RB(JCOUNT)%NAME = TRIM(NAME)//TRIM(CLOUT)
     JCOUNT = JCOUNT + 1
   ENDDO
@@ -244,7 +244,7 @@ DO JPASS = 1, 2
 
   ! iterate over YLFL LIST
   DO JFLD = 1, SIZE (YLFL)
-  
+
    ! Phase 1: compute number of GRID_VIEW that will be generated for each field of the list
    ! Phase 2: call the correct routine to create the GRID_VIEW for each field of the list
     SELECT TYPE (YLF => YLFL (JFLD)%PTR)
@@ -262,7 +262,7 @@ DO JPASS = 1, 2
         CALL YLF%GET_DIMS (LBOUNDS=ILBOUNDS, UBOUNDS=IUBOUNDS)
         ILEN = (IUBOUNDS (2) - ILBOUNDS (2) + 1) * (IUBOUNDS (3) - ILBOUNDS (3) + 1)
         IF (JPASS == 2) LG (IOFF+1:IOFF+ILEN) = LG4RB (YLF,YLFL(JFLD)%NAME,YLFL(JFLD)%IVSET,LDACC,LDRDONLY)
-      CLASS DEFAULT        
+      CLASS DEFAULT
         CALL ABOR1("LG FAILURE: CLASS UNKNOWN")
     END SELECT
 
@@ -411,7 +411,7 @@ INTEGER(KIND=JPIM) :: ILBOUNDS (5), IUBOUNDS (5)
 ! First pass: determination of the output size list
 ! Second pass: allocate and instanciate the SPEC_VIEW types
 DO JPASS = 1, 2
-  
+
   IOFF = 0
   ILEN = -1
 

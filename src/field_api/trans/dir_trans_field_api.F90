@@ -1,12 +1,12 @@
 ! (C) Copyright 2001- ECMWF.
 ! (C) Copyright 2001- Meteo-France.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
-! 
+!
 
 SUBROUTINE DIR_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
                              & YDFU, YDFV, YDFSCALAR, &
@@ -18,7 +18,7 @@ SUBROUTINE DIR_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
 
 !     Purpose.
 !     --------
-!        Allow to call DIR_TRANS with a list of fields from field API                            
+!        Allow to call DIR_TRANS with a list of fields from field API
 
 !**   Interface.
 !     ----------
@@ -27,9 +27,9 @@ SUBROUTINE DIR_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
 !     Explicit arguments :
 !     --------------------
 !      output
-!       YDFSPVOR(:)    - List of spectral vector fields (vorticity) 
+!       YDFSPVOR(:)    - List of spectral vector fields (vorticity)
 !       YDFSPDIV(:)    - List of spectral vector fields (divergence)
-!       YDFSPSCALAR(:) - List of spectral scalar fields 
+!       YDFSPSCALAR(:) - List of spectral scalar fields
 !      input
 !       YDFU(:)        - List of grid-point vector fields (u)
 !       YDFV(:)        - List of grid-point vector fields (v)
@@ -105,7 +105,7 @@ REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
 !     ------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('DIR_TRANS_FIELD_API',0,ZHOOK_HANDLE)
 
-ISPUV = 0 
+ISPUV = 0
 IFLDXG  = 0
 IFLDXL = 0
 IFLDXGUV = 0
@@ -148,11 +148,11 @@ IF (PRESENT(YDFU)) THEN
      CALL ABOR1("[DIR_TRANS_FIELD_API] inconsistent kflevg or kflevl")
   ENDIF
 
-  IUVG = SIZE(YDFU)          
+  IUVG = SIZE(YDFU)
   ISPUV = SIZE(YDFSPVOR)
 
   IUVDIM = 2
-   
+
   IFLDSPVOR = SIZE(YLSPVVOR)
   ! allocate temporary vector field arrays in spectral space
   ALLOCATE(ZPSPVOR(IFLDSPVOR,KSPEC))
@@ -160,7 +160,7 @@ IF (PRESENT(YDFU)) THEN
 
   ! allocate temporary vector field array in grid space
   ALLOCATE(ZPGPUV(KPROMA,KFLEVG, IUVG * IUVDIM,KGPBLKS))
-  
+
   ! allocate 'b-set' for vector fields
   ALLOCATE(IVSETUV(KFLEVG))
 
@@ -170,7 +170,7 @@ IF (PRESENT(YDFU)) THEN
     !$ACC ENTER DATA CREATE(ZPSPVOR,ZPSPDIV,ZPGPUV)
   ENDIF
 
-  
+
   IOFFSET = 0
 
   ! Copy list of 2d views of grid point vector fields into temporary arrays
@@ -179,32 +179,32 @@ IF (PRESENT(YDFU)) THEN
     DO JFLD=1,IUVG
       DO JLEV=1,KFLEVG
         ID = JLEV + (JFLD -1) * KFLEVG
-        ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:) = YLGVU(ID)%VIEW%P(:,:) 
-        ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:) = YLGVV(ID)%VIEW%P(:,:)         
+        ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:) = YLGVU(ID)%VIEW%P(:,:)
+        ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:) = YLGVV(ID)%VIEW%P(:,:)
       ENDDO
     ENDDO
     !$ACC END KERNELS
-  ELSE      
+  ELSE
       DO JFLD=1,IUVG
         DO JLEV=1,KFLEVG
-          ID = JLEV + (JFLD -1) * KFLEVG       
-          ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:) = YLGVU(ID)%VIEW%P(:,:) 
-          ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:) = YLGVV(ID)%VIEW%P(:,:)       
+          ID = JLEV + (JFLD -1) * KFLEVG
+          ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:) = YLGVU(ID)%VIEW%P(:,:)
+          ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:) = YLGVV(ID)%VIEW%P(:,:)
         ENDDO
-      ENDDO      
+      ENDDO
   ENDIF
 
   DO JFLD=1,IUVG
     DO JLEV=1,KFLEVG
       ID = JLEV + (JFLD -1) * KFLEVG
       IF (JFLD .EQ. 1) IVSETUV(JLEV) = YLGVU(ID)%IVSET
-      IF (IVSETUV(JLEV) .NE. YLGVU(ID)%IVSET)  CALL ABOR1("[DIR_TRANS_FIELD_API] ivsetuv inconsistent with ylgvu%ivset")        
+      IF (IVSETUV(JLEV) .NE. YLGVU(ID)%IVSET)  CALL ABOR1("[DIR_TRANS_FIELD_API] ivsetuv inconsistent with ylgvu%ivset")
     ENDDO
   ENDDO
 ELSE
   ! No vector field provided
   ISPUV = 0
-  ZPGPUV=>NULL()  
+  ZPGPUV=>NULL()
   ZPSPVOR=>NULL()
   ZPSPDIV=>NULL()
 ENDIF
@@ -222,13 +222,13 @@ IF (PRESENT(YDFSPSCALAR)) THEN
   YLGVSCALAR = LG(YDFSCALAR, LDACC,.TRUE.)
   YLSPVSCALAR = LS(YDFSPSCALAR, LDACC,.FALSE.)
 
-  IFLDXG = SIZE(YLGVSCALAR) 
+  IFLDXG = SIZE(YLGVSCALAR)
 
   ! count the number of fields present on the processor
-  IFLDXL = 0 
-  DO JFLD = 1, SIZE(YLGVSCALAR) 
+  IFLDXL = 0
+  DO JFLD = 1, SIZE(YLGVSCALAR)
     IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) IFLDXL = IFLDXL + 1
-  END DO 
+  END DO
 
   ISCDIM = 1
 
@@ -237,7 +237,7 @@ IF (PRESENT(YDFSPSCALAR)) THEN
 
   ! Allocate temporary scalar field array in grid space
   ALLOCATE(ZPGP2(KPROMA,IFLDXG * ISCDIM,KGPBLKS))
-  
+
   ! allocate 'b-set' for scalar fields
   ALLOCATE(IVSETSC2(IFLDXG))
 
@@ -246,22 +246,22 @@ IF (PRESENT(YDFSPSCALAR)) THEN
     !$ACC ENTER DATA CREATE(ZPSPSC2,ZPGP2)
   ENDIF
 
-  
+
   ! Copy list of scalar fields into temporary arrays (2d copy thanks to field_view)
 
   IF (LDACC) THEN
     !$ACC KERNELS PRESENT(ZPGP2) COPY(IFLDXG)
     DO JFLD=1, IFLDXG
-      ZPGP2(:,JFLD,:) = YLGVSCALAR(JFLD)%VIEW%P(:,:)      
+      ZPGP2(:,JFLD,:) = YLGVSCALAR(JFLD)%VIEW%P(:,:)
     ENDDO
     !$ACC END KERNELS
   ELSE
     DO JFLD=1, IFLDXG
-      ZPGP2(:,JFLD,:) = YLGVSCALAR(JFLD)%VIEW%P(:,:)  
+      ZPGP2(:,JFLD,:) = YLGVSCALAR(JFLD)%VIEW%P(:,:)
     ENDDO
   ENDIF
 
-  DO JFLD=1, IFLDXG    
+  DO JFLD=1, IFLDXG
     IVSETSC2(JFLD) = YLGVSCALAR(JFLD)%IVSET
   ENDDO
 
@@ -270,7 +270,7 @@ ELSE
   ISPUV = 0
   IFLDXG = 0
   ZPGP2=>NULL()
-  ZPSPSC2=>NULL()  
+  ZPSPSC2=>NULL()
 ENDIF
 
 ! 3. CALL DIR_TRANS using the regular interface and the temporary arrays
@@ -295,13 +295,13 @@ IF (IUVG>0) THEN
   IF (LDACC) THEN
     !$ACC KERNELS PRESENT(ZPSPVOR, ZPSPDIV) COPY(IFLDSPVOR)
     DO JFLD=1,IFLDSPVOR
-      YLSPVVOR(JFLD)%VIEW%P(:) = ZPSPVOR(JFLD,:)  
+      YLSPVVOR(JFLD)%VIEW%P(:) = ZPSPVOR(JFLD,:)
       YLSPVDIV(JFLD)%VIEW%P(:) = ZPSPDIV(JFLD,:)
-    ENDDO   
-    !$ACC END KERNELS 
+    ENDDO
+    !$ACC END KERNELS
   ELSE
     DO JFLD=1,IFLDSPVOR
-      YLSPVVOR(JFLD)%VIEW%P(:) = ZPSPVOR(JFLD,:)  
+      YLSPVVOR(JFLD)%VIEW%P(:) = ZPSPVOR(JFLD,:)
       YLSPVDIV(JFLD)%VIEW%P(:) = ZPSPDIV(JFLD,:)
     ENDDO
   ENDIF
@@ -309,21 +309,21 @@ ENDIF
 
  ! copy spectral scalar fields
  ID = 1
- IFLDSPSC = SIZE(YLSPVSCALAR) 
+ IFLDSPSC = SIZE(YLSPVSCALAR)
  IF (LDACC) THEN
   !$ACC KERNELS PRESENT(ZPSPSC2) COPY(IFLDSPSC)
   DO JFLD = 1, IFLDSPSC
       IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) THEN
-        YLSPVSCALAR(JFLD)%VIEW%P(:) = ZPSPSC2(ID,:) 
-        ID = ID + 1 
+        YLSPVSCALAR(JFLD)%VIEW%P(:) = ZPSPSC2(ID,:)
+        ID = ID + 1
       ENDIF
   ENDDO
-  !$ACC END KERNELS 
+  !$ACC END KERNELS
  ELSE
   DO JFLD = 1, IFLDSPSC
     IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) THEN
-      YLSPVSCALAR(JFLD)%VIEW%P(:) = ZPSPSC2(ID,:) 
-      ID = ID + 1 
+      YLSPVSCALAR(JFLD)%VIEW%P(:) = ZPSPSC2(ID,:)
+      ID = ID + 1
     ENDIF
   ENDDO
  ENDIF

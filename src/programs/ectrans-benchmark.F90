@@ -526,7 +526,7 @@ enddo
 ! Allocate grid-point arrays
 if (lvordiv) then
   jbegin_uv = 1
-  jend_uv = 2  
+  jend_uv = 2
 endif
 if (luvders) then
   jbegin_uder_EW  = jend_uv + 1
@@ -566,8 +566,8 @@ zgp3a => zgmv(:,:,jbegin_sc:jend_scder_EW,:)
 zgp2  => zgmvs(:,:,:)
 
 #if USE_FIELD_API
-if (lfield_api) then   
-  call nullify_wrapped_fields(ywflds) 
+if (lfield_api) then
+  call nullify_wrapped_fields(ywflds)
   call wrap_benchmark_fields(ywflds,lvordiv, lscders, luvders, &
                           & sp3d, zspsc2, zgmv, zgmvs, zgp2, &
                           & jbegin_uv,jend_uv, &
@@ -576,8 +576,8 @@ if (lfield_api) then
                           & jbegin_scder_EW, jend_scder_EW, &
                           & jbegin_uder_EW, jend_uder_EW, &
                           & jbegin_vder_EW, jend_vder_EW)
-    
-  call create_fields_lists(ywflds,ylf,ivset,ivsetsc)  
+
+  call create_fields_lists(ywflds,ylf,ivset,ivsetsc)
 endif
 #endif
 !===================================================================================================
@@ -682,7 +682,7 @@ do jstep = 1, iters+iters_warmup
                             & ydfu_ns=ylf%u_ns, ydfv_ns=ylf%v_ns, &
                             & ydfscalar_ns=ylf%scalar_ns, ydfscalar_ew=ylf%scalar_ew, &
                             & ydfvor=ylf%vor, ydfdiv=ylf%div, &
-                            & kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,& 
+                            & kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,&
                             & ldacc=llacc)
 #else
   call abor1('ectrans_benchmark: No field API support')
@@ -757,8 +757,8 @@ endif
   if (lfield_api) then
 #if USE_FIELD_API
         call dir_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
-                                & ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &                                
-                                & kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,& 
+                                & ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
+                                & kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,&
                                 & ldacc=llacc)
 #else
       call abor1('ectrans_benchmark: No field API support')
@@ -800,7 +800,7 @@ endif
   ztstep2(jstep) = (timef() - ztstep2(jstep))/1000.0_jprd
 
   ztstep(jstep) = (timef() - ztstep(jstep))/1000.0_jprd
-  
+
   !=================================================================================================
   ! Print norms
   !=================================================================================================
@@ -1054,7 +1054,7 @@ call allocator%deallocate('zspsc2', zspsc2)
 #if USE_FIELD_API
 if (lfield_api) then
   call delete_wrapped_fields(ywflds)
-  call delete_fields_lists(ylf)  
+  call delete_fields_lists(ylf)
 endif
 #endif
 !===================================================================================================
