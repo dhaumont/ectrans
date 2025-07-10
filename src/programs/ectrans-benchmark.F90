@@ -250,6 +250,7 @@ real(kind=jprb), allocatable :: global_field(:,:)
 luse_mpi = detect_mpirun()
 if (VERSION == "gpu") then
   lpinning = .true.
+  llacc = .true.
 endif
 
 ! Setup
@@ -480,7 +481,10 @@ if (verbosity >= 0 .and. myproc == 1) then
   write(nout,'("lscders    ",l1)') lscders
   write(nout,'("luvders    ",l1)') luvders
   write(nout,'("lfield_api ",l1)') lfield_api
+  write(nout,'("llacc      ",l1)') llacc
+
   write(nout,'(" ")')
+
   write(nout,'(a)') '======= End of runtime parameters ======='
   write(nout,'(" ")')
 end if
