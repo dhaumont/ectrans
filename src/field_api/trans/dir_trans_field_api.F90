@@ -203,7 +203,7 @@ IF (PRESENT(YDFU)) THEN
   ENDDO
 ELSE
   ! No vector field provided
-  ISPUV = 0
+  IUVG = 0
   ZPGPUV=>NULL()
   ZPSPVOR=>NULL()
   ZPSPDIV=>NULL()

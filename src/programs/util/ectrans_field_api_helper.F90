@@ -178,24 +178,25 @@ subroutine create_fields_lists(ywflds,ylf, nbsetlev,nbsetsc2)
 
   type(wrapped_fields), intent(inout) :: ywflds
    
-  if(associated(ywflds%spvor)) call field_delete(ywflds%spvor)
-  if(associated(ywflds%spdiv)) call field_delete(ywflds%spdiv)
-  if(associated(ywflds%spscalar)) call field_delete(ywflds%spscalar)
-  if(associated(ywflds%spscalar2)) call field_delete(ywflds%spscalar2)
+  if(associated(ywflds%spvor)) call ywflds%spvor%final()
+  if(associated(ywflds%spdiv)) call ywflds%spdiv%final()
+  if(associated(ywflds%spscalar)) call ywflds%spscalar%final()
+  if(associated(ywflds%spscalar2)) call ywflds%spscalar2%final()
 
-  if(associated(ywflds%u)) call field_delete(ywflds%u)
-  if(associated(ywflds%v)) call field_delete(ywflds%v)
-  if(associated(ywflds%u_ns)) call field_delete(ywflds%u_ns)
-  if(associated(ywflds%v_ns)) call field_delete(ywflds%v_ns)
-  if(associated(ywflds%scalar)) call field_delete(ywflds%scalar)
-  if(associated(ywflds%scalar_ew)) call field_delete(ywflds%scalar_ew)
-  if(associated(ywflds%scalar_ns)) call field_delete(ywflds%scalar_ns)
-  if(associated(ywflds%vor)) call field_delete(ywflds%vor)
-  if(associated(ywflds%div)) call field_delete(ywflds%div)
+  if(associated(ywflds%u)) call ywflds%u%final()
+  if(associated(ywflds%v)) call ywflds%v%final()
+  if(associated(ywflds%u_ns)) call ywflds%u_ns%final()
+  if(associated(ywflds%v_ns)) call ywflds%v_ns%final()
+  if(associated(ywflds%scalar)) call ywflds%scalar%final()
+  if(associated(ywflds%scalar_ew)) call ywflds%scalar_ew%final()
+  if(associated(ywflds%scalar_ns)) call ywflds%scalar_ns%final()
+  if(associated(ywflds%vor)) call ywflds%vor%final()
+  if(associated(ywflds%div)) call ywflds%div%final()
 
-  if(associated(ywflds%scalar2)) call field_delete(ywflds%scalar2)
-  if(associated(ywflds%scalar2_ew)) call field_delete(ywflds%scalar2_ew)
-  if(associated(ywflds%scalar2_ns)) call field_delete(ywflds%scalar2_ns) 
+  if(associated(ywflds%scalar2)) call ywflds%scalar2%final()
+  if(associated(ywflds%scalar2_ew)) call ywflds%scalar2_ew%final()
+  if(associated(ywflds%scalar2_ns)) call ywflds%scalar2_ns %final()
+
 end subroutine delete_wrapped_fields
 
 subroutine delete_fields_lists(yfl)

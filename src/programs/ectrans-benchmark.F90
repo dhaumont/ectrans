@@ -1045,18 +1045,18 @@ endif
 !===================================================================================================
 ! Cleanup
 !===================================================================================================
-
-call allocator%deallocate('zgmv',   zgmv)
-call allocator%deallocate('zgmvs',  zgmvs)
-call allocator%deallocate('sp3d',   sp3d)
-call allocator%deallocate('zspsc2', zspsc2)
-
 #if USE_FIELD_API
 if (lfield_api) then
   call delete_wrapped_fields(ywflds)
   call delete_fields_lists(ylf)
 endif
 #endif
+
+call allocator%deallocate('zgmv',   zgmv)
+call allocator%deallocate('zgmvs',  zgmvs)
+call allocator%deallocate('sp3d',   sp3d)
+call allocator%deallocate('zspsc2', zspsc2)
+
 !===================================================================================================
 
 if (lstats) then
