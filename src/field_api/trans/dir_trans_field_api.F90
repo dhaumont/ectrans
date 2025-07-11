@@ -175,7 +175,7 @@ IF (PRESENT(YDFU)) THEN
 
   ! Copy list of 2d views of grid point vector fields into temporary arrays
   IF (LDACC) THEN
-    !$ACC KERNELS PRESENT(ZPGPUV) COPY(IUVG, KFLEVG,OFFSET)
+    !$ACC KERNELS PRESENT(ZPGPUV) COPY(IUVG, KFLEVG,IOFFSET)
     DO JFLD=1,IUVG
       DO JLEV=1,KFLEVG
         ID = JLEV + (JFLD -1) * KFLEVG
