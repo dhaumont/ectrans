@@ -1,7 +1,7 @@
 module ectrans_field_api_helper
 
 use field_module, only:field_1rb, field_2rb, field_3rb, field_4rb
-use field_access_module, only: get_host_data_rdwr
+use field_access_module, only: sync_host_data_rdonly
 use field_factory_module
 use parkind1, only: jpim, jprb, jprd
 #include "field_basic_type_ptr.h"
@@ -179,24 +179,24 @@ subroutine create_fields_lists(ywflds,ylf, nbsetlev,nbsetsc2)
 
   type(wrapped_fields), intent(inout) :: ywflds
 
-  if(associated(ywflds%spvor)) call ywflds%spvor%final()
-  if(associated(ywflds%spdiv)) call ywflds%spdiv%final()
-  if(associated(ywflds%spscalar)) call ywflds%spscalar%final()
-  if(associated(ywflds%spscalar2)) call ywflds%spscalar2%final()
+  if(associated(ywflds%spvor)) call field_delete(ywflds%spvor)
+  if(associated(ywflds%spdiv)) call field_delete(ywflds%spdiv)
+  if(associated(ywflds%spscalar)) call field_delete(ywflds%spscalar)
+  if(associated(ywflds%spscalar2)) call field_delete(ywflds%spscalar2)
 
-  if(associated(ywflds%u)) call ywflds%u%final()
-  if(associated(ywflds%v)) call ywflds%v%final()
-  if(associated(ywflds%u_ns)) call ywflds%u_ns%final()
-  if(associated(ywflds%v_ns)) call ywflds%v_ns%final()
-  if(associated(ywflds%scalar)) call ywflds%scalar%final()
-  if(associated(ywflds%scalar_ew)) call ywflds%scalar_ew%final()
-  if(associated(ywflds%scalar_ns)) call ywflds%scalar_ns%final()
-  if(associated(ywflds%vor)) call ywflds%vor%final()
-  if(associated(ywflds%div)) call ywflds%div%final()
+  if(associated(ywflds%u)) call field_delete(ywflds%u)
+  if(associated(ywflds%v)) call field_delete(ywflds%v)
+  if(associated(ywflds%u_ns)) call field_delete(ywflds%u_ns)
+  if(associated(ywflds%v_ns)) call field_delete(ywflds%v_ns)
+  if(associated(ywflds%scalar)) call field_delete(ywflds%scalar)
+  if(associated(ywflds%scalar_ew)) call field_delete(ywflds%scalar_ew)
+  if(associated(ywflds%scalar_ns)) call field_delete(ywflds%scalar_ns)
+  if(associated(ywflds%vor)) call field_delete(ywflds%vor)
+  if(associated(ywflds%div)) call field_delete(ywflds%div)
 
-  if(associated(ywflds%scalar2)) call ywflds%scalar2%final()
-  if(associated(ywflds%scalar2_ew)) call ywflds%scalar2_ew%final()
-  if(associated(ywflds%scalar2_ns)) call ywflds%scalar2_ns %final()
+  if(associated(ywflds%scalar2)) call field_delete(ywflds%scalar2)
+  if(associated(ywflds%scalar2_ew)) call field_delete(ywflds%scalar2_ew)
+  if(associated(ywflds%scalar2_ns)) call field_delete(ywflds%scalar2_ns )
 
 end subroutine delete_wrapped_fields
 
@@ -224,26 +224,24 @@ subroutine synchost_wrapped_fields(ywflds)
   ! Synchronize all field lists on host
 
   type(wrapped_fields),intent(inout) ::ywflds
-  real(kind=jprb), pointer :: zz2(:,:)
-  real(kind=jprb), pointer :: zz3(:,:,:)
-  real(kind=jprb), pointer :: zz4(:,:,:,:)
 
-  if (associated(ywflds%spvor))      zz2=>get_host_data_rdwr(ywflds%spvor)
-  if (associated(ywflds%spdiv))      zz2=>get_host_data_rdwr(ywflds%spdiv)
-  if (associated(ywflds%spscalar))   zz3=>get_host_data_rdwr(ywflds%spscalar)
-  if (associated(ywflds%spscalar2))  zz2=>get_host_data_rdwr(ywflds%spscalar2)
-  if (associated(ywflds%u))          zz3=>get_host_data_rdwr(ywflds%u)
-  if (associated(ywflds%v))          zz3=>get_host_data_rdwr(ywflds%v)
-  if (associated(ywflds%u_ns))       zz3=>get_host_data_rdwr(ywflds%u_ns)
-  if (associated(ywflds%v_ns))       zz3=>get_host_data_rdwr(ywflds%v_ns)
-  if (associated(ywflds%scalar))     zz4=>get_host_data_rdwr(ywflds%scalar)
-  if (associated(ywflds%scalar_ew))  zz4=>get_host_data_rdwr(ywflds%scalar_ew)
-  if (associated(ywflds%scalar_ns))  zz4=>get_host_data_rdwr(ywflds%scalar_ns)
-  if (associated(ywflds%vor))        zz3=>get_host_data_rdwr(ywflds%vor)
-  if (associated(ywflds%div))        zz3=>get_host_data_rdwr(ywflds%div)
-  if (associated(ywflds%scalar2))    zz3=>get_host_data_rdwr(ywflds%scalar2)
-  if (associated(ywflds%scalar2_ew)) zz3=>get_host_data_rdwr(ywflds%scalar2_ew)
-  if (associated(ywflds%scalar2_ns)) zz3=>get_host_data_rdwr(ywflds%scalar2_ns)
+  write(6,*) "SYNCHOST_WRAPPED)FIELDS"
+  if (associated(ywflds%spvor))      call ywflds%spvor%sync_host_rdonly()
+  if (associated(ywflds%spdiv))      call ywflds%spdiv%sync_host_rdonly()
+  if (associated(ywflds%spscalar))   call ywflds%spscalar%sync_host_rdonly()
+  if (associated(ywflds%spscalar2))  call ywflds%spscalar2%sync_host_rdonly()
+  if (associated(ywflds%u))          call ywflds%u%sync_host_rdonly()
+  if (associated(ywflds%v))          call ywflds%v%sync_host_rdonly()
+  if (associated(ywflds%u_ns))       call ywflds%u_ns%sync_host_rdonly()
+  if (associated(ywflds%v_ns))       call ywflds%v_ns%sync_host_rdonly()
+  if (associated(ywflds%scalar))     call ywflds%scalar%sync_host_rdonly()
+  if (associated(ywflds%scalar_ew))  call ywflds%scalar_ew%sync_host_rdonly()
+  if (associated(ywflds%scalar_ns))  call ywflds%scalar_ns%sync_host_rdonly()
+  if (associated(ywflds%vor))        call ywflds%vor%sync_host_rdonly()
+  if (associated(ywflds%div))        call ywflds%div%sync_host_rdonly()
+  if (associated(ywflds%scalar2))    call ywflds%scalar2%sync_host_rdonly()
+  if (associated(ywflds%scalar2_ew)) call ywflds%scalar2_ew%sync_host_rdonly()
+  if (associated(ywflds%scalar2_ns)) call ywflds%scalar2_ns%sync_host_rdonly()
 end subroutine synchost_wrapped_fields
 
 
