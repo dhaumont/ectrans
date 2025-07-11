@@ -52,7 +52,7 @@ USE ectrans_field_api_helper, only : wrapped_fields, fields_lists, &
                                    & wrap_benchmark_fields, create_fields_lists, &
                                    & delete_wrapped_fields,delete_fields_lists, &
                                    & output_wrapped_fields, output_fields_lists, &
-                                   & nullify_wrapped_fields
+                                   & nullify_wrapped_fields, synchost_wrapped_fields
 #endif
 
 implicit none
@@ -722,6 +722,9 @@ if (ldump_checksums) then
     iend = ngptot - nproma * (ngpblks - 1)
     zgmvs (iend+1:, :, ngpblks) = 0
     write (checksums_filename,'(A)') trim(cchecksums_path)//'_inv_trans.checksums'
+
+    if (lfield_api) call synchost_wrapped_fields(ywflds)
+
     call dump_checksums(filename = checksums_filename, noutdump=noutdump,                 &
                       & jstep = jstep, myproc = myproc, nproma = nproma, ngptotg=ngptotg, &
                       & ivset = ivset, ivsetsc = ivsetsc,                                 &
@@ -791,6 +794,9 @@ endif
 
 if (ldump_checksums) then
   write (checksums_filename,'(A)') trim(cchecksums_path)//'_dir_trans.checksums'
+
+  if (lfield_api) call synchost_wrapped_fields(ywflds)
+
   call dump_checksums(filename = checksums_filename, noutdump = noutdump,               &
                     & jstep = jstep, myproc = myproc, nproma = nproma, ngptotg=ngptotg, &
                     & ivset = ivset, ivsetsc = ivsetsc,                                 &

@@ -1,6 +1,7 @@
 module ectrans_field_api_helper
 
 use field_module, only:field_1rb, field_2rb, field_3rb, field_4rb
+use field_access_module, only: get_host_data_rdwr
 use field_factory_module
 use parkind1, only: jpim, jprb, jprd
 #include "field_basic_type_ptr.h"
@@ -17,7 +18,7 @@ type wrapped_fields
   class (field_2rb), pointer :: spvor, spdiv  ! spectral vorticity and divergence
 
   class (field_3rb), pointer :: vor, div      ! grid-point vorticity and divergence
-  class (field_3rb), pointer :: u, v          ! grid-point u and v fields  
+  class (field_3rb), pointer :: u, v          ! grid-point u and v fields
   class (field_3rb), pointer :: u_ns, v_ns      ! grid-point u and derivatives
 
   class (field_4rb), pointer :: scalar       ! grid-point scalar fields
@@ -41,16 +42,16 @@ type fields_lists
   type (field_basic_ptr), allocatable:: u_ns (:), v_ns (:)            ! grid-point u and derivatives we
   type (field_basic_ptr), allocatable:: scalar_ns (:), scalar_ew (:)  ! grid space scalar derivatives ns and ew
   end type fields_lists
-  
+
 contains
 
-subroutine wrap_benchmark_fields(ywflds, lvordiv, lscders, luvders,& 
-                               & sp3d, spc2, zgmv, zgmvs, zgp2,    & 
-                               & jbegin_uv,jend_uv,                & 
-                               & jbegin_sc,jend_sc,                & 
-                               & jbegin_scder_ns, jend_scder_ns,   & 
-                               & jbegin_scder_ew, jend_scder_ew,   & 
-                               & jbegin_uder_ew, jend_uder_ew,     & 
+subroutine wrap_benchmark_fields(ywflds, lvordiv, lscders, luvders,&
+                               & sp3d, spc2, zgmv, zgmvs, zgp2,    &
+                               & jbegin_uv,jend_uv,                &
+                               & jbegin_sc,jend_sc,                &
+                               & jbegin_scder_ns, jend_scder_ns,   &
+                               & jbegin_scder_ew, jend_scder_ew,   &
+                               & jbegin_uder_ew, jend_uder_ew,     &
                                & jbegin_vder_ew, jend_vder_ew)
 
   ! Wrap the arrays given as input in field API objects
@@ -76,24 +77,24 @@ subroutine wrap_benchmark_fields(ywflds, lvordiv, lscders, luvders,&
     integer(kind=jpim), intent(in) :: jend_uder_ew
     integer(kind=jpim), intent(in) :: jbegin_vder_ew
     integer(kind=jpim), intent(in) :: jend_vder_ew
-  
+
   if (lvordiv) then
       if (jbegin_uv>0 )      call field_new(ywflds%u, data=zgmv(:,:,jbegin_uv,:))
       if (jend_uv>0 )        call field_new(ywflds%v, data=zgmv(:,:,jend_uv,:))
-  
+
       ! In the benchmark, vorticity is not computed
       !call field_new(ywflds%vor,         data=zgmv(:,:,jbegin_uv,:))
       !call field_new(ywflds%div,         data=zgmv(:,:,jend_uv,:))
   endif
-  
+
   ! spectral vector fields
   if (size(sp3d,3) >=1 ) call field_new(ywflds%spvor,      data=sp3d(:,:,1))
   if (size(sp3d,3) >=2 ) call field_new(ywflds%spdiv,      data=sp3d(:,:,2))
-  
+
   ! spectral scalar fields
   if (size(sp3d,3) >=3 ) call field_new(ywflds%spscalar,  data=sp3d(:,:,3:))
   if (size(spc2,2) >=1 ) call field_new(ywflds%spscalar2, data=spc2(:,:))
-  
+
   ! spectral surfacic scalar fields
   if (size(zgmvs,2)>=1)  call field_new(ywflds%scalar2,   data=zgmvs(:,1:1,:))
 
@@ -107,13 +108,13 @@ subroutine wrap_benchmark_fields(ywflds, lvordiv, lscders, luvders,&
   if (jend_sc>0 .and. jend_sc>=jbegin_sc ) call field_new(ywflds%scalar,  data=zgmv(:,:,jbegin_sc:jend_sc,:))
 
   ! grid-point scalar derivatives fields
-  if (lscders) then    
+  if (lscders) then
     if (jend_scder_ew>0 .and. jend_scder_ew>=jbegin_scder_ew ) call field_new(ywflds%scalar_ew,  data=zgmv(:,:,jbegin_scder_ew:jend_scder_ew,:))
     if (jend_scder_ns>0 .and. jend_scder_ns>=jbegin_scder_ns ) call field_new(ywflds%scalar_ns,  data=zgmv(:,:,jbegin_scder_ns:jend_scder_ns,:))
-  
+
     ! grid-point surfacic scalar derivatives fields
     if (size(zgmvs,2)>=2)     call field_new(ywflds%scalar2_ns, data=zgmvs(:,2:2,:))
-    if (size(zgmvs,2)>=3)     call field_new(ywflds%scalar2_ew, data=zgmvs(:,3:3,:))      
+    if (size(zgmvs,2)>=3)     call field_new(ywflds%scalar2_ew, data=zgmvs(:,3:3,:))
   endif
 end subroutine wrap_benchmark_fields
 
@@ -125,59 +126,59 @@ subroutine create_fields_lists(ywflds,ylf, nbsetlev,nbsetsc2)
   type(fields_lists), intent(inout), target :: ylf ! output field lists
   integer(kind=jpim), intent(in) :: nbsetlev(:)    ! 'b-set' for vector fields
   integer(kind=jpim), intent(in) :: nbsetsc2(:)    ! 'b-set' for surfacic fields
-  
+
   if(associated(ywflds%spvor)) ylf%spvor=[b(ywflds%spvor,'spvor')]
-  
+
   if(associated(ywflds%spdiv)) ylf%spdiv= [b(ywflds%spdiv,'spdiv')]
-  
+
   if(associated(ywflds%u)) ylf%u = [b(ywflds%u,'u',nbsetlev)]
   if(associated(ywflds%v)) ylf%v = [b(ywflds%v,'v',nbsetlev)]
-      
+
   if(associated(ywflds%u_ns)) ylf%u_ns=[b(ywflds%u_ns,'u_ns', nbsetlev)]
   if(associated(ywflds%v_ns)) ylf%v_ns=[b(ywflds%v_ns,'v_ns', nbsetlev)]
-    
+
   if(associated(ywflds%vor))  ylf%vor = [b(ywflds%vor,'vor', nbsetlev)]
   if(associated(ywflds%div))  ylf%div = [b(ywflds%div,'div', nbsetlev)]
-  
+
   if (associated(ywflds%spscalar) .and. associated(ywflds%spscalar2) ) then
     ylf%spscalar = [b(ywflds%spscalar,'spscalar'), b(ywflds%spscalar2,'spscalar2')]
   else if (associated(ywflds%spscalar)) then
-    ylf%spscalar = [b(ywflds%spscalar,'spscalar')]    
+    ylf%spscalar = [b(ywflds%spscalar,'spscalar')]
   else if (associated(ywflds%spscalar2)) then
-    ylf%spscalar = [b(ywflds%spscalar2,'spscalar2')]  
+    ylf%spscalar = [b(ywflds%spscalar2,'spscalar2')]
   endif
-    
+
   if (associated(ywflds%scalar) .and. associated(ywflds%scalar2) ) then
     ylf%scalar = [b(ywflds%scalar,'scalar', nbsetlev), b(ywflds%scalar2,'scalar2', nbsetsc2)]
   else if (associated(ywflds%scalar)) then
-    ylf%scalar = [b(ywflds%scalar,'scalar', nbsetlev)]    
+    ylf%scalar = [b(ywflds%scalar,'scalar', nbsetlev)]
   else if (associated(ywflds%scalar2)) then
-    ylf%scalar = [b(ywflds%scalar2,'scalar2', nbsetsc2)]  
+    ylf%scalar = [b(ywflds%scalar2,'scalar2', nbsetsc2)]
   endif
-  
+
   if (associated(ywflds%scalar_ns) .and. associated(ywflds%scalar2_ns) ) then
     ylf%scalar_ns = [b(ywflds%scalar_ns,'scalar_ns', nbsetlev), b(ywflds%scalar2_ns,'scalar2_ns', nbsetsc2)]
   else if (associated(ywflds%scalar_ns)) then
     ylf%scalar_ns = [b(ywflds%scalar_ns,'scalar_ns', nbsetlev)]
   else if (associated(ywflds%scalar2_ns)) then
-    ylf%scalar_ns = [b(ywflds%scalar2_ns,'scalar2_ns', nbsetsc2)]  
+    ylf%scalar_ns = [b(ywflds%scalar2_ns,'scalar2_ns', nbsetsc2)]
   endif
-  
+
   if (associated(ywflds%scalar_ew) .and. associated(ywflds%scalar2_ew) ) then
     ylf%scalar_ew = [b(ywflds%scalar_ew,'scalar_ew', nbsetlev), b(ywflds%scalar2_ew,'scalar2_ew', nbsetsc2)]
   else if (associated(ywflds%scalar_ew)) then
-    ylf%scalar_ew = [b(ywflds%scalar_ew,'scalar_ew', nbsetlev)]    
+    ylf%scalar_ew = [b(ywflds%scalar_ew,'scalar_ew', nbsetlev)]
   else if (associated(ywflds%scalar2_ew)) then
-    ylf%scalar_ew = [b(ywflds%scalar2_ew,'scalar2_ew', nbsetsc2)]  
+    ylf%scalar_ew = [b(ywflds%scalar2_ew,'scalar2_ew', nbsetsc2)]
   endif
  end subroutine create_fields_lists
 
  subroutine delete_wrapped_fields(ywflds)
-  
+
   ! Delete  all fields in ywflds
 
   type(wrapped_fields), intent(inout) :: ywflds
-   
+
   if(associated(ywflds%spvor)) call ywflds%spvor%final()
   if(associated(ywflds%spdiv)) call ywflds%spdiv%final()
   if(associated(ywflds%spscalar)) call ywflds%spscalar%final()
@@ -213,17 +214,46 @@ subroutine delete_fields_lists(yfl)
   if (allocated(yfl%vor)) deallocate(yfl%vor)
   if (allocated(yfl%div)) deallocate(yfl%div)
   if (allocated(yfl%u_ns)) deallocate(yfl%u_ns)
-  if (allocated(yfl%v_ns)) deallocate(yfl%v_ns) 
+  if (allocated(yfl%v_ns)) deallocate(yfl%v_ns)
   if (allocated(yfl%scalar_ns)) deallocate(yfl%scalar_ns)
   if (allocated(yfl%scalar_ew)) deallocate(yfl%scalar_ew)
 end subroutine delete_fields_lists
+
+subroutine synchost_wrapped_fields(ywflds)
+
+  ! Synchronize all field lists on host
+
+  type(wrapped_fields),intent(inout) ::ywflds
+  real(kind=jprb), pointer :: zz2(:,:)
+  real(kind=jprb), pointer :: zz3(:,:,:)
+  real(kind=jprb), pointer :: zz4(:,:,:,:)
+
+  if (associated(ywflds%spvor))      zz2=>get_host_data_rdwr(ywflds%spvor)
+  if (associated(ywflds%spdiv))      zz2=>get_host_data_rdwr(ywflds%spdiv)
+  if (associated(ywflds%spscalar))   zz3=>get_host_data_rdwr(ywflds%spscalar)
+  if (associated(ywflds%spscalar2))  zz2=>get_host_data_rdwr(ywflds%spscalar2)
+  if (associated(ywflds%u))          zz3=>get_host_data_rdwr(ywflds%u)
+  if (associated(ywflds%v))          zz3=>get_host_data_rdwr(ywflds%v)
+  if (associated(ywflds%u_ns))       zz3=>get_host_data_rdwr(ywflds%u_ns)
+  if (associated(ywflds%v_ns))       zz3=>get_host_data_rdwr(ywflds%v_ns)
+  if (associated(ywflds%scalar))     zz4=>get_host_data_rdwr(ywflds%scalar)
+  if (associated(ywflds%scalar_ew))  zz4=>get_host_data_rdwr(ywflds%scalar_ew)
+  if (associated(ywflds%scalar_ns))  zz4=>get_host_data_rdwr(ywflds%scalar_ns)
+  if (associated(ywflds%vor))        zz3=>get_host_data_rdwr(ywflds%vor)
+  if (associated(ywflds%div))        zz3=>get_host_data_rdwr(ywflds%div)
+  if (associated(ywflds%scalar2))    zz3=>get_host_data_rdwr(ywflds%scalar2)
+  if (associated(ywflds%scalar2_ew)) zz3=>get_host_data_rdwr(ywflds%scalar2_ew)
+  if (associated(ywflds%scalar2_ns)) zz3=>get_host_data_rdwr(ywflds%scalar2_ns)
+end subroutine synchost_wrapped_fields
+
+
 
 subroutine nullify_wrapped_fields(ywflds)
 
     ! Nullify all pointers in ywflds
 
   type(wrapped_fields), intent(inout) :: ywflds
-    
+
   nullify(ywflds%spvor)
   nullify(ywflds%spdiv)
   nullify(ywflds%spscalar)
@@ -246,7 +276,7 @@ end subroutine nullify_wrapped_fields
 
 
 subroutine output_wrapped_fields(nout, ywflds)
-  
+
   ! output the adress of all data fields in ywflds
 
   type(wrapped_fields), intent(in) :: ywflds
@@ -280,8 +310,8 @@ subroutine output_fields_lists(nout,yfl)
 
   integer(kind=jpim), intent(in) :: nout
   type(fields_lists), intent(in) :: yfl
-  
-  if (allocated(yfl%u)) write(nout,*) "yfl%u", size(yfl%u)  
+
+  if (allocated(yfl%u)) write(nout,*) "yfl%u", size(yfl%u)
   if (allocated(yfl%v)) write(nout,*) "yfl%v", size(yfl%v)
   if (allocated(yfl%scalar)) write(nout,*) "yfl%scalar", size(yfl%scalar)
   if (allocated(yfl%spscalar)) write(nout,*) "yfl%spscalar", size(yfl%spscalar)
