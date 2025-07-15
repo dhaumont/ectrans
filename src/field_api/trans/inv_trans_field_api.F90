@@ -100,6 +100,11 @@ REAL(KIND=JPRB), POINTER :: ZPSPSC2(:,:)               ! spectral scalar fields 
 REAL(KIND=JPRB), POINTER :: ZPGPUV(:,:,:,:)            ! grid vector fields (out)
 REAL(KIND=JPRB), POINTER :: ZPGP2(:,:,:)               ! grid scalar fields (out)
 
+REAL(KIND=JPRB), POINTER :: ZZ1_1(:)
+REAL(KIND=JPRB), POINTER :: ZZ1_2(:)
+REAL(KIND=JPRB), POINTER :: ZZ2_1(:,:)
+REAL(KIND=JPRB), POINTER :: ZZ2_2(:,:)
+
 ! b-set for inv-trans
 INTEGER(KIND=JPIM),ALLOCATABLE :: IVSETUV(:)
 INTEGER(KIND=JPIM),ALLOCATABLE :: IVSETSC2(:)
@@ -229,23 +234,22 @@ IF (PRESENT(YDFU)) THEN
     !$ACC ENTER DATA CREATE(ZPSPVOR,ZPSPDIV,ZPGPUV)
   ENDIF
 
-  IF (LDACC) THEN
-    !!!ACC KERNELS PRESENT(ZPSPVOR,ZPSPDIV,YLSPVVOR(:)%VIEW%P,YLSPVDIV(:)%VIEW%P) FIRSTPRIVATE(IFLDSPVOR) PRIVATE(JFLD)
-    !$ACC KERNELS PRESENT(ZPSPVOR,ZPSPDIV)
     ! Copy list of 2d views of spectral vector fields into temporary arrays
     DO JFLD=1,IFLDSPVOR
-      ZPSPVOR(JFLD,:) = YLSPVVOR(JFLD)%VIEW%P(:)
-      ZPSPDIV(JFLD,:) = YLSPVDIV(JFLD)%VIEW%P(:)
+      ZZ1_1=>YLSPVVOR(JFLD)%VIEW%P(:)
+      ZZ1_2=>YLSPVDIV(JFLD)%VIEW%P(:)
+      IF (LDACC) THEN  
+        !$ACC KERNELS PRESENT(ZPSPVOR,ZPSPDIV,ZZ1_1,ZZ1_2)
+        ZPSPVOR(JFLD,:) = ZZ1_1(:)
+        ZPSPDIV(JFLD,:) = ZZ1_2(:)
+        !$ACC END KERNELS
+      ELSE
+        ZPSPVOR(JFLD,:) = ZZ1_1(:)
+        ZPSPDIV(JFLD,:) = ZZ1_2(:)
+      ENDIF
     ENDDO
-    !$ACC END KERNELS
-  ELSE
-    ! Copy list of 2d views of spectral vector fields into temporary arrays
-    DO JFLD=1,IFLDSPVOR
-      ZPSPVOR(JFLD,:) = YLSPVVOR(JFLD)%VIEW%P(:)
-      ZPSPDIV(JFLD,:) = YLSPVDIV(JFLD)%VIEW%P(:)
-    ENDDO
-  ENDIF
-
+    
+  
   ! Initialize b-set for vector fields data
   DO JFLD=1,IUVG
     DO JLEV=1,KFLEVG
@@ -310,31 +314,24 @@ IF (PRESENT(YDFSPSCALAR)) THEN
     !$ACC ENTER DATA CREATE(ZPSPSC2,ZPGP2)
   ENDIF
 
-
   IFLDSPSC = SIZE(YLSPVSCALAR)
   ! Copy list of of spectral scalar fields into temporary arrays (1d copy thanks to field_view)
-  IF (LDACC) THEN
-    !!!ACC KERNELS PRESENT(ZPSPSC2,YLSPVSCALAR(:)%VIEW%P)  FIRSTPRIVATE(IFLDSPSC) PRIVATE(JFLD,ID)
-    !$ACC KERNELS PRESENT(ZPSPSC2)
-    ID = 1
-    DO JFLD = 1,IFLDSPSC
-      IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) THEN
-!         ZPSPSC2(ID,:) = YLSPVSCALAR(JFLD)%VIEW%P(:)
-        ID = ID + 1
-      ENDIF
-    ENDDO
-    !$ACC END KERNELS
-  ELSE
-    ID = 1
-    DO JFLD = 1,IFLDSPSC
-      IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) THEN
-         ZPSPSC2(ID,:) = YLSPVSCALAR(JFLD)%VIEW%P(:)
-        ID = ID + 1
-      ENDIF
-    ENDDO
-
-  ENDIF
-
+      
+  ID = 1
+  DO JFLD = 1,IFLDSPSC
+    IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) THEN
+        ZZ1_1=>YLSPVSCALAR(JFLD)%VIEW%P(:)
+        IF (LDACC) THEN    
+          !$ACC KERNELS PRESENT(ZPSPSC2,ZZ1_1)
+          ZPSPSC2(ID,:) = ZZ1_1(:)
+          !$ACC END KERNELS     
+        ELSE
+          ZPSPSC2(ID,:) = ZZ1_1(:)
+        ENDIF
+      ID = ID + 1
+    ENDIF
+  ENDDO
+  
   ! compute ´b-set´ for scalar-fields
    DO JFLD=1, IFLDXG
     IVSETSC2(JFLD) = YLGVSCALAR(JFLD)%IVSET
@@ -392,9 +389,8 @@ ENDIF
 
 IEND = KGPTOT - KPROMA * (KGPBLKS - 1)
 
-IF (LDACC) THEN
-    !!!ACC KERNELS PRESENT(ZPGPUV, ZPGP2) FIRSTPRIVATE(IEND, KGPBLKS,IUVG,IFLDXG)
-    !$ACC KERNELS PRESENT(ZPGPUV, ZPGP2)
+IF (LDACC) THEN    
+  !$ACC KERNELS PRESENT(ZPGPUV, ZPGP2)
   IF (IUVG>0) ZPGPUV (IEND+1:, :, :, KGPBLKS) = 0
   IF (IFLDXG>0)  ZPGP2 (IEND+1:, :, KGPBLKS) = 0
   !$ACC END KERNELS
@@ -406,134 +402,121 @@ ENDIF
 ! copy vector fields
 
 IF (IUVG>0) THEN
-    IOFFSET = 0
-    ! copy vorticity
-    IF (LLVORGP) THEN
-      IF (LDACC) THEN
-        !!!ACC KERNELS PRESENT(ZPGPUV,YLGVVOR(:)%VIEW%P) FIRSTPRIVATE(IUVG, KFLEVG,IOFFSET) PRIVATE(ID,JFLD,JLEV)
-        !$ACC KERNELS PRESENT(ZPGPUV)
-        DO JFLD=1,IUVG
-          DO JLEV=1,KFLEVG
-            ID = JLEV + (JFLD -1) * KFLEVG
-            YLGVVOR(ID)%VIEW%P(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
-          ENDDO
-        ENDDO
-        !$ACC END KERNELS
-      ELSE
-        DO JFLD=1,IUVG
-          DO JLEV=1,KFLEVG
-            ID = JLEV + (JFLD -1) * KFLEVG
-            YLGVVOR(ID)%VIEW%P(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
-          ENDDO
-        ENDDO
-      ENDIF
-      IOFFSET = IOFFSET + 1
-    ENDIF
-
-    ! copy divergence
-    IF (LLDIVGP) THEN
-      IF (LDACC) THEN
-        !!!!ACC KERNELS PRESENT(ZPGPUV,YLGVDIV(:)%VIEW%P) FIRSTPRIVATE(IUVG, KFLEVG,IOFFSET) PRIVATE(JFLD,JLEV,ID)
-        !$ACC KERNELS PRESENT(ZPGPUV)
-        DO JFLD=1,IUVG
-          DO JLEV=1,KFLEVG
-          ID = JLEV + (JFLD -1) * KFLEVG
-          YLGVDIV(ID)%VIEW%P(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
-          ENDDO
-        ENDDO
-        !$ACC END KERNELS
-      ELSE
-        DO JFLD=1,IUVG
-          DO JLEV=1,KFLEVG
-            ID = JLEV + (JFLD -1) * KFLEVG
-            YLGVDIV(ID)%VIEW%P(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
-          ENDDO
-        ENDDO
-      ENDIF
-      IOFFSET = IOFFSET + 1
-    ENDIF
-
-    ! copy u and v
-    IF (LDACC) THEN
-      !!!ACC KERNELS PRESENT(ZPGPUV,YLGVU(:)%VIEW%P,LGVV(:)%VIEW%P) FIRSTPRIVATE(IUVG, KFLEVG,IOFFSET) PRIVATE(ID,JFLD,JLEV)
-      !$ACC KERNELS PRESENT(ZPGPUV)
+  IOFFSET = 0
+  ! copy vorticity
+  IF (LLVORGP) THEN
       DO JFLD=1,IUVG
         DO JLEV=1,KFLEVG
           ID = JLEV + (JFLD -1) * KFLEVG
-          YLGVU(ID)%VIEW%P(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
-          YLGVV(ID)%VIEW%P(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
+          ZZ2_1=>YLGVVOR(ID)%VIEW%P(:,:)
+          IF (LDACC) THEN
+            !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1)
+            ZZ2_1 = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+            !$ACC END KERNELS
+          ELSE
+            ZZ2_1 = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+          ENDIF
         ENDDO
       ENDDO
-      !$ACC END KERNELS
-    ELSE
+      
+    IOFFSET = IOFFSET + 1
+  ENDIF
+
+  ! copy divergence
+  IF (LLDIVGP) THEN
+     
       DO JFLD=1,IUVG
         DO JLEV=1,KFLEVG
-          ID = JLEV + (JFLD -1) * KFLEVG
-          YLGVU(ID)%VIEW%P(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
-          YLGVV(ID)%VIEW%P(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
+        ID = JLEV + (JFLD -1) * KFLEVG
+        ZZ2_1=>YLGVDIV(ID)%VIEW%P(:,:)
+        IF (LDACC) THEN
+          !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1)
+          ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+          !$ACC END KERNELS
+        ELSE
+          ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+        ENDIF
         ENDDO
       ENDDO
-    ENDIF
+    
+    IOFFSET = IOFFSET + 1
+  ENDIF
 
-    IOFFSET = IOFFSET + 2
-
-    ! copy u and v derivatives
-    IF (LLUVDER) THEN
+  ! copy u and v
+    
+  DO JFLD=1,IUVG
+    DO JLEV=1,KFLEVG
+      ID = JLEV + (JFLD -1) * KFLEVG
+      ZZ2_1=>YLGVU(ID)%VIEW%P(:,:)
+      ZZ2_2=>YLGVV(ID)%VIEW%P(:,:)
       IF (LDACC) THEN
-        !!!ACC KERNELS PRESENT(ZPGPUV,YLGVU_NS(:)%VIEW%P,YLGVV_NS(:)%VIEW%P) FIRSTPRIVATE(IUVG, KFLEVG,IOFFSET) PRIVATE(ID,JFLD,JLEV)
-        !$ACC KERNELS PRESENT(ZPGPUV)
-        DO JFLD=1,IUVG
-          DO JLEV=1,KFLEVG
-            ID = JLEV + (JFLD -1) * KFLEVG
-            YLGVU_NS(ID)%VIEW%P(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*IOFFSET,:)
-            YLGVV_NS(ID)%VIEW%P(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*(IOFFSET+1),:)
-          ENDDO
-        ENDDO
+        !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1,ZZ2_2)
+        ZZ2_1(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
+        ZZ2_2(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
         !$ACC END KERNELS
       ELSE
-        DO JFLD=1,IUVG
-          DO JLEV=1,KFLEVG
-            ID = JLEV + (JFLD -1) * KFLEVG
-            YLGVU_NS(ID)%VIEW%P(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*IOFFSET,:)
-            YLGVV_NS(ID)%VIEW%P(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*(IOFFSET+1),:)
-          ENDDO
-        ENDDO
+        ZZ2_1(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
+        ZZ2_2(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
       ENDIF
-    ENDIF
+    ENDDO
+  ENDDO
+    
+  IOFFSET = IOFFSET + 2
+
+  ! copy u and v derivatives
+  IF (LLUVDER) THEN      
+    DO JFLD=1,IUVG
+    DO JLEV=1,KFLEVG
+      ID = JLEV + (JFLD -1) * KFLEVG
+      ZZ2_1=>YLGVU_NS(ID)%VIEW%P(:,:)
+      ZZ2_2=>YLGV_NS(ID)%VIEW%P(:,:)
+      IF (LDACC) THEN
+        !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1,ZZ2_2)
+        ZZ2_1(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*IOFFSET,:)
+        ZZ2_2(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*(IOFFSET+1),:)
+        !$ACC END KERNELS
+      ELSE
+        ZZ2_1(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*IOFFSET,:)
+        ZZ2_2(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*(IOFFSET+1),:)
+      ENDIF
+    ENDDO
+  ENDDO
+    
+  
 ENDIF
 
 IF (IFLDXG > 0) THEN
   ! copy spectral scalar fields
-  IF (LDACC) THEN
-    !!!ACC KERNELS PRESENT(ZPGP2,YLGVSCALAR(:)%VIEW%P) FIRSTPRIVATE(IFLDXG) PRIVATE(JFLD)
-    !$ACC KERNELS PRESENT(ZPGP2)
+    
     DO JFLD=1, IFLDXG
-!      YLGVSCALAR(JFLD)%VIEW%P(:,:) = ZPGP2(:,JFLD,:)
+      ZZ2_1=>YLGVSCALAR(JFLD)%VIEW%P(:,:)
+      IF (LDACC) THEN
+        !$ACC KERNELS PRESENT(ZPGP2,ZZ2_1)
+        ZZ2_1(:,:) = ZPGP2(:,JFLD,:)
+        !$ACC END KERNELS
+      ELSE
+        ZZ2_1(:,:) = ZPGP2(:,JFLD,:)
+      ENDIF
     ENDDO
-    !$ACC END KERNELS
-  ELSE
-    DO JFLD=1, IFLDXG
-      YLGVSCALAR(JFLD)%VIEW%P(:,:) = ZPGP2(:,JFLD,:)
-    ENDDO
-  ENDIF
+    
 
   ! copy spectral scalar fields derivatives
 
-  IF (LLSCDERS) THEN
-    IF (LDACC) THEN
-      !!!!ACC KERNELS PRESENT(ZPGP2,YLGVSCALAR_NS(:)%VIEW%P,YLGVSCALAR_EW(:)%VIEW%P) FIRSTPRIVATE(IFLDXG) PRIVATE(JFLD)
-      !$ACC KERNELS PRESENT(ZPGP2)
+  IF (LLSCDERS) THEN        
       DO JFLD=1,IFLDXG
-!        YLGVSCALAR_NS(JFLD)%VIEW%P(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
-!        YLGVSCALAR_EW(JFLD)%VIEW%P(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
+        ZZ2_1=>YLGVSCALAR_NS(JFLD)%VIEW%P(:,:)
+        ZZ2_2=>YLGVSCALAR_EW(JFLD)%VIEW%P(:,:)
+        IF (LDACC) THEN
+          !$ACC KERNELS PRESENT(ZPGP2,ZZ2_1,ZZ2_2)
+          ZZ2_1(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
+          ZZ2_2(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
+          !$ACC END KERNELS  
+        ELSE
+          ZZ2_1(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
+          ZZ2_2(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
+        ENDIF
       ENDDO
-      !$ACC END KERNELS
-    ELSE
-      DO JFLD=1,IFLDXG
-        YLGVSCALAR_NS(JFLD)%VIEW%P(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
-        YLGVSCALAR_EW(JFLD)%VIEW%P(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
-      ENDDO
-    ENDIF
+      
   ENDIF
 ENDIF
 ! 5. Final cleanup
