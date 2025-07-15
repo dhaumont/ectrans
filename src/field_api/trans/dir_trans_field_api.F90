@@ -10,7 +10,7 @@
 
 SUBROUTINE DIR_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
                              & YDFU, YDFV, YDFSCALAR, &
-                             & KSPEC, KPROMA, KGPBLKS, KGPTOT, KFLEVG, KFLEVL,&
+                             & KSPEC, KPROMA, KGPBLKS, KGPTOT, KFLEVG, KFLEVL, KPROC,&
                              & LDACC)
 
 
@@ -40,6 +40,7 @@ SUBROUTINE DIR_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
 !       KGPTOT         - Number of total grid points
 !       KFLEVG         - Number of levels
 !       KFLEVL         - Number of local levels
+!       KPROC          - Processor ID
 !       LDACC          - Field data on device
 
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
@@ -61,6 +62,7 @@ INTEGER(KIND=JPIM), INTENT(IN) ::KGPBLKS
 INTEGER(KIND=JPIM), INTENT(IN) ::KGPTOT
 INTEGER(KIND=JPIM), INTENT(IN) :: KFLEVG
 INTEGER(KIND=JPIM), INTENT(IN) :: KFLEVL
+INTEGER(KIND=JPIM), INTENT(IN) :: KPROC
 LOGICAL, INTENT(IN), OPTIONAL  :: LDACC
 
 ! Local variables
@@ -198,8 +200,9 @@ IF (PRESENT(YDFU)) THEN
   DO JFLD=1,IUVG
     DO JLEV=1,KFLEVG
       ID = JLEV + (JFLD -1) * KFLEVG
-      IF (JFLD .EQ. 1) IVSETUV(JLEV) = YLGVU(ID)%IVSET
-      IF (IVSETUV(JLEV) .NE. YLGVU(ID)%IVSET)  CALL ABOR1("[DIR_TRANS_FIELD_API] ivsetuv inconsistent with ylgvu%ivset")
+      IF (JFLD .EQ. 1) IVSETUV(JLEV) = YLSPVVOR(ID)%IVSET
+      IF (IVSETUV(JLEV) .NE. YLSPVVOR(ID)%IVSET)  CALL ABOR1("[DIR_TRANS_FIELD_API] ivsetuv inconsistent with ylspvdiv%ivset")
+      IF (IVSETUV(JLEV) .NE. YLSPVDIV(ID)%IVSET) CALL ABOR1("[INV_TRANS_FIELD_API] ivsetuv inconsistent with ylspvdiv%ivset")
     ENDDO
   ENDDO
 ELSE
@@ -229,7 +232,8 @@ IF (PRESENT(YDFSPSCALAR)) THEN
   ! count the number of fields present on the processor
   IFLDXL = 0
   DO JFLD = 1, SIZE(YLGVSCALAR)
-    IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) IFLDXL = IFLDXL + 1
+
+    IF (YLSPVSCALAR(JFLD)%IVSET == KPROC) IFLDXL = IFLDXL + 1
   END DO
 
    ! Allocate temporary scalar field array in spectral space
@@ -260,7 +264,7 @@ IF (PRESENT(YDFSPSCALAR)) THEN
   ENDDO
 
   DO JFLD=1, IFLDXG
-    IVSETSC2(JFLD) = YLGVSCALAR(JFLD)%IVSET
+    IVSETSC2(JFLD) = YLSPVSCALAR(JFLD)%IVSET
   ENDDO
 
 ELSE
@@ -292,16 +296,18 @@ ENDIF
 IF (IUVG>0) THEN
 
     DO JFLD=1,IFLDSPVOR
-      ZZ1_1=>YLSPVVOR(JFLD)%VIEW%P
-      ZZ1_2=>YLSPVDIV(JFLD)%VIEW%P
-      IF (LDACC) THEN
-        !$ACC KERNELS PRESENT(ZPSPVOR,ZZ1_1,ZZ1_2)
-        ZZ1_1(:) = ZPSPVOR(JFLD,:)
-        ZZ1_2(:) = ZPSPDIV(JFLD,:)
-        !$ACC END KERNELS
-      ELSE
-        ZZ1_1(:) = ZPSPVOR(JFLD,:)
-        ZZ1_2(:) = ZPSPDIV(JFLD,:)
+      IF (YLSPVVOR(JFLD)%IVSET == KPROC) THEN
+        ZZ1_1=>YLSPVVOR(JFLD)%VIEW%P
+        ZZ1_2=>YLSPVDIV(JFLD)%VIEW%P
+        IF (LDACC) THEN
+          !$ACC KERNELS PRESENT(ZPSPVOR,ZZ1_1,ZZ1_2)
+          ZZ1_1(:) = ZPSPVOR(JFLD,:)
+          ZZ1_2(:) = ZPSPDIV(JFLD,:)
+          !$ACC END KERNELS
+        ELSE
+          ZZ1_1(:) = ZPSPVOR(JFLD,:)
+          ZZ1_2(:) = ZPSPDIV(JFLD,:)
+        ENDIF
       ENDIF
     ENDDO
 ENDIF
@@ -310,7 +316,7 @@ ENDIF
  IF (IFLDSPSC > 0) THEN
    ID = 1
    DO JFLD = 1, IFLDSPSC
-      IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) THEN
+      IF (YLSPVSCALAR(JFLD)%IVSET == KPROC) THEN
         ZZ1_1=>YLSPVSCALAR(JFLD)%VIEW%P
         IF (LDACC) THEN
           !$ACC KERNELS PRESENT(ZPSPSC2,ZZ1_1)

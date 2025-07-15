@@ -11,8 +11,8 @@
 SUBROUTINE INV_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
                              & YDFU, YDFV, YDFVOR,YDFDIV,YDFSCALAR, &
                              & YDFU_NS, YDFV_NS, YDFSCALAR_NS, YDFSCALAR_EW,&
-                             & KSPEC, KPROMA, KGPBLKS, KGPTOT, KFLEVG, KFLEVL,&
-                             & LDACC, &
+                             & KSPEC, KPROMA, KGPBLKS, KGPTOT, KFLEVG, KFLEVL, KPROC,&
+                             & LDACC,&
                              & FSPGL_PROC)
 
 !**** *INV_TRANS_FIELD_API* - Field API interface to inverse spectral transform
@@ -37,6 +37,7 @@ SUBROUTINE INV_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
 !       KGPTOT         - Number of total grid points
 !       KFLEVG         - Number of levels
 !       KFLEVL         - Number of local levels
+!       KPROC          - Processor ID
 !       LDACC          - Field data on device
 !       FSPGL_PROC     - procedure to be executed in fourier space
 !                        before transposition
@@ -77,6 +78,7 @@ INTEGER(KIND=JPIM),   INTENT(IN)            :: KGPBLKS
 INTEGER(KIND=JPIM),   INTENT(IN)            :: KGPTOT
 INTEGER(KIND=JPIM),   INTENT(IN)            :: KFLEVG
 INTEGER(KIND=JPIM),   INTENT(IN)            :: KFLEVL
+INTEGER(KIND=JPIM),   INTENT(IN)            :: KPROC
 LOGICAL,              INTENT(IN), OPTIONAL  :: LDACC
 PROCEDURE (FSPGL_INTF),           OPTIONAL  :: FSPGL_PROC
 
@@ -236,16 +238,18 @@ IF (PRESENT(YDFU)) THEN
 
     ! Copy list of 2d views of spectral vector fields into temporary arrays
     DO JFLD=1,IFLDSPVOR
-      ZZ1_1=>YLSPVVOR(JFLD)%VIEW%P
-      ZZ1_2=>YLSPVDIV(JFLD)%VIEW%P
-      IF (LDACC) THEN
-        !$ACC KERNELS PRESENT(ZPSPVOR,ZPSPDIV,ZZ1_1,ZZ1_2)
-        ZPSPVOR(JFLD,:) = ZZ1_1(:)
-        ZPSPDIV(JFLD,:) = ZZ1_2(:)
-        !$ACC END KERNELS
-      ELSE
-        ZPSPVOR(JFLD,:) = ZZ1_1(:)
-        ZPSPDIV(JFLD,:) = ZZ1_2(:)
+      IF (YLSPVVOR(JFLD)%IVSET == KPROC) THEN
+        ZZ1_1=>YLSPVVOR(JFLD)%VIEW%P
+        ZZ1_2=>YLSPVDIV(JFLD)%VIEW%P
+        IF (LDACC) THEN
+          !$ACC KERNELS PRESENT(ZPSPVOR,ZPSPDIV,ZZ1_1,ZZ1_2)
+          ZPSPVOR(JFLD,:) = ZZ1_1(:)
+          ZPSPDIV(JFLD,:) = ZZ1_2(:)
+          !$ACC END KERNELS
+        ELSE
+          ZPSPVOR(JFLD,:) = ZZ1_1(:)
+          ZPSPDIV(JFLD,:) = ZZ1_2(:)
+        ENDIF
       ENDIF
     ENDDO
 
@@ -254,9 +258,9 @@ IF (PRESENT(YDFU)) THEN
   DO JFLD=1,IUVG
     DO JLEV=1,KFLEVG
      ID = JLEV + (JFLD -1) * KFLEVG
-     IF (JFLD .EQ. 1) IVSETUV(JLEV) = YLGVU(ID)%IVSET
-     IF (IVSETUV(JLEV) .NE. YLGVU(ID)%IVSET) CALL ABOR1("[INV_TRANS_FIELD_API] ivsetuv inconsistent with ylgvu%ivset")
-     IF (IVSETUV(JLEV) .NE. YLGVV(ID)%IVSET) CALL ABOR1("[INV_TRANS_FIELD_API] ivsetuv inconsistent with ylgvv%ivset")
+     IF (JFLD .EQ. 1) IVSETUV(JLEV) = YLSPVVOR(ID)%IVSET
+     IF (IVSETUV(JLEV) .NE. YLSPVVOR(ID)%IVSET) CALL ABOR1("[INV_TRANS_FIELD_API] ivsetuv inconsistent with ylgvvor%ivset")
+     IF (IVSETUV(JLEV) .NE. YLSPVDIV(ID)%IVSET) CALL ABOR1("[INV_TRANS_FIELD_API] ivsetuv inconsistent with ylgvdiv%ivset")
     ENDDO
   ENDDO
 
@@ -287,7 +291,8 @@ IF (PRESENT(YDFSPSCALAR)) THEN
   ! count the number of fields present on the processor
   IFLDXL = 0
   DO JFLD = 1, SIZE(YLGVSCALAR)
-    IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) THEN
+
+    IF (YLSPVSCALAR(JFLD)%IVSET == KPROC) THEN
       IFLDXL = IFLDXL + 1
     ENDIF
   END DO
@@ -319,22 +324,22 @@ IF (PRESENT(YDFSPSCALAR)) THEN
 
   ID = 1
   DO JFLD = 1,IFLDSPSC
-    IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) THEN
-        ZZ1_1=>YLSPVSCALAR(JFLD)%VIEW%P
-        IF (LDACC) THEN
-          !$ACC KERNELS PRESENT(ZPSPSC2,ZZ1_1)
-          ZPSPSC2(ID,:) = ZZ1_1(:)
-          !$ACC END KERNELS
-        ELSE
-          ZPSPSC2(ID,:) = ZZ1_1(:)
-        ENDIF
+    IF (YLSPVSCALAR(JFLD)%IVSET == KPROC) THEN
+      ZZ1_1=>YLSPVSCALAR(JFLD)%VIEW%P
+      IF (LDACC) THEN
+        !$ACC KERNELS PRESENT(ZPSPSC2,ZZ1_1)
+        ZPSPSC2(ID,:) = ZZ1_1(:)
+        !$ACC END KERNELS
+      ELSE
+        ZPSPSC2(ID,:) = ZZ1_1(:)
+      ENDIF
       ID = ID + 1
     ENDIF
   ENDDO
 
   ! compute ´b-set´ for scalar-fields
    DO JFLD=1, IFLDXG
-    IVSETSC2(JFLD) = YLGVSCALAR(JFLD)%IVSET
+    IVSETSC2(JFLD) = YLSPVSCALAR(JFLD)%IVSET
    ENDDO
 
 ELSE
