@@ -177,13 +177,13 @@ IF (PRESENT(YDFU)) THEN
 
   IOFFSET = 0
 
-  ! Copy list of 2d views of grid point vector fields into temporary arrays  
+  ! Copy list of 2d views of grid point vector fields into temporary arrays
     DO JFLD=1,IUVG
       DO JLEV=1,KFLEVG
         ID = JLEV + (JFLD -1) * KFLEVG
         ZZ2_1=>YLGVU(ID)%VIEW%P(:,:)
         ZZ2_2=>YLGVV(ID)%VIEW%P(:,:)
-        IF (LDACC) THEN    
+        IF (LDACC) THEN
           !$ACC KERNELS PRESENT(ZPGP2,ZZ2_1,ZZ2_2)
           ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)     = ZZ2_1(:,:)
           ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:) = ZZ2_2(:,:)
@@ -194,7 +194,7 @@ IF (PRESENT(YDFU)) THEN
         ENDIF
       ENDDO
     ENDDO
-    
+
   DO JFLD=1,IUVG
     DO JLEV=1,KFLEVG
       ID = JLEV + (JFLD -1) * KFLEVG
@@ -247,18 +247,18 @@ IF (PRESENT(YDFSPSCALAR)) THEN
   ENDIF
 
   ! Copy list of scalar fields into temporary arrays (2d copy thanks to field_view)
-  
+
   DO JFLD=1, IFLDXG
       ZZ2_1=>YLGVSCALAR(JFLD)%VIEW%P(:,:)
-      IF (LDACC) THEN    
+      IF (LDACC) THEN
         !$ACC KERNELS PRESENT(ZPGP2,ZZ2_1)
         ZPGP2(:,JFLD,:) = ZZ2_1(:,:)
         !$ACC END KERNELS
-    ELSE   
+    ELSE
         ZPGP2(:,JFLD,:) = ZZ2_1(:,:)
     ENDIF
   ENDDO
-  
+
   DO JFLD=1, IFLDXG
     IVSETSC2(JFLD) = YLGVSCALAR(JFLD)%IVSET
   ENDDO
@@ -294,7 +294,7 @@ IF (IUVG>0) THEN
     DO JFLD=1,IFLDSPVOR
       ZZ1_1=>YLSPVVOR(JFLD)%VIEW%P(:)
       ZZ1_2=>YLSPVDIV(JFLD)%VIEW%P(:)
-      IF (LDACC) THEN    
+      IF (LDACC) THEN
         !$ACC KERNELS PRESENT(ZPSPVOR,ZZ1_1,ZZ1_2)
         ZZ1_1(:) = ZPSPVOR(JFLD,:)
         ZZ1_2(:) = ZPSPDIV(JFLD,:)
@@ -304,9 +304,9 @@ IF (IUVG>0) THEN
         ZZ1_2(:) = ZPSPDIV(JFLD,:)
       ENDIF
     ENDDO
-    
-   ! copy spectral scalar fields
+ENDIF
 
+! copy spectral scalar fields
  IF (IFLDSPSC > 0) THEN
    ID = 1
    DO JFLD = 1, IFLDSPSC
@@ -321,8 +321,9 @@ IF (IUVG>0) THEN
         ENDIF
         ID = ID + 1
       ENDIF
-   ENDDO   
+   ENDDO
 ENDIF
+
 ! 5. Final cleanup
 
 ! delete temporary arrays
