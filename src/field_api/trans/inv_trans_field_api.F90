@@ -236,9 +236,9 @@ IF (PRESENT(YDFU)) THEN
 
     ! Copy list of 2d views of spectral vector fields into temporary arrays
     DO JFLD=1,IFLDSPVOR
-      ZZ1_1=>YLSPVVOR(JFLD)%VIEW%P(:)
-      ZZ1_2=>YLSPVDIV(JFLD)%VIEW%P(:)
-      IF (LDACC) THEN  
+      ZZ1_1=>YLSPVVOR(JFLD)%VIEW%P
+      ZZ1_2=>YLSPVDIV(JFLD)%VIEW%P
+      IF (LDACC) THEN
         !$ACC KERNELS PRESENT(ZPSPVOR,ZPSPDIV,ZZ1_1,ZZ1_2)
         ZPSPVOR(JFLD,:) = ZZ1_1(:)
         ZPSPDIV(JFLD,:) = ZZ1_2(:)
@@ -248,8 +248,8 @@ IF (PRESENT(YDFU)) THEN
         ZPSPDIV(JFLD,:) = ZZ1_2(:)
       ENDIF
     ENDDO
-    
-  
+
+
   ! Initialize b-set for vector fields data
   DO JFLD=1,IUVG
     DO JLEV=1,KFLEVG
@@ -316,22 +316,22 @@ IF (PRESENT(YDFSPSCALAR)) THEN
 
   IFLDSPSC = SIZE(YLSPVSCALAR)
   ! Copy list of of spectral scalar fields into temporary arrays (1d copy thanks to field_view)
-      
+
   ID = 1
   DO JFLD = 1,IFLDSPSC
     IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) THEN
-        ZZ1_1=>YLSPVSCALAR(JFLD)%VIEW%P(:)
-        IF (LDACC) THEN    
+        ZZ1_1=>YLSPVSCALAR(JFLD)%VIEW%P
+        IF (LDACC) THEN
           !$ACC KERNELS PRESENT(ZPSPSC2,ZZ1_1)
           ZPSPSC2(ID,:) = ZZ1_1(:)
-          !$ACC END KERNELS     
+          !$ACC END KERNELS
         ELSE
           ZPSPSC2(ID,:) = ZZ1_1(:)
         ENDIF
       ID = ID + 1
     ENDIF
   ENDDO
-  
+
   ! compute ´b-set´ for scalar-fields
    DO JFLD=1, IFLDXG
     IVSETSC2(JFLD) = YLGVSCALAR(JFLD)%IVSET
@@ -389,7 +389,7 @@ ENDIF
 
 IEND = KGPTOT - KPROMA * (KGPBLKS - 1)
 
-IF (LDACC) THEN    
+IF (LDACC) THEN
   !$ACC KERNELS PRESENT(ZPGPUV, ZPGP2)
   IF (IUVG>0) ZPGPUV (IEND+1:, :, :, KGPBLKS) = 0
   IF (IFLDXG>0)  ZPGP2 (IEND+1:, :, KGPBLKS) = 0
@@ -408,27 +408,27 @@ IF (IUVG>0) THEN
       DO JFLD=1,IUVG
         DO JLEV=1,KFLEVG
           ID = JLEV + (JFLD -1) * KFLEVG
-          ZZ2_1=>YLGVVOR(ID)%VIEW%P(:,:)
+          ZZ2_1=>YLGVVOR(ID)%VIEW%P
           IF (LDACC) THEN
             !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1)
-            ZZ2_1 = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+            ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
             !$ACC END KERNELS
           ELSE
-            ZZ2_1 = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+            ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
           ENDIF
         ENDDO
       ENDDO
-      
+
     IOFFSET = IOFFSET + 1
   ENDIF
 
   ! copy divergence
   IF (LLDIVGP) THEN
-     
+
       DO JFLD=1,IUVG
         DO JLEV=1,KFLEVG
         ID = JLEV + (JFLD -1) * KFLEVG
-        ZZ2_1=>YLGVDIV(ID)%VIEW%P(:,:)
+        ZZ2_1=>YLGVDIV(ID)%VIEW%P
         IF (LDACC) THEN
           !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1)
           ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
@@ -438,17 +438,17 @@ IF (IUVG>0) THEN
         ENDIF
         ENDDO
       ENDDO
-    
+
     IOFFSET = IOFFSET + 1
   ENDIF
 
   ! copy u and v
-    
+
   DO JFLD=1,IUVG
     DO JLEV=1,KFLEVG
       ID = JLEV + (JFLD -1) * KFLEVG
-      ZZ2_1=>YLGVU(ID)%VIEW%P(:,:)
-      ZZ2_2=>YLGVV(ID)%VIEW%P(:,:)
+      ZZ2_1=>YLGVU(ID)%VIEW%P
+      ZZ2_2=>YLGVV(ID)%VIEW%P
       IF (LDACC) THEN
         !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1,ZZ2_2)
         ZZ2_1(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
@@ -460,34 +460,34 @@ IF (IUVG>0) THEN
       ENDIF
     ENDDO
   ENDDO
-    
+
   IOFFSET = IOFFSET + 2
 
   ! copy u and v derivatives
-  IF (LLUVDER) THEN      
+  IF (LLUVDER) THEN
     DO JFLD=1,IUVG
-    DO JLEV=1,KFLEVG
-      ID = JLEV + (JFLD -1) * KFLEVG
-      ZZ2_1=>YLGVU_NS(ID)%VIEW%P(:,:)
-      ZZ2_2=>YLGV_NS(ID)%VIEW%P(:,:)
-      IF (LDACC) THEN
-        !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1,ZZ2_2)
-        ZZ2_1(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*IOFFSET,:)
-        ZZ2_2(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*(IOFFSET+1),:)
-        !$ACC END KERNELS
-      ELSE
-        ZZ2_1(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*IOFFSET,:)
-        ZZ2_2(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*(IOFFSET+1),:)
-      ENDIF
+      DO JLEV=1,KFLEVG
+        ID = JLEV + (JFLD -1) * KFLEVG
+        ZZ2_1=>YLGVU_NS(ID)%VIEW%P
+        ZZ2_2=>YLGVV_NS(ID)%VIEW%P
+        IF (LDACC) THEN
+          !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1,ZZ2_2)
+          ZZ2_1(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*IOFFSET,:)
+          ZZ2_2(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*(IOFFSET+1),:)
+          !$ACC END KERNELS
+        ELSE
+          ZZ2_1(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*IOFFSET,:)
+          ZZ2_2(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*(IOFFSET+1),:)
+        ENDIF
+      ENDDO
     ENDDO
-  ENDDO
-    
-  
+ENDIF
+
 ENDIF
 
 IF (IFLDXG > 0) THEN
   ! copy spectral scalar fields
-    
+
     DO JFLD=1, IFLDXG
       ZZ2_1=>YLGVSCALAR(JFLD)%VIEW%P(:,:)
       IF (LDACC) THEN
@@ -498,25 +498,25 @@ IF (IFLDXG > 0) THEN
         ZZ2_1(:,:) = ZPGP2(:,JFLD,:)
       ENDIF
     ENDDO
-    
+
 
   ! copy spectral scalar fields derivatives
 
-  IF (LLSCDERS) THEN        
+  IF (LLSCDERS) THEN
       DO JFLD=1,IFLDXG
-        ZZ2_1=>YLGVSCALAR_NS(JFLD)%VIEW%P(:,:)
-        ZZ2_2=>YLGVSCALAR_EW(JFLD)%VIEW%P(:,:)
+        ZZ2_1=>YLGVSCALAR_NS(JFLD)%VIEW%P
+        ZZ2_2=>YLGVSCALAR_EW(JFLD)%VIEW%P
         IF (LDACC) THEN
           !$ACC KERNELS PRESENT(ZPGP2,ZZ2_1,ZZ2_2)
           ZZ2_1(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
           ZZ2_2(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
-          !$ACC END KERNELS  
+          !$ACC END KERNELS
         ELSE
           ZZ2_1(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
           ZZ2_2(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
         ENDIF
       ENDDO
-      
+
   ENDIF
 ENDIF
 ! 5. Final cleanup
