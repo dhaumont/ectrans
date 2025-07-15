@@ -181,8 +181,8 @@ IF (PRESENT(YDFU)) THEN
     DO JFLD=1,IUVG
       DO JLEV=1,KFLEVG
         ID = JLEV + (JFLD -1) * KFLEVG
-        ZZ2_1=>YLGVU(ID)%VIEW%P(:,:)
-        ZZ2_2=>YLGVV(ID)%VIEW%P(:,:)
+        ZZ2_1=>YLGVU(ID)%VIEW%P
+        ZZ2_2=>YLGVV(ID)%VIEW%P
         IF (LDACC) THEN
           !$ACC KERNELS PRESENT(ZPGP2,ZZ2_1,ZZ2_2)
           ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)     = ZZ2_1(:,:)
@@ -249,7 +249,7 @@ IF (PRESENT(YDFSPSCALAR)) THEN
   ! Copy list of scalar fields into temporary arrays (2d copy thanks to field_view)
 
   DO JFLD=1, IFLDXG
-      ZZ2_1=>YLGVSCALAR(JFLD)%VIEW%P(:,:)
+      ZZ2_1=>YLGVSCALAR(JFLD)%VIEW%P
       IF (LDACC) THEN
         !$ACC KERNELS PRESENT(ZPGP2,ZZ2_1)
         ZPGP2(:,JFLD,:) = ZZ2_1(:,:)
@@ -292,8 +292,8 @@ ENDIF
 IF (IUVG>0) THEN
 
     DO JFLD=1,IFLDSPVOR
-      ZZ1_1=>YLSPVVOR(JFLD)%VIEW%P(:)
-      ZZ1_2=>YLSPVDIV(JFLD)%VIEW%P(:)
+      ZZ1_1=>YLSPVVOR(JFLD)%VIEW%P
+      ZZ1_2=>YLSPVDIV(JFLD)%VIEW%P
       IF (LDACC) THEN
         !$ACC KERNELS PRESENT(ZPSPVOR,ZZ1_1,ZZ1_2)
         ZZ1_1(:) = ZPSPVOR(JFLD,:)
@@ -311,7 +311,7 @@ ENDIF
    ID = 1
    DO JFLD = 1, IFLDSPSC
       IF (ASSOCIATED(YLSPVSCALAR(JFLD)%VIEW%P)) THEN
-        ZZ1_1=>YLSPVSCALAR(JFLD)%VIEW%P(:)
+        ZZ1_1=>YLSPVSCALAR(JFLD)%VIEW%P
         IF (LDACC) THEN
           !$ACC KERNELS PRESENT(ZPSPSC2,ZZ1_1)
           ZZ1_1(:) = ZPSPSC2(ID,:)
