@@ -1,7 +1,6 @@
 module ectrans_field_api_helper
 
 use field_module, only:field_1rb, field_2rb, field_3rb, field_4rb
-use field_access_module, only: sync_host_data_rdonly
 use field_factory_module
 use parkind1, only: jpim, jprb, jprd
 #include "field_basic_type_ptr.h"
