@@ -452,5 +452,29 @@ ENDDO
 
 END FUNCTION LS
 
+
+SUBROUTINE COPY_DEVICE_1RB (PTR_RHS, PTR_LHS)
+
+  REAL(KIND=JPRB) :: PTR_RHS (:), PTR_LHS (:)
+  
+  !$acc kernels present (PTR_RHS, PTR_LHS)
+  PTR_RHS = PTR_LHS
+  !$acc end kernels
+  
+END SUBROUTINE
+
+SUBROUTINE COPY_DEVICE_2RB (PTR_RHS, PTR_LHS)
+
+  REAL(KIND=JPRB) :: PTR_RHS (:,:), PTR_LHS (:,:)
+  
+  !$acc kernels present (PTR_RHS, PTR_LHS)
+  PTR_RHS = PTR_LHS
+  !$acc end kernels
+  
+END SUBROUTINE
+  
+    
+
+
 END MODULE FIELD_API_ECTRANS_MOD
 
