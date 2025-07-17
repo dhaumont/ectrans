@@ -132,7 +132,7 @@ ENDIF
 
 ALLOCATE (LG2RB (1))
 
-!$acc data present(zz2)
+!$acc data present(zz2) if(LDACC)
 !$ACC HOST_DATA USE_DEVICE (ZZ2) IF (LDACC)
 LG2RB (1)%VIEW%P => ZZ2
 !$ACC END HOST_DATA
@@ -175,11 +175,11 @@ ALLOCATE (LG3RB (SIZE (ZZ3, 2)))
 
 JCOUNT = 1
 DO JLEV = LBOUND (ZZ3, 2), UBOUND (ZZ3, 2)
-!$acc data present(zz3(:,jlev,:))
+  !$acc data present(zz3(:,jlev,:)) if(LDACC)
   !$ACC HOST_DATA USE_DEVICE ( ZZ3 (:, JLEV, :)) IF (LDACC)
   LG3RB (JCOUNT)%VIEW%P => ZZ3 (:, JLEV, :)
   !$ACC END HOST_DATA
- !$acc end data
+  !$acc end data
   LG3RB (JCOUNT)%IVSET = IVSET(JLEV)
   LG3RB(JCOUNT)%NAME = TRIM(NAME)//TRIM(CLOUT)
   JCOUNT = JCOUNT + 1
@@ -225,11 +225,11 @@ JCOUNT = 1
 
 DO JFLD = LBOUND (ZZ4, 3), UBOUND (ZZ4, 3)
   DO JLEV = LBOUND (ZZ4, 2), UBOUND (ZZ4, 2)
-!$acc data present(zz4(:,jlev,jfld,:))
-     !$ACC HOST_DATA USE_DEVICE ( ZZ4(:, JLEV, JFLD, :)) IF (LDACC)
+    !$acc data present(zz4(:,jlev,jfld,:)) if(LDACC)
+    !$ACC HOST_DATA USE_DEVICE ( ZZ4(:, JLEV, JFLD, :)) IF (LDACC)
     LG4RB (JCOUNT)%VIEW%P => ZZ4(:, JLEV, JFLD, :)
     !$ACC END HOST_DATA
- !$acc end data
+    !$acc end data
     LG4RB (JCOUNT)%IVSET = IVSET(JLEV)
     LG4RB(JCOUNT)%NAME = TRIM(NAME)//TRIM(CLOUT)
     JCOUNT = JCOUNT + 1
@@ -321,11 +321,11 @@ ELSE
 ENDIF
 
 ALLOCATE (LS1RB (1))
-!$acc data present(zz1)
- !$ACC HOST_DATA USE_DEVICE (ZZ1) IF (LDACC)
+!$acc data present(zz1) if(LDACC)
+!$ACC HOST_DATA USE_DEVICE (ZZ1) IF (LDACC)
 LS1RB(1)%VIEW%P => ZZ1
 !$ACC END HOST_DATA
- !$acc end data
+!$acc end data
 
 LS1RB(1)%IVSET = IVSET(1)
 LS1RB(1)%NAME=TRIM(NAME)//TRIM(CLOUT)
@@ -366,12 +366,11 @@ ALLOCATE (LS2RB (SIZE (ZZ2, 1)))
 JCOUNT = 1
 
 DO JLEV = LBOUND (ZZ2, 1), UBOUND (ZZ2, 1)
-!$acc data present(zz2(jlev,:))
-   !$ACC HOST_DATA USE_DEVICE (ZZ2 (JLEV, :)) IF (LDACC)
+  !$acc data present(zz2(jlev,:)) if(LDACC)
+  !$ACC HOST_DATA USE_DEVICE (ZZ2 (JLEV, :)) IF (LDACC)
   LS2RB (JCOUNT)%VIEW%P => ZZ2 (JLEV, :)
   !$ACC END HOST_DATA
-
- !$acc end data
+  !$acc end data
   LS2RB (JCOUNT)%IVSET = IVSET(JLEV)
   LS2RB(JCOUNT)%NAME=TRIM(NAME)//TRIM(CLOUT)
   JCOUNT = JCOUNT + 1
@@ -416,11 +415,11 @@ JCOUNT = 1
 
 DO JFLD = LBOUND (ZZ3, 3), UBOUND (ZZ3, 3)
   DO JLEV = LBOUND (ZZ3, 1), UBOUND (ZZ3, 1)
-!$acc data present(zz3(jlev,:,jfld))
-   !$ACC HOST_DATA USE_DEVICE (ZZ3 (JLEV, :, JFLD)) IF (LDACC)
+    !$acc data present(zz3(jlev,:,jfld)) if(LDACC) 
+    !$ACC HOST_DATA USE_DEVICE (ZZ3 (JLEV, :, JFLD)) IF (LDACC)
     LS3RB(JCOUNT)%VIEW%P => ZZ3 (JLEV, :, JFLD)
     !$ACC END HOST_DATA
- !$acc end data
+    !$acc end data
     LS3RB(JCOUNT)%NAME=TRIM(NAME)//TRIM(CLOUT)
     LS3RB(JCOUNT)%IVSET = IVSET(JLEV)
     JCOUNT = JCOUNT + 1
