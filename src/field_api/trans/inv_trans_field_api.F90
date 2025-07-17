@@ -246,8 +246,8 @@ IF (PRESENT(YDFU)) THEN
           CALL COPY_DEVICE_1RB(ZPSPVOR(JFLD,:),ZZ1_1)
           CALL COPY_DEVICE_1RB(ZPSPDIV(JFLD,:),ZZ1_2)          
         ELSE
-          ZPSPVOR(JFLD,:) = ZZ1_1(:)
-          ZPSPDIV(JFLD,:) = ZZ1_2(:)
+     	   ZPSPVOR(JFLD,:) = YLSPVVOR(JFLD)%VIEW%P(:)
+           ZPSPDIV(JFLD,:) = YLSPVDIV(JFLD)%VIEW%P(:)
         ENDIF
       ENDIF
     ENDDO
@@ -333,7 +333,7 @@ IF (PRESENT(YDFSPSCALAR)) THEN
       IF (LDACC) THEN
         CALL COPY_DEVICE_1RB(ZPSPSC2(ID,:),ZZ1_1)
       ELSE
-        ZPSPSC2(ID,:) = ZZ1_1(:)
+        ZPSPSC2(ID,:) = YLSPVSCALAR(JFLD)%VIEW%P(:)
       ENDIF
       ID = ID + 1
     ENDIF
@@ -419,7 +419,7 @@ IF (IUVG>0) THEN
           IF (LDACC) THEN
             CALL COPY_DEVICE_2RB(ZZ2_1,ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:))            
           ELSE
-            ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+             YLGVVOR(ID)%VIEW%P(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
           ENDIF
         ENDDO
       ENDDO
@@ -437,7 +437,7 @@ IF (IUVG>0) THEN
         IF (LDACC) THEN
           CALL COPY_DEVICE_2RB(ZZ2_1,ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:))          
         ELSE
-          ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+          YLGVDIV(ID)%VIEW%P(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
         ENDIF
         ENDDO
       ENDDO
@@ -456,8 +456,8 @@ IF (IUVG>0) THEN
         CALL COPY_DEVICE_2RB(ZZ2_1,ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:))
         CALL COPY_DEVICE_2RB(ZZ2_2,ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:))        
       ELSE
-        ZZ2_1(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
-        ZZ2_2(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
+       YLGVU(ID)%VIEW%P(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
+        YLGVV(ID)%VIEW%P(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
       ENDIF
     ENDDO
   ENDDO
@@ -475,8 +475,8 @@ IF (IUVG>0) THEN
           CALL COPY_DEVICE_2RB(ZZ2_1,ZPGPUV(:,JLEV,JFLD+IUVG*IOFFSET,:))
           CALL COPY_DEVICE_2RB(ZZ2_2, ZPGPUV(:,JLEV,JFLD+IUVG*(IOFFSET+1),:))          
         ELSE
-          ZZ2_1(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*IOFFSET,:)
-          ZZ2_2(:,:) = ZPGPUV(:,JLEV,JFLD+IUVG*(IOFFSET+1),:)
+          YLGVU(ID)%VIEW%P(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
+          YLGVV(ID)%VIEW%P(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
         ENDIF
       ENDDO
     ENDDO
@@ -492,7 +492,7 @@ IF (IFLDXG > 0) THEN
       IF (LDACC) THEN
         CALL COPY_DEVICE_2RB(ZZ2_1(:,:),ZPGP2(:,JFLD,:))        
       ELSE
-        ZZ2_1(:,:) = ZPGP2(:,JFLD,:)
+       YLGVSCALAR(JFLD)%VIEW%P(:,:) = ZPGP2(:,JFLD,:)
       ENDIF
     ENDDO
 
@@ -507,8 +507,8 @@ IF (IFLDXG > 0) THEN
           CALL COPY_DEVICE_2RB(ZZ2_1,ZPGP2(:, JFLD+IFLDXG,:))
           CALL COPY_DEVICE_2RB(ZZ2_1,ZPGP2(:, JFLD+(2*IFLDXG),:))     
         ELSE
-          ZZ2_1(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
-          ZZ2_2(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
+         YLGVSCALAR_NS(JFLD)%VIEW%P(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
+         YLGVSCALAR_EW(JFLD)%VIEW%P(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
         ENDIF
       ENDDO
 
