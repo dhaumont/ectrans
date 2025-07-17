@@ -25,7 +25,7 @@ END TYPE
 
 TYPE GRID_VIEW
 ! Grid point field view
-  TYPE (FIELD_3RB_VIEW) :: VIEW  
+  TYPE (FIELD_3RB_VIEW) :: VIEW
   CHARACTER(LEN=12)     :: NAME
 END TYPE
 
@@ -130,10 +130,11 @@ ENDIF
 
 ALLOCATE (LG2RB (1))
 
+!$acc data present(zz2)
 !$ACC HOST_DATA USE_DEVICE (ZZ2) IF (LDACC)
 LG2RB (1)%VIEW%P => ZZ2
 !$ACC END HOST_DATA
-
+ !$acc end data
 LG2RB(1)%NAME = TRIM(NAME)//TRIM(CLOUT)
 END FUNCTION
 
@@ -170,10 +171,12 @@ ALLOCATE (LG3RB (SIZE (ZZ3, 2)))
 
 JCOUNT = 1
 DO JLEV = LBOUND (ZZ3, 2), UBOUND (ZZ3, 2)
+!$acc data present(zz3(:,jlev,:))
   !$ACC HOST_DATA USE_DEVICE ( ZZ3 (:, JLEV, :)) IF (LDACC)
   LG3RB (JCOUNT)%VIEW%P => ZZ3 (:, JLEV, :)
   !$ACC END HOST_DATA
-  
+
+ !$acc end data
   LG3RB(JCOUNT)%NAME = TRIM(NAME)//TRIM(CLOUT)
   JCOUNT = JCOUNT + 1
 ENDDO
@@ -217,9 +220,11 @@ JCOUNT = 1
 
 DO JFLD = LBOUND (ZZ4, 3), UBOUND (ZZ4, 3)
   DO JLEV = LBOUND (ZZ4, 2), UBOUND (ZZ4, 2)
-     !$ACC HOST_DATA USE_DEVICE ( ZZ4(:, JLEV, JFLD, :)) IF (LDACC)  
+!$acc data present(zz4(:,jlev,jfld,:))
+     !$ACC HOST_DATA USE_DEVICE ( ZZ4(:, JLEV, JFLD, :)) IF (LDACC)
     LG4RB (JCOUNT)%VIEW%P => ZZ4(:, JLEV, JFLD, :)
     !$ACC END HOST_DATA
+ !$acc end data
     LG4RB(JCOUNT)%NAME = TRIM(NAME)//TRIM(CLOUT)
     JCOUNT = JCOUNT + 1
   ENDDO
@@ -310,9 +315,11 @@ ELSE
 ENDIF
 
 ALLOCATE (LS1RB (1))
+!$acc data present(zz1)
  !$ACC HOST_DATA USE_DEVICE (ZZ1) IF (LDACC)
 LS1RB(1)%VIEW%P => ZZ1
 !$ACC END HOST_DATA
+ !$acc end data
 
 LS1RB(1)%IVSET = IVSET(1)
 LS1RB(1)%NAME=TRIM(NAME)//TRIM(CLOUT)
@@ -353,10 +360,12 @@ ALLOCATE (LS2RB (SIZE (ZZ2, 1)))
 JCOUNT = 1
 
 DO JLEV = LBOUND (ZZ2, 1), UBOUND (ZZ2, 1)
+!$acc data present(zz2(jlev,:))
    !$ACC HOST_DATA USE_DEVICE (ZZ2 (JLEV, :)) IF (LDACC)
   LS2RB (JCOUNT)%VIEW%P => ZZ2 (JLEV, :)
   !$ACC END HOST_DATA
-  
+
+ !$acc end data
   LS2RB (JCOUNT)%IVSET = IVSET(JLEV)
   LS2RB(JCOUNT)%NAME=TRIM(NAME)//TRIM(CLOUT)
   JCOUNT = JCOUNT + 1
@@ -401,9 +410,11 @@ JCOUNT = 1
 
 DO JFLD = LBOUND (ZZ3, 3), UBOUND (ZZ3, 3)
   DO JLEV = LBOUND (ZZ3, 1), UBOUND (ZZ3, 1)
-   !$ACC HOST_DATA USE_DEVICE (ZZ3 (JLEV, :, JFLD)) IF (LDACC)  
+!$acc data present(zz3(jlev,:,jfld))
+   !$ACC HOST_DATA USE_DEVICE (ZZ3 (JLEV, :, JFLD)) IF (LDACC)
     LS3RB(JCOUNT)%VIEW%P => ZZ3 (JLEV, :, JFLD)
     !$ACC END HOST_DATA
+ !$acc end data
     LS3RB(JCOUNT)%NAME=TRIM(NAME)//TRIM(CLOUT)
     LS3RB(JCOUNT)%IVSET = IVSET(JLEV)
     JCOUNT = JCOUNT + 1
@@ -470,24 +481,24 @@ END FUNCTION LS
 SUBROUTINE COPY_DEVICE_1RB (PTR_RHS, PTR_LHS)
 
   REAL(KIND=JPRB) :: PTR_RHS (:), PTR_LHS (:)
-  
+
   !$acc kernels present (PTR_RHS, PTR_LHS)
   PTR_RHS = PTR_LHS
   !$acc end kernels
-  
+
 END SUBROUTINE
 
 SUBROUTINE COPY_DEVICE_2RB (PTR_RHS, PTR_LHS)
 
   REAL(KIND=JPRB) :: PTR_RHS (:,:), PTR_LHS (:,:)
-  
+
   !$acc kernels present (PTR_RHS, PTR_LHS)
   PTR_RHS = PTR_LHS
   !$acc end kernels
-  
+
 END SUBROUTINE
-  
-    
+
+
 
 
 END MODULE FIELD_API_ECTRANS_MOD
