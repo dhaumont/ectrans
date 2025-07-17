@@ -238,7 +238,8 @@ IF (PRESENT(YDFU)) THEN
 
     ! Copy list of 2d views of spectral vector fields into temporary arrays
     DO JFLD=1,IFLDSPVOR
-      IF (YLSPVVOR(JFLD)%IVSET == KPROC) THEN
+    IF (ASSOCIATED(YLSPVVOR(JFLD)%VIEW%P)) THEN
+!      IF (YLSPVVOR(JFLD)%IVSET == KPROC) THEN
         ZZ1_1=>YLSPVVOR(JFLD)%VIEW%P
         ZZ1_2=>YLSPVDIV(JFLD)%VIEW%P
         IF (LDACC) THEN
@@ -268,6 +269,7 @@ IF (PRESENT(YDFU)) THEN
 ELSE
   ! No vector field provided
   IUVG = 0
+  ISPUV = 0
   ZPGPUV=>NULL()
   ZPSPVOR=>NULL()
   ZPSPDIV=>NULL()
