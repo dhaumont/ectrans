@@ -130,14 +130,14 @@ subroutine create_fields_lists(ywflds,ylf, nbsetlev,nbsetsc2)
 
   if(associated(ywflds%spdiv)) ylf%spdiv= [b(ywflds%spdiv,'spdiv',nbsetlev)]
 
-  if(associated(ywflds%u)) ylf%u = [b(ywflds%u,'u')]
-  if(associated(ywflds%v)) ylf%v = [b(ywflds%v,'v')]
+  if(associated(ywflds%u)) ylf%u = [b(ywflds%u,'u',nbsetlev)]
+  if(associated(ywflds%v)) ylf%v = [b(ywflds%v,'v',nbsetlev)]
 
-  if(associated(ywflds%u_ns)) ylf%u_ns=[b(ywflds%u_ns,'u_ns')]
-  if(associated(ywflds%v_ns)) ylf%v_ns=[b(ywflds%v_ns,'v_ns')]
+  if(associated(ywflds%u_ns)) ylf%u_ns=[b(ywflds%u_ns,'u_ns', nbsetlev)]
+  if(associated(ywflds%v_ns)) ylf%v_ns=[b(ywflds%v_ns,'v_ns', nbsetlev)]
 
-  if(associated(ywflds%vor))  ylf%vor = [b(ywflds%vor,'vor')]
-  if(associated(ywflds%div))  ylf%div = [b(ywflds%div,'div')]
+  if(associated(ywflds%vor))  ylf%vor = [b(ywflds%vor,'vor', nbsetlev)]
+  if(associated(ywflds%div))  ylf%div = [b(ywflds%div,'div', nbsetlev)]
 
   if (associated(ywflds%spscalar) .and. associated(ywflds%spscalar2) ) then
     ylf%spscalar = [b(ywflds%spscalar,'spscalar',nbsetlev), b(ywflds%spscalar2,'spscalar2',nbsetsc2)]
@@ -148,27 +148,27 @@ subroutine create_fields_lists(ywflds,ylf, nbsetlev,nbsetsc2)
   endif
 
   if (associated(ywflds%scalar) .and. associated(ywflds%scalar2) ) then
-    ylf%scalar = [b(ywflds%scalar,'scalar'), b(ywflds%scalar2,'scalar2')]
+    ylf%scalar = [b(ywflds%scalar,'scalar', nbsetlev), b(ywflds%scalar2,'scalar2', nbsetsc2)]
   else if (associated(ywflds%scalar)) then
-    ylf%scalar = [b(ywflds%scalar,'scalar')]
+    ylf%scalar = [b(ywflds%scalar,'scalar', nbsetlev)]
   else if (associated(ywflds%scalar2)) then
-    ylf%scalar = [b(ywflds%scalar2,'scalar2')]
+    ylf%scalar = [b(ywflds%scalar2,'scalar2', nbsetsc2)]
   endif
 
   if (associated(ywflds%scalar_ns) .and. associated(ywflds%scalar2_ns) ) then
-    ylf%scalar_ns = [b(ywflds%scalar_ns,'scalar_ns'), b(ywflds%scalar2_ns,'scalar2_ns')]
+    ylf%scalar_ns = [b(ywflds%scalar_ns,'scalar_ns', nbsetlev), b(ywflds%scalar2_ns,'scalar2_ns', nbsetsc2)]
   else if (associated(ywflds%scalar_ns)) then
-    ylf%scalar_ns = [b(ywflds%scalar_ns,'scalar_ns')]
+    ylf%scalar_ns = [b(ywflds%scalar_ns,'scalar_ns', nbsetlev)]
   else if (associated(ywflds%scalar2_ns)) then
-    ylf%scalar_ns = [b(ywflds%scalar2_ns,'scalar2_ns')]
+    ylf%scalar_ns = [b(ywflds%scalar2_ns,'scalar2_ns', nbsetsc2)]
   endif
 
   if (associated(ywflds%scalar_ew) .and. associated(ywflds%scalar2_ew) ) then
-    ylf%scalar_ew = [b(ywflds%scalar_ew,'scalar_ew'), b(ywflds%scalar2_ew,'scalar2_ew')]
+    ylf%scalar_ew = [b(ywflds%scalar_ew,'scalar_ew', nbsetlev), b(ywflds%scalar2_ew,'scalar2_ew', nbsetsc2)]
   else if (associated(ywflds%scalar_ew)) then
-    ylf%scalar_ew = [b(ywflds%scalar_ew,'scalar_ew')]
+    ylf%scalar_ew = [b(ywflds%scalar_ew,'scalar_ew', nbsetlev)]
   else if (associated(ywflds%scalar2_ew)) then
-    ylf%scalar_ew = [b(ywflds%scalar2_ew,'scalar2_ew')]
+    ylf%scalar_ew = [b(ywflds%scalar2_ew,'scalar2_ew', nbsetsc2)]
   endif
  end subroutine create_fields_lists
 
@@ -224,7 +224,7 @@ subroutine synchost_wrapped_fields(ywflds)
 
   type(wrapped_fields),intent(inout) ::ywflds
 
-  write(6,*) "SYNCHOST_WRAPPED)FIELDS"
+    write(6,*) "SYNCHOST_WRAPPED FIELDS BEGIN"
   if (associated(ywflds%spvor))      call ywflds%spvor%sync_host_rdonly()
   if (associated(ywflds%spdiv))      call ywflds%spdiv%sync_host_rdonly()
   if (associated(ywflds%spscalar))   call ywflds%spscalar%sync_host_rdonly()
@@ -241,6 +241,7 @@ subroutine synchost_wrapped_fields(ywflds)
   if (associated(ywflds%scalar2))    call ywflds%scalar2%sync_host_rdonly()
   if (associated(ywflds%scalar2_ew)) call ywflds%scalar2_ew%sync_host_rdonly()
   if (associated(ywflds%scalar2_ns)) call ywflds%scalar2_ns%sync_host_rdonly()
+  write(6,*) "SYNCHOST_WRAPPED FIELDS END"
 end subroutine synchost_wrapped_fields
 
 
