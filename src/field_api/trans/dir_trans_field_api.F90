@@ -200,7 +200,7 @@ IF (PRESENT(YDFU)) THEN
     DO JLEV=1,KFLEVG
       ID = JLEV + (JFLD -1) * KFLEVG
       IF (JFLD .EQ. 1) IVSETUV(JLEV) = YLGVU(ID)%IVSET
-      IF (IVSETUV(JLEV) .NE. YLGVU(ID)%IVSET)  CALL ABOR1("[DIR_TRANS_FIELD_API] ivsetuv inconsistent with ylgvu%ivset")
+      IF (IVSETUV(JLEV) .NE. YLGVV(ID)%IVSET)  CALL ABOR1("[DIR_TRANS_FIELD_API] ivsetuv inconsistent with ylgvv%ivset")
     ENDDO
   ENDDO
 ELSE
@@ -231,11 +231,7 @@ IF (PRESENT(YDFSPSCALAR)) THEN
   ! count the number of fields present on the processor
   IFLDXL = 0
   DO JFLD = 1, IFLDSPSC
-
-    WRITE(6,*) "ASSOCIATED(YLSPVSCALAR(JFLD)%P))", ASSOCIATED(YLSPVSCALAR(JFLD)%P)
-    WRITE(6,*) "YLSPVSCALAR(JFLD)%IVSET", YLSPVSCALAR(JFLD)%IVSET
     IF (ASSOCIATED(YLSPVSCALAR(JFLD)%P)) IFLDXL = IFLDXL + 1
-!   IF (YLSPVSCALAR(JFLD)%IVSET == KPROC) IFLDXL = IFLDXL + 1!
   END DO
 
    ! Allocate temporary scalar field array in spectral space
@@ -255,9 +251,9 @@ IF (PRESENT(YDFSPSCALAR)) THEN
   ! Copy list of scalar fields into temporary arrays (2d copy thanks to field_view)
 
   DO JFLD=1, IFLDXG
-      ZZ2_1=>YLGVSCALAR(JFLD)%P
-      IF (LDACC) THEN
-        CALL COPY_DEVICE_2RB(ZPGP2(:,JFLD,:),ZZ2_1)
+    ZZ2_1=>YLGVSCALAR(JFLD)%P
+    IF (LDACC) THEN
+      CALL COPY_DEVICE_2RB(ZPGP2(:,JFLD,:),ZZ2_1)
     ELSE
       ZPGP2(:,JFLD,:) = YLGVSCALAR(JFLD)%P(:,:)
     ENDIF
@@ -294,10 +290,8 @@ ENDIF
 
 ! copy spectral vorticity and divergence
 IF (IUVG>0) THEN
-
     DO JFLD=1,IFLDSPVOR
       IF (ASSOCIATED(YLSPVVOR(JFLD)%P)) THEN
-!      IF (YLSPVVOR(JFLD)%IVSET == KPROC) THEN
         ZZ1_1=>YLSPVVOR(JFLD)%P
         ZZ1_2=>YLSPVDIV(JFLD)%P
         IF (LDACC) THEN
@@ -316,7 +310,6 @@ ENDIF
    ID = 1
    DO JFLD = 1, IFLDSPSC
       IF (ASSOCIATED(YLSPVSCALAR(JFLD)%P)) THEN
-!      IF (YLSPVSCALAR(JFLD)%IVSET == KPROC) THEN
         ZZ1_1=>YLSPVSCALAR(JFLD)%P
         IF (LDACC) THEN
           CALL COPY_DEVICE_1RB(ZZ1_1,ZPSPSC2(ID,:))
