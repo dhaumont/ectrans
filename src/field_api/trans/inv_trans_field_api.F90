@@ -431,7 +431,7 @@ IF (IUVG>0) THEN
           ID = JLEV + (JFLD -1) * KFLEVG
           ZZ2_1=>YLGVVOR(ID)%P
           IF (LDACC) THEN
-            !$acc kernels present(PGPUV,ZZ2_1)
+            !$acc kernels present(ZPGPUV,ZZ2_1)
              ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
             !$acc end kernels
           ELSE
