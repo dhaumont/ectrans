@@ -138,20 +138,16 @@ IF (PRESENT(YDFU)) THEN
   IF ((SIZE(YDFU)/= SIZE(YDFV)).OR.(SIZE(YDFU)/= SIZE(YDFSPDIV)).OR.(SIZE(YDFU)/= SIZE(YDFSPVOR))) THEN
      CALL ABOR1("[DIR_TRANS_FIELD_API] The vector arrays have inconsitent sizes: YDFU, YDFV, YDFSPDIV, YDFSPVOR")
   ENDIF
-
-  ! Convert list of spectral vector fields into a list of 2d FIELD_VIEW
-  ALLOCATE(YLSPVVOR(LS_COUNT(YDFSPVOR)))
-  ALLOCATE(YLSPVDIV(LS_COUNT(YDFSPDIV)))
   
-  C=LS(YLSPVVOR, YDFSPVOR, LDACC, .FALSE.)
-  C=LS(YLSPVDIV, YDFSPDIV, LDACC, .FALSE.)
+  ! Convert list of spectral vector fields into a list of 2d FIELD_VIEW
+  IFLDSPVOR = LS_COUNT(YDFSPVOR)
 
+  ALLOCATE(YLSPVVOR(IFLDSPVOR))
+  ALLOCATE(YLSPVDIV(IFLDSPVOR))
+  
   ! Convert list of grid-point vector fields into a list of 2d FIELD_VIEW
   ALLOCATE(YLGVU(LG_COUNT(YDFU)))
   ALLOCATE(YLGVV(LG_COUNT(YDFV)))
-  C=LG(YLGVU, YDFU, LDACC, .TRUE.)
-  C=LG(YLGVV, YDFV, LDACC, .TRUE.)
-
   IF ((SIZE (YLGVU) /= SIZE (YLGVV)) .OR. (SIZE (YLSPVVOR) /= SIZE (YLSPVDIV))) THEN
      CALL ABOR1("[DIR_TRANS_FIELD_API] inconsistent number of field_view for vectors")
   ENDIF
@@ -164,7 +160,6 @@ IF (PRESENT(YDFU)) THEN
 
   IUVDIM = 2
 
-  IFLDSPVOR = SIZE(YLSPVVOR)
   ! allocate temporary vector field arrays in spectral space
   ALLOCATE(ZPSPVOR(IFLDSPVOR,KSPEC))
   ALLOCATE(ZPSPDIV(IFLDSPVOR,KSPEC))
@@ -183,6 +178,9 @@ IF (PRESENT(YDFU)) THEN
 
 
   IOFFSET = 0
+  C=LG(YLGVU, YDFU, LDACC, .TRUE.)
+  C=LG(YLGVV, YDFV, LDACC, .TRUE.)
+
 
   ! Copy list of 2d views of grid point vector fields into temporary arrays
     DO JFLD=1,IUVG
@@ -229,20 +227,19 @@ IF (PRESENT(YDFSPSCALAR)) THEN
 
   ! Convert list of spectral scalar fields of any dimension into a list of 2d fields
   ALLOCATE(YLGVSCALAR(LG_COUNT(YDFSCALAR)))
-  C=LG(YLGVSCALAR, YDFSCALAR, LDACC,.TRUE.)
 
-  ALLOCATE(YLSPVSCALAR(LS_COUNT(YDFSPSCALAR)))
-  C=LS(YLSPVSCALAR, YDFSPSCALAR, LDACC,.FALSE.)
-
-  IFLDSPSC = SIZE(YLSPVSCALAR)
   IFLDXG = SIZE(YLGVSCALAR)
 
+  IFLDSPSC = LS_COUNT(YDFSPSCALAR)
+  ALLOCATE(YLSPVSCALAR(IFLDSPSC))
+
+
   ! count the number of fields present on the processor
+  C=LS(YLSPVSCALAR, YDFSPSCALAR, LDACC,.FALSE.)
   IFLDXL = 0
   DO JFLD = 1, IFLDSPSC
     IF (ASSOCIATED(YLSPVSCALAR(JFLD)%P)) IFLDXL = IFLDXL + 1
   END DO
-
    ! Allocate temporary scalar field array in spectral space
   ALLOCATE(ZPSPSC2(IFLDXL,KSPEC))
 
@@ -258,7 +255,7 @@ IF (PRESENT(YDFSPSCALAR)) THEN
   ENDIF
 
   ! Copy list of scalar fields into temporary arrays (2d copy thanks to field_view)
-
+  C=LG(YLGVSCALAR, YDFSCALAR, LDACC,.TRUE.)
   DO JFLD=1, IFLDXG
     ZZ2_1=>YLGVSCALAR(JFLD)%P
     IF (LDACC) THEN
@@ -269,7 +266,7 @@ IF (PRESENT(YDFSPSCALAR)) THEN
       ZPGP2(:,JFLD,:) = ZZ2_1(:,:)
     ENDIF
   ENDDO
-
+  
   DO JFLD=1, IFLDXG
     IVSETSC2(JFLD) = YLGVSCALAR(JFLD)%IVSET
   ENDDO
@@ -301,6 +298,10 @@ ENDIF
 
 ! copy spectral vorticity and divergence
 IF (IUVG>0) THEN
+    C=LS(YLSPVVOR, YDFSPVOR, LDACC, .FALSE.)
+    C=LS(YLSPVDIV, YDFSPDIV, LDACC, .FALSE.)
+
+
     DO JFLD=1,IFLDSPVOR
       IF (ASSOCIATED(YLSPVVOR(JFLD)%P)) THEN
         ZZ1_1=>YLSPVVOR(JFLD)%P
@@ -320,6 +321,7 @@ ENDIF
 
 ! copy spectral scalar fields
  IF (IFLDSPSC > 0) THEN
+    C=LS(YLSPVSCALAR, YDFSPSCALAR, LDACC,.FALSE.)
    ID = 1
    DO JFLD = 1, IFLDSPSC
       IF (ASSOCIATED(YLSPVSCALAR(JFLD)%P)) THEN
