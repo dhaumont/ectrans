@@ -196,8 +196,8 @@ IF (PRESENT(YDFU)) THEN
           ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:) = ZZ2_2(:,:)
           !$acc end kernels
         ELSE
-          ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:) = YLGVU(ID)%P(:,:)
-          ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:) = YLGVV(ID)%P(:,:)
+          ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:) = ZZ2_1(:,:)
+          ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:) = ZZ2_2(:,:)
         ENDIF
       ENDDO
     ENDDO
@@ -266,7 +266,7 @@ IF (PRESENT(YDFSPSCALAR)) THEN
       ZPGP2(:,JFLD,:) = ZZ2_1(:,:)
       !$acc end kernels
     ELSE
-      ZPGP2(:,JFLD,:) = YLGVSCALAR(JFLD)%P(:,:)
+      ZPGP2(:,JFLD,:) = ZZ2_1(:,:)
     ENDIF
   ENDDO
 
@@ -311,8 +311,8 @@ IF (IUVG>0) THEN
           ZZ1_2(:) = ZPSPDIV(JFLD,:)
           !$acc end kernels
         ELSE
-          YLSPVVOR(JFLD)%P(:) = ZPSPVOR(JFLD,:)
-          YLSPVDIV(JFLD)%P(:) = ZPSPDIV(JFLD,:)
+          ZZ1_1(:) = ZPSPVOR(JFLD,:)
+          ZZ1_2(:) = ZPSPDIV(JFLD,:)
         ENDIF
       ENDIF
     ENDDO
@@ -329,7 +329,7 @@ ENDIF
            ZZ1_1(:) = ZPSPSC2(ID,:)
           !$acc end kernels
         ELSE
-           YLSPVSCALAR(JFLD)%P(:) = ZPSPSC2(ID,:)
+           ZZ1_1(:) = ZPSPSC2(ID,:)
         ENDIF
         ID = ID + 1
       ENDIF

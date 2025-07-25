@@ -250,11 +250,13 @@ IF (PRESENT(YDFU)) THEN
         ZZ1_1=>YLSPVVOR(JFLD)%P
         ZZ1_2=>YLSPVDIV(JFLD)%P
         IF (LDACC) THEN
-          CALL COPY_DEVICE_1RB(ZPSPVOR(JFLD,:),ZZ1_1)
-          CALL COPY_DEVICE_1RB(ZPSPDIV(JFLD,:),ZZ1_2)
+          !$acc kernels present(ZPSPVOR,ZPSPDIV,ZZ1_1,ZZ1_2)
+          ZPSPVOR(JFLD,:) = ZZ1_1(:)
+          ZPSPDIV(JFLD,:) = ZZ1_2(:)
+          !$acc end kernels
         ELSE
-     	   ZPSPVOR(JFLD,:) = YLSPVVOR(JFLD)%P(:)
-           ZPSPDIV(JFLD,:) = YLSPVDIV(JFLD)%P(:)
+     	     ZPSPVOR(JFLD,:) = ZZ1_1(:)
+           ZPSPDIV(JFLD,:) = ZZ1_2(:)
         ENDIF
       ENDIF
     ENDDO
@@ -341,9 +343,11 @@ IF (PRESENT(YDFSPSCALAR)) THEN
     IF (ASSOCIATED(YLSPVSCALAR(JFLD)%P)) THEN
       ZZ1_1=>YLSPVSCALAR(JFLD)%P
       IF (LDACC) THEN
-        CALL COPY_DEVICE_1RB(ZPSPSC2(ID,:),ZZ1_1)
+        !$acc kernels present(ZPSPSC2,ZZ1_1)
+        ZPSPSC2(ID,:) = ZZ1_1(:)
+        !$acc end kernels
       ELSE
-        ZPSPSC2(ID,:) = YLSPVSCALAR(JFLD)%P(:)
+        ZPSPSC2(ID,:) = ZZ1_1(:)
       ENDIF
       ID = ID + 1
     ENDIF
@@ -427,9 +431,11 @@ IF (IUVG>0) THEN
           ID = JLEV + (JFLD -1) * KFLEVG
           ZZ2_1=>YLGVVOR(ID)%P
           IF (LDACC) THEN
-            CALL COPY_DEVICE_2RB(ZZ2_1,ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:))
+            !$acc kernels present(PGPUV,ZZ2_1)
+             ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+            !$acc end kernels
           ELSE
-             YLGVVOR(ID)%P(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+            ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
           ENDIF
         ENDDO
       ENDDO
@@ -445,9 +451,11 @@ IF (IUVG>0) THEN
         ID = JLEV + (JFLD -1) * KFLEVG
         ZZ2_1=>YLGVDIV(ID)%P
         IF (LDACC) THEN
-          CALL COPY_DEVICE_2RB(ZZ2_1,ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:))
+          !$acc kernels present(ZPGPUV,ZZ2_1)
+          ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+          !$acc end kernels
         ELSE
-          YLGVDIV(ID)%P(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+          ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
         ENDIF
         ENDDO
       ENDDO
@@ -463,11 +471,13 @@ IF (IUVG>0) THEN
       ZZ2_1=>YLGVU(ID)%P
       ZZ2_2=>YLGVV(ID)%P
       IF (LDACC) THEN
-        CALL COPY_DEVICE_2RB(ZZ2_1,ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:))
-        CALL COPY_DEVICE_2RB(ZZ2_2,ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:))
+        !$acc kernels present(ZPGPUV,ZZ2_1,ZZ2_2)
+        ZZ2_1(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
+        ZZ2_2(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
+        !$acc end kernels
       ELSE
-        YLGVU(ID)%P(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
-        YLGVV(ID)%P(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
+        ZZ2_1(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
+        ZZ2_2(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
       ENDIF
     ENDDO
   ENDDO
@@ -482,11 +492,13 @@ IF (IUVG>0) THEN
         ZZ2_1=>YLGVU_NS(ID)%P
         ZZ2_2=>YLGVV_NS(ID)%P
         IF (LDACC) THEN
-          CALL COPY_DEVICE_2RB(ZZ2_1,ZPGPUV(:,JLEV,JFLD+IUVG*IOFFSET,:))
-          CALL COPY_DEVICE_2RB(ZZ2_2, ZPGPUV(:,JLEV,JFLD+IUVG*(IOFFSET+1),:))
+          !$acc kernels present(ZPGPUV,ZZ2_1,ZZ2_2)
+          ZZ2_1(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
+          ZZ2_2(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
+          !$acc end kernels
         ELSE
-          YLGVU_NS(ID)%P(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
-          YLGVV_NS(ID)%P(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
+          ZZ2_1(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
+          ZZ2_2(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
         ENDIF
       ENDDO
     ENDDO
@@ -500,9 +512,11 @@ IF (IFLDXG > 0) THEN
     DO JFLD=1, IFLDXG
       ZZ2_1=>YLGVSCALAR(JFLD)%P(:,:)
       IF (LDACC) THEN
-        CALL COPY_DEVICE_2RB(ZZ2_1(:,:),ZPGP2(:,JFLD,:))
+        !$acc kernels present(ZPGP2,ZZ2_1)
+        ZZ2_1(:,:) = ZPGP2(:,JFLD,:)
+        !$acc end kernels
       ELSE
-       YLGVSCALAR(JFLD)%P(:,:) = ZPGP2(:,JFLD,:)
+        ZZ2_1(:,:) = ZPGP2(:,JFLD,:)
       ENDIF
     ENDDO
 
@@ -514,11 +528,13 @@ IF (IFLDXG > 0) THEN
         ZZ2_1=>YLGVSCALAR_NS(JFLD)%P
         ZZ2_2=>YLGVSCALAR_EW(JFLD)%P
         IF (LDACC) THEN
-          CALL COPY_DEVICE_2RB(ZZ2_1,ZPGP2(:, JFLD+IFLDXG,:))
-          CALL COPY_DEVICE_2RB(ZZ2_1,ZPGP2(:, JFLD+(2*IFLDXG),:))
+          !$acc kernels present(ZPGP2,ZZ2_1,ZZ2_2)
+          ZZ2_1(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
+          ZZ2_2(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
+          !$acc end kernels
         ELSE
-         YLGVSCALAR_NS(JFLD)%P(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
-         YLGVSCALAR_EW(JFLD)%P(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
+          ZZ2_1(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
+          ZZ2_2(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
         ENDIF
       ENDDO
 
