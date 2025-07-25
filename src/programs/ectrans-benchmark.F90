@@ -52,7 +52,8 @@ USE ectrans_field_api_helper, only : wrapped_fields, fields_lists, &
                                    & wrap_benchmark_fields, create_fields_lists, &
                                    & delete_wrapped_fields,delete_fields_lists, &
                                    & output_wrapped_fields, output_fields_lists, &
-                                   & nullify_wrapped_fields, synchost_wrapped_fields
+                                   & nullify_wrapped_fields, synchost_rdonly_wrapped_fields, &
+                                   & synchost_rdwr_wrapped_fields
 #endif
 
 implicit none
@@ -677,6 +678,7 @@ do jstep = 1, iters+iters_warmup
 
   if (lfield_api) then
 #if USE_FIELD_API
+    call synchost_rdwr_wrapped_fields(ywflds)
     CALL inv_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
                             & ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
                             & ydfu_ns=ylf%u_ns, ydfv_ns=ylf%v_ns, &
@@ -684,6 +686,7 @@ do jstep = 1, iters+iters_warmup
                             & ydfvor=ylf%vor, ydfdiv=ylf%div, &
                             & kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,&
                             & kproc=myproc, ldacc=llacc)
+    call synchost_rdonly_wrapped_fields(ywflds)
 #else
   call abor1('ectrans_benchmark: No field API support')
 #endif
@@ -718,10 +721,6 @@ endif
   call gstats(4,1)
 
 if (ldump_checksums) then
-
-#if USE_FIELD_API
-    if (lfield_api) call synchost_wrapped_fields(ywflds)
-#endif 
     ! Remove trash at end of last block
     iend = ngptot - nproma * (ngpblks - 1)
 
@@ -764,12 +763,14 @@ endif
 
   if (lfield_api) then
 #if USE_FIELD_API
-        call dir_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
-                                & ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
-                                & kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,&
-                                & kproc=myproc, ldacc=llacc)
+    call synchost_rdwr_wrapped_fields(ywflds)
+    call dir_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
+                            & ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
+                            & kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,&
+                            & kproc=myproc, ldacc=llacc)
+    call synchost_rdonly_wrapped_fields(ywflds)
 #else
-      call abor1('ectrans_benchmark: No field API support')
+    call abor1('ectrans_benchmark: No field API support')
 #endif
   else
   if (lvordiv) then
@@ -799,10 +800,6 @@ endif
 
 if (ldump_checksums) then
   write (checksums_filename,'(A)') trim(cchecksums_path)//'_dir_trans.checksums'
-
-#if USE_FIELD_API
-  if (lfield_api) call synchost_wrapped_fields(ywflds)
-#endif
 
   call dump_checksums(filename = checksums_filename, noutdump = noutdump,               &
                     & jstep = jstep, myproc = myproc, nproma = nproma, ngptotg=ngptotg, &
