@@ -531,9 +531,9 @@ if (lvordiv) then
 endif
 if (luvders) then
   jbegin_uder_EW  = jend_uv + 1
-  jend_uder_EW    = jbegin_uder_EW + 1
+  jend_uder_EW    = jbegin_uder_EW
   jbegin_vder_EW  = jend_uder_EW + 1
-  jend_vder_EW    = jbegin_vder_EW + 1
+  jend_vder_EW    = jbegin_vder_EW
 else
   jbegin_uder_EW = jend_uv
   jend_uder_EW   = jend_uv
@@ -678,7 +678,6 @@ do jstep = 1, iters+iters_warmup
 
   if (lfield_api) then
 #if USE_FIELD_API
-    call synchost_rdwr_wrapped_fields(ywflds)
     CALL inv_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
                             & ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
                             & ydfu_ns=ylf%u_ns, ydfv_ns=ylf%v_ns, &
@@ -763,7 +762,7 @@ endif
 
   if (lfield_api) then
 #if USE_FIELD_API
-    call synchost_rdwr_wrapped_fields(ywflds)
+!    call synchost_rdwr_wrapped_fields(ywflds)
     call dir_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
                             & ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
                             & kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,&
@@ -1574,6 +1573,8 @@ subroutine dump_checksums(filename, noutdump,                      &
         if (myproc == 1) then
             call crc64 (gfld (:, :), int (size (gfld (:, :)) * kind (gfld), 8), icrc)
             write (noutdump, '(a," (",i0,", ",i0,") = ",z16.16)') "zgmv", jlev, jfld, icrc
+
+            write(noutdump,*) gfld(1:10,1)
         endif
       enddo
     enddo
@@ -1586,6 +1587,7 @@ subroutine dump_checksums(filename, noutdump,                      &
         if (myproc == 1) then
             call crc64 (gfld (:, :), int (size (gfld (:, :)) * kind (gfld), 8), icrc)
             write (noutdump, '(a," (",i0,") = ",z16.16)') "zgmvs", jfld, icrc
+            write(noutdump,*) gfld(1:10,1)
         endif
     enddo
   endif
@@ -1598,6 +1600,7 @@ subroutine dump_checksums(filename, noutdump,                      &
         if (myproc == 1) then
           call crc64 (gspfld (:, :), int (size (gspfld (:, :)) * kind (gspfld), 8), icrc)
           write (noutdump, '(a," (",i0,", ",i0,") = ",z16.16)') "sp3d", jlev, jfld, icrc
+          write(noutdump,*) gspfld(1,1:10)
         endif
       enddo
     enddo
@@ -1610,6 +1613,7 @@ subroutine dump_checksums(filename, noutdump,                      &
       if (myproc == 1) then
         call crc64 (gspfld (:, :), int (size (gspfld (:, :)) * kind (gspfld), 8), icrc)
         write (noutdump, '(a," (",i0,") = ",z16.16)') "zspc2", jfld, icrc
+        write(noutdump,*) gspfld(1,1:10)
       endif
     enddo
   endif

@@ -12,13 +12,13 @@ type wrapped_fields
 
 ! Set of fields for spectral transform
 
-  class (field_3rb), pointer :: spscalar     ! spectral scalar fields
-  class (field_2rb), pointer :: spscalar2    ! spectral surfacic scalar fields
+  class (field_3rb), pointer :: spscalar      ! spectral scalar fields
+  class (field_2rb), pointer :: spscalar2     ! spectral surfacic scalar fields
   class (field_2rb), pointer :: spvor, spdiv  ! spectral vorticity and divergence
 
   class (field_3rb), pointer :: vor, div      ! grid-point vorticity and divergence
   class (field_3rb), pointer :: u, v          ! grid-point u and v fields
-  class (field_3rb), pointer :: u_ns, v_ns      ! grid-point u and derivatives
+  class (field_4rb), pointer :: u_ns, v_ns    ! grid-point u and derivatives
 
   class (field_4rb), pointer :: scalar       ! grid-point scalar fields
   class (field_4rb), pointer :: scalar_ew    ! grid-point scalar fields derivatives ew
@@ -99,10 +99,10 @@ subroutine wrap_benchmark_fields(ywflds, lvordiv, lscders, luvders,&
 
   ! grid-point vector derivatives
   if (luvders) then
-    call field_new(ywflds%u_ns, data=zgmv(:,:,jbegin_uder_ew,:))
-    call field_new(ywflds%v_ns, data=zgmv(:,:,jend_uder_ew,:))
+     if (jend_uder_ew>0 .and. jend_uder_ew>=jbegin_uder_ew ) call field_new(ywflds%u_ns, data=zgmv(:,:,jbegin_uder_ew:jend_uder_ew,:))
+     if (jend_vder_ew>0 .and. jend_vder_ew>=jbegin_vder_ew ) call field_new(ywflds%v_ns, data=zgmv(:,:,jbegin_vder_ew:jend_vder_ew,:))
   endif
-
+ 
   ! grid-point scalar fields
   if (jend_sc>0 .and. jend_sc>=jbegin_sc ) call field_new(ywflds%scalar,  data=zgmv(:,:,jbegin_sc:jend_sc,:))
 
