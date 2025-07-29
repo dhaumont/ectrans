@@ -1573,8 +1573,6 @@ subroutine dump_checksums(filename, noutdump,                      &
         if (myproc == 1) then
             call crc64 (gfld (:, :), int (size (gfld (:, :)) * kind (gfld), 8), icrc)
             write (noutdump, '(a," (",i0,", ",i0,") = ",z16.16)') "zgmv", jlev, jfld, icrc
-
-            write(noutdump,*) gfld(1:10,1)
         endif
       enddo
     enddo
@@ -1587,7 +1585,6 @@ subroutine dump_checksums(filename, noutdump,                      &
         if (myproc == 1) then
             call crc64 (gfld (:, :), int (size (gfld (:, :)) * kind (gfld), 8), icrc)
             write (noutdump, '(a," (",i0,") = ",z16.16)') "zgmvs", jfld, icrc
-            write(noutdump,*) gfld(1:10,1)
         endif
     enddo
   endif
@@ -1600,7 +1597,6 @@ subroutine dump_checksums(filename, noutdump,                      &
         if (myproc == 1) then
           call crc64 (gspfld (:, :), int (size (gspfld (:, :)) * kind (gspfld), 8), icrc)
           write (noutdump, '(a," (",i0,", ",i0,") = ",z16.16)') "sp3d", jlev, jfld, icrc
-          write(noutdump,*) gspfld(1,1:10)
         endif
       enddo
     enddo
@@ -1613,7 +1609,6 @@ subroutine dump_checksums(filename, noutdump,                      &
       if (myproc == 1) then
         call crc64 (gspfld (:, :), int (size (gspfld (:, :)) * kind (gspfld), 8), icrc)
         write (noutdump, '(a," (",i0,") = ",z16.16)') "zspc2", jfld, icrc
-        write(noutdump,*) gspfld(1,1:10)
       endif
     enddo
   endif
