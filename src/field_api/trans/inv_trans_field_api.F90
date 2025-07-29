@@ -254,6 +254,17 @@ IF (PRESENT(YDFU)) THEN
         ENDIF
       ENDIF
     ENDDO
+  if (LDACC)  THEN
+    !$ACC UPDATE SELF(ZPSPVOR,ZPSPDIV)
+ endif
+ 
+   WRITE(*,*) "INV_TRANS ZPSPVOR"
+   CALL WRITE_SUM2(ZPSPVOR,LDACC)
+
+   WRITE(*,*) "INV_TRANS ZPSPDIV"
+   CALL WRITE_SUM2(ZPSPDIV,LDACC)
+
+
 
   ! Initialize b-set for vector fields data
   C=LG(YLGVU, YDFU, LDACC, .TRUE.)
@@ -337,8 +348,14 @@ IF (PRESENT(YDFSPSCALAR)) THEN
       ID = ID + 1
     ENDIF
   ENDDO
+  
+  if (LDACC) THEN 
+    !$ACC UPDATE SELF(ZPSPSC2)
+  endif
+  WRITE(*,*) "INV_TRANS ZPSPSC2"
+   CALL WRITE_SUM2(ZPSPSC2,LDACC)
 
-  ! compute ´b-set´ for scalar-fields
+ ! compute ´b-set´ for scalar-fields
   C=LG(YLGVSCALAR,YDFSCALAR, LDACC,.TRUE.)
    DO JFLD=1, IFLDXG
     IVSETSC2(JFLD) = YLGVSCALAR(JFLD)%IVSET
@@ -392,14 +409,20 @@ ENDIF
 ! 4. Copy back temporary array data into grid-point fields
 
 ! remove garbage at the end of arrays
-
 IEND = KGPTOT - KPROMA * (KGPBLKS - 1)
-
 IF (LDACC) THEN
-  !$ACC KERNELS PRESENT(ZPGPUV, ZPGP2)
-  IF (IUVG>0) ZPGPUV (IEND+1:, :, :, KGPBLKS) = 0
-  IF (IFLDXG>0)  ZPGP2 (IEND+1:, :, KGPBLKS) = 0
-  !$ACC END KERNELS
+  IF (IUVG>0) THEN
+    !$ACC UPDATE DEVICE(ZPGPUV)
+    !$ACC KERNELS PRESENT(ZPGPUV)
+    ZPGPUV (IEND+1:, :, :, KGPBLKS) = 0
+    !$ACC END KERNELS
+  ENDIF
+  IF (IFLDXG>0) THEN
+    !$ACC UPDATE DEVICE(ZPGP2)
+    !$ACC KERNELS PRESENT(ZPGP2)
+     ZPGP2 (IEND+1:, :, KGPBLKS) = 0
+    !$ACC END KERNELS
+  ENDIF
 ELSE
   IF (IUVG>0) ZPGPUV (IEND+1:, :, :, KGPBLKS) = 0
   IF (IFLDXG>0)  ZPGP2 (IEND+1:, :, KGPBLKS) = 0
@@ -408,6 +431,9 @@ ENDIF
 ! copy vector fields
 
 IF (IUVG>0) THEN
+   WRITE(*,*) "INV_TRANS ZPGUV"
+   CALL WRITE_SUM4(ZPGPUV,LDACC)
+
   IOFFSET = 0
   ! copy vorticity
   IF (LLVORGP) THEN
@@ -500,6 +526,12 @@ ENDIF
 ENDIF
 
 IF (IFLDXG > 0) THEN
+     WRITE(*,*) "INV_TRANS ZPGP2"
+   CALL WRITE_SUM3(ZPGP2,LDACC)
+
+
+
+
   ! copy spectral scalar fields
     C=LG(YLGVSCALAR,YDFSCALAR, LDACC,.FALSE.)
     DO JFLD=1, IFLDXG

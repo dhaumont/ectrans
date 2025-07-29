@@ -286,7 +286,7 @@ END FUNCTION LG
 FUNCTION LG_COUNT(YLFL)
   TYPE (FIELD_BASIC_PTR) :: YLFL (:)
   INTEGER :: LG_COUNT
-  TYPE (GRID_VIEW) :: DUMMY (0) 
+  TYPE (GRID_VIEW) :: DUMMY (0)
   LG_COUNT = LG(DUMMY,YLFL,.FALSE.,.FALSE.)
 END FUNCTION LG_COUNT
 
@@ -324,7 +324,7 @@ ENDIF
 IF (SIZE(LS1RBV) /= 1 ) CALL ABOR1("Error - incorrect size for LS1RBV")
 LS1RBV(1)%P => ZZ1(:)
 LS1RBV(1)%IVSET = IVSET(1)
-LS1RBV(1)%NAME=TRIM(NAME)//TRIM(CLOUT)
+
 
 END SUBROUTINE
 
@@ -432,7 +432,7 @@ REAL(KIND=JPRB), POINTER :: ZZ1 (:)
 ! First pass: determination of the output size list
 ! Second pass: allocate and instanciate the SPEC_VIEW types
 DO JPASS = 1,2
-  
+
   IOFF = 0
   ILEN = -1
 
@@ -462,7 +462,7 @@ DO JPASS = 1,2
     IOFF = IOFF + ILEN
 
   ENDDO
-  
+
   IF (SIZE(LSV) == 0 .AND.JPASS == 1) THEN
     RETURN
   ELSE
@@ -477,9 +477,138 @@ END FUNCTION LS
 FUNCTION LS_COUNT(YLFL)
   TYPE (FIELD_BASIC_PTR) :: YLFL (:)
   INTEGER :: LS_COUNT
-  TYPE (SPEC_VIEW) :: DUMMY (0) 
+  TYPE (SPEC_VIEW) :: DUMMY (0)
   LS_COUNT = LS(DUMMY,YLFL,.FALSE.,.FALSE.)
 END FUNCTION LS_COUNT
+
+SUBROUTINE WRITE_SUM2(A, LDACC)
+   REAL(KIND=JPRB) :: A(:,:)
+   LOGICAL :: LDACC
+
+   REAL(KIND=JPRB) :: S
+
+   INTEGER :: I,J
+   INTEGER :: KI, KJ
+   WRITE(*,*) "SHAPE", SHAPE(A)
+   WRITE(*,*) "[CPU]"
+   WRITE(*,*) SUM(ABS(A(:,:)))
+
+   IF (LDACC) THEN
+     KI = SIZE(A,1)
+     KJ = SIZE(A,2)
+     S = 0
+     DO I=1,KI
+       DO J=1, KJ
+         S = S + ABS(A(I,J))
+       enddo
+     enddo
+     write(*,*) s
+
+     WRITE(*,*) "[GPU]"
+     S = 0
+     !$acc parallel loop collapse(2) present(A) reduction(+:S) copy(s)
+     DO I=1,KI
+       DO J=1, KJ
+         S = S + ABS(A(I,J))
+       enddo
+     enddo
+     !$acc end parallel
+     write(*,*) s
+   ENDIF
+
+
+END SUBROUTINE WRITE_SUM2
+
+SUBROUTINE WRITE_SUM3(A, LDACC)
+   REAL(KIND=JPRB) :: A(:,:,:)
+   LOGICAL :: LDACC
+
+   REAL(KIND=JPRB) :: S
+
+   INTEGER :: I,J,K
+   INTEGER :: KI, KJ,KK
+   WRITE(*,*) "SHAPE", SHAPE(A)
+   WRITE(*,*) "[CPU]"
+   WRITE(*,*) SUM(ABS(A(:,:,:)))
+
+   IF (LDACC) THEN
+     KI = SIZE(A,1)
+     KJ = SIZE(A,2)
+     KK = SIZE(A,3)
+     S = 0
+     DO I=1,KI
+       DO J=1, KJ
+         DO K=1, KK
+           S = S + ABS(A(I,J,K))
+         enddo
+       enddo
+     enddo
+     write(*,*) s
+
+     WRITE(*,*) "[GPU]"
+     S = 0
+     !$acc parallel loop collapse(3) present(A) reduction(+:S) copy(s)
+     DO I=1,KI
+       DO J=1, KJ
+         DO K=1,KK
+         S = S + ABS(A(I,J,K))
+         enddo
+       enddo
+     enddo
+     !$acc end parallel
+     write(*,*) s
+   ENDIF
+
+
+END SUBROUTINE WRITE_SUM3
+
+SUBROUTINE WRITE_SUM4(A, LDACC)
+   REAL(KIND=JPRB) :: A(:,:,:,:)
+   LOGICAL :: LDACC
+
+   REAL(KIND=JPRB) :: S
+
+   INTEGER :: I,J,K,L
+   INTEGER :: KI, KJ,KK,KL
+   WRITE(*,*) "SHAPE", SHAPE(A)
+   WRITE(*,*) "[CPU]"
+   WRITE(*,*) SUM(ABS(A(:,:,:,:)))
+
+   IF (LDACC) THEN
+     KI = SIZE(A,1)
+     KJ = SIZE(A,2)
+     KK = SIZE(A,3)
+     KL = SIZE(A,4)
+     S = 0
+     DO I=1,KI
+       DO J=1, KJ
+         DO K=1, KK
+         DO L=1, KL
+           S = S + ABS(A(I,J,K,L))
+         enddo
+       enddo
+     enddo
+     enddo
+     write(*,*) s
+
+     WRITE(*,*) "[GPU]"
+     S = 0
+     !$acc parallel loop collapse(3) present(A) reduction(+:S) copy(s)
+     DO I=1,KI
+       DO J=1, KJ
+         DO K=1,KK
+         DO L=1, KL
+         S = S + ABS(A(I,J,K,L))
+         enddo
+       enddo
+     enddo
+     enddo
+     !$acc end parallel
+     write(*,*) s
+   ENDIF
+
+
+END SUBROUTINE WRITE_SUM4
 
 END MODULE FIELD_API_ECTRANS_MOD
 
