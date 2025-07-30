@@ -501,6 +501,9 @@ nullify(zspdiv)
 nullify(zspsc3a)
 call allocator%allocate('sp3d',   sp3d,   [nflevl,nspec2,2+nfld])
 call allocator%allocate('zspsc2', zspsc2, [1,nspec2])
+!sp3d(:,:,:) = 0
+!zspsc2(:,:) = 0 
+
 
 call initialize_spectral_arrays(nsmax, zspsc2, sp3d)
 
@@ -566,6 +569,10 @@ zgpuv => zgmv(:,:,1:jend_vder_EW,:)
 zgp3a => zgmv(:,:,jbegin_sc:jend_scder_EW,:)
 zgp2  => zgmvs(:,:,:)
 
+!zgmv(:,:,:,:) = 0
+!zgmvs(:,:,:) = 0 
+
+ 
 #if USE_FIELD_API
 if (lfield_api) then
   call nullify_wrapped_fields(ywflds)
@@ -666,6 +673,10 @@ do jstep = 1, iters+iters_warmup
     ztloop = timef()
   endif
 
+  ! clear array to make sure they will be computed and ensure reproducibility between runs
+!  write(*,*) "zgmv", zgmv
+!  write(*,*) "zgmvs", zgmvs
+
   call gstats(3,0)
   ztstep(jstep) = timef()
 
@@ -676,7 +687,7 @@ do jstep = 1, iters+iters_warmup
   ztstep1(jstep) = timef()
   call gstats(4,0)
 
-  if (lfield_api) then
+ if (lfield_api) then
 #if USE_FIELD_API
     CALL inv_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
                             & ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
@@ -755,6 +766,9 @@ endif
   !=================================================================================================
   ! Do direct transform
   !=================================================================================================
+  ! clear array to make sure they will be computed and ensure reproducibility between runs
+!  write(*,*) "sp3d", sp3d(:,:,:)
+!  write(*,*) "zspsc2", zspsc2(:,:)
 
   ztstep2(jstep) = timef()
 
