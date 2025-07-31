@@ -147,6 +147,7 @@ integer(kind=jpim) :: ntrace_stats = 0
 integer(kind=jpim) :: nprnt_stats = 1
 integer(kind=jpim) :: nopt_mem_tr = 0
 
+real(kind=jprb) :: clamp_epsilon
 character(len=256) :: checksums_filename
 
 ! The multiplier of the machine epsilon used as a tolerance for correctness checking
@@ -278,6 +279,12 @@ endif
 nthread = oml_max_threads()
 
 call dr_hook_init()
+IF (JPRB == JPRD) THEN
+  clamp_epsilon = 1e-14
+else
+  clamp_epsilon = 1e-12
+endif
+
 
 !===================================================================================================
 
@@ -809,6 +816,11 @@ endif
   endif
 endif
   call gstats(5,1)
+
+  WRITE(*,*)"clamp_epsilon = ", clamp_epsilon
+if (associated(zspsc2)) where (abs(zspsc2) < clamp_epsilon)zspsc2 = 0
+if (associated(sp3d)) where (abs(sp3d) < clamp_epsilon)sp3d = 0
+
 
 
 if (ldump_checksums) then

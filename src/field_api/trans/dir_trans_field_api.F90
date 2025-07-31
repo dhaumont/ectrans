@@ -105,19 +105,12 @@ INTEGER(KIND=JPIM) :: JLEV      ! Level counter
 INTEGER(KIND=JPIM) :: JFLD      ! Field counter
 INTEGER(KIND=JPIM)          :: C
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
-real(kind=jprb) :: clamp_epsilon
 
 #include "dir_trans.h"
 #include "abor1.intfb.h"
 
 !     ------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('DIR_TRANS_FIELD_API',0,ZHOOK_HANDLE)
-
-IF (JPRB == JPRD) THEN
-  clamp_epsilon = 1e-14
-else
-  clamp_epsilon = 1e-12
-endif
 
 ISPUV = 0
 IFLDXG  = 0
@@ -305,9 +298,6 @@ ELSE IF (ASSOCIATED(ZPGPUV)) THEN
 	CALL DIR_TRANS(PSPVOR = ZPSPVOR,PSPDIV = ZPSPDIV,PGPUV = ZPGPUV,KVSETUV = IVSETUV, &
 	             & KPROMA = KPROMA)
 ENDIF
-WRITE(*,*)"clamp_epsilon = ", clamp_epsilon
-if (associated(zpspsc2)) where (abs(zpspsc2) < clamp_epsilon)zpspsc2 = 0
-
 ! 4. Copy back temporary array data into spectral fields
 
 ! copy spectral vorticity and divergence
