@@ -46,7 +46,7 @@ SUBROUTINE DIR_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
 USE FIELD_API_BASIC_TYPE_MOD, ONLY: FIELD_BASIC_PTR
 USE FIELD_API_ECTRANS_MOD
-USE PARKIND1  ,ONLY : JPIM     ,JPRB
+USE PARKIND1  ,ONLY : JPIM,JPRB, JPRD
 
 IMPLICIT NONE
 
@@ -105,12 +105,19 @@ INTEGER(KIND=JPIM) :: JLEV      ! Level counter
 INTEGER(KIND=JPIM) :: JFLD      ! Field counter
 INTEGER(KIND=JPIM)          :: C
 REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+real(kind=jprb) :: clamp_epsilon
 
 #include "dir_trans.h"
 #include "abor1.intfb.h"
 
 !     ------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('DIR_TRANS_FIELD_API',0,ZHOOK_HANDLE)
+
+IF (JPRB == JPRD) THEN
+  clamp_epsilon = 1e-14
+else
+  clamp_epsilon = 1e-12
+endif
 
 ISPUV = 0
 IFLDXG  = 0
@@ -298,6 +305,8 @@ ELSE IF (ASSOCIATED(ZPGPUV)) THEN
 	CALL DIR_TRANS(PSPVOR = ZPSPVOR,PSPDIV = ZPSPDIV,PGPUV = ZPGPUV,KVSETUV = IVSETUV, &
 	             & KPROMA = KPROMA)
 ENDIF
+WRITE(*,*)"clamp_epsilon = ", clamp_epsilon
+if (associated(zpspsc2)) where (abs(zpspsc2) < clamp_epsilon)zpspsc2 = 0
 
 ! 4. Copy back temporary array data into spectral fields
 
