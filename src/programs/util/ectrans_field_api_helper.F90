@@ -33,13 +33,13 @@ type fields_lists
 
 ! List of field lists that will be used as parameter to inv_trans_field_api and dir_trans_field_api
 
-  type (field_basic_ptr), allocatable:: u (:), v (:)                ! grid-point u and v fields
-  type (field_basic_ptr), allocatable:: scalar (:)                  ! grid-point scalar fields
-  type (field_basic_ptr), allocatable:: spvor (:), spdiv (:)        ! spectral vorticity and divergence
-  type (field_basic_ptr), allocatable:: vor (:), div (:)            ! grid-point vorticity and diverence
-  type (field_basic_ptr), allocatable:: spscalar (:)                ! spectral scalar fields
-  type (field_basic_ptr), allocatable:: u_ns (:), v_ns (:)            ! grid-point u and derivatives we
-  type (field_basic_ptr), allocatable:: scalar_ns (:), scalar_ew (:)  ! grid space scalar derivatives ns and ew
+  type (field_basic_ptr), allocatable :: u (:), v (:)                ! grid-point u and v fields
+  type (field_basic_ptr), allocatable :: scalar (:)                  ! grid-point scalar fields
+  type (field_basic_ptr), allocatable :: spvor (:), spdiv (:)        ! spectral vorticity and divergence
+  type (field_basic_ptr), allocatable :: vor (:), div (:)            ! grid-point vorticity and diverence
+  type (field_basic_ptr), allocatable :: spscalar (:)                ! spectral scalar fields
+  type (field_basic_ptr), allocatable :: u_ns (:), v_ns (:)            ! grid-point u and derivatives we
+  type (field_basic_ptr), allocatable :: scalar_ns (:), scalar_ew (:)  ! grid space scalar derivatives ns and ew
   end type fields_lists
 
 contains
@@ -178,22 +178,22 @@ subroutine create_fields_lists(ywflds,ylf, nbsetlev,nbsetsc2)
 
   type(wrapped_fields), intent(inout) :: ywflds
 
-  if(associated(ywflds%spvor)) call field_delete(ywflds%spvor)
-  if(associated(ywflds%spdiv)) call field_delete(ywflds%spdiv)
-  if(associated(ywflds%spscalar)) call field_delete(ywflds%spscalar)
-  if(associated(ywflds%spscalar2)) call field_delete(ywflds%spscalar2)
+  if(associated(ywflds%spvor))      call field_delete(ywflds%spvor)
+  if(associated(ywflds%spdiv))      call field_delete(ywflds%spdiv)
+  if(associated(ywflds%spscalar))   call field_delete(ywflds%spscalar)
+  if(associated(ywflds%spscalar2))  call field_delete(ywflds%spscalar2)
 
-  if(associated(ywflds%u)) call field_delete(ywflds%u)
-  if(associated(ywflds%v)) call field_delete(ywflds%v)
-  if(associated(ywflds%u_ns)) call field_delete(ywflds%u_ns)
-  if(associated(ywflds%v_ns)) call field_delete(ywflds%v_ns)
-  if(associated(ywflds%scalar)) call field_delete(ywflds%scalar)
-  if(associated(ywflds%scalar_ew)) call field_delete(ywflds%scalar_ew)
-  if(associated(ywflds%scalar_ns)) call field_delete(ywflds%scalar_ns)
-  if(associated(ywflds%vor)) call field_delete(ywflds%vor)
-  if(associated(ywflds%div)) call field_delete(ywflds%div)
+  if(associated(ywflds%u))          call field_delete(ywflds%u)
+  if(associated(ywflds%v))          call field_delete(ywflds%v)
+  if(associated(ywflds%u_ns))       call field_delete(ywflds%u_ns)
+  if(associated(ywflds%v_ns))       call field_delete(ywflds%v_ns)
+  if(associated(ywflds%scalar))     call field_delete(ywflds%scalar)
+  if(associated(ywflds%scalar_ew))  call field_delete(ywflds%scalar_ew)
+  if(associated(ywflds%scalar_ns))  call field_delete(ywflds%scalar_ns)
+  if(associated(ywflds%vor))        call field_delete(ywflds%vor)
+  if(associated(ywflds%div))        call field_delete(ywflds%div)
 
-  if(associated(ywflds%scalar2)) call field_delete(ywflds%scalar2)
+  if(associated(ywflds%scalar2))    call field_delete(ywflds%scalar2)
   if(associated(ywflds%scalar2_ew)) call field_delete(ywflds%scalar2_ew)
   if(associated(ywflds%scalar2_ns)) call field_delete(ywflds%scalar2_ns )
 
@@ -204,26 +204,26 @@ subroutine delete_fields_lists(yfl)
   ! Delete  all field lists in yfl
 
   type(fields_lists), intent(inout) ::yfl
-  if (allocated(yfl%u)) deallocate(yfl%u)
-  if (allocated(yfl%v)) deallocate(yfl%v)
-  if (allocated(yfl%scalar)) deallocate(yfl%scalar)
-  if (allocated(yfl%spscalar)) deallocate(yfl%spscalar)
-  if (allocated(yfl%spvor)) deallocate(yfl%spvor)
-  if (allocated(yfl%spdiv)) deallocate(yfl%spdiv)
-  if (allocated(yfl%vor)) deallocate(yfl%vor)
-  if (allocated(yfl%div)) deallocate(yfl%div)
-  if (allocated(yfl%u_ns)) deallocate(yfl%u_ns)
-  if (allocated(yfl%v_ns)) deallocate(yfl%v_ns)
+  if (allocated(yfl%u))         deallocate(yfl%u)
+  if (allocated(yfl%v))         deallocate(yfl%v)
+  if (allocated(yfl%scalar))    deallocate(yfl%scalar)
+  if (allocated(yfl%spscalar))  deallocate(yfl%spscalar)
+  if (allocated(yfl%spvor))     deallocate(yfl%spvor)
+  if (allocated(yfl%spdiv))     deallocate(yfl%spdiv)
+  if (allocated(yfl%vor))       deallocate(yfl%vor)
+  if (allocated(yfl%div))       deallocate(yfl%div)
+  if (allocated(yfl%u_ns))      deallocate(yfl%u_ns)
+  if (allocated(yfl%v_ns))      deallocate(yfl%v_ns)
   if (allocated(yfl%scalar_ns)) deallocate(yfl%scalar_ns)
   if (allocated(yfl%scalar_ew)) deallocate(yfl%scalar_ew)
 end subroutine delete_fields_lists
 
 subroutine synchost_rdonly_wrapped_fields(ywflds)
-  ! Synchronize all field lists on host
+
+  ! Synchronize all field lists on host readonly
 
   type(wrapped_fields),intent(inout) ::ywflds
 
-  write(6,*) "SYNCHOST_WRAPPED FIELDS BEGIN"
   if (associated(ywflds%spvor))      call ywflds%spvor%sync_host_rdonly()
   if (associated(ywflds%spdiv))      call ywflds%spdiv%sync_host_rdonly()
   if (associated(ywflds%spscalar))   call ywflds%spscalar%sync_host_rdonly()
@@ -240,15 +240,15 @@ subroutine synchost_rdonly_wrapped_fields(ywflds)
   if (associated(ywflds%scalar2))    call ywflds%scalar2%sync_host_rdonly()
   if (associated(ywflds%scalar2_ew)) call ywflds%scalar2_ew%sync_host_rdonly()
   if (associated(ywflds%scalar2_ns)) call ywflds%scalar2_ns%sync_host_rdonly()
-  write(6,*) "SYNCHOST_WRAPPED FIELDS END"
+  
 end subroutine synchost_rdonly_wrapped_fields
 
 subroutine synchost_rdwr_wrapped_fields(ywflds)
-  ! Synchronize all field lists on host
+
+  ! Synchronize all field lists on host read/write
 
   type(wrapped_fields),intent(inout) ::ywflds
-
-  write(6,*) "SYNCHOST_WRAPPED FIELDS BEGIN"
+  
   if (associated(ywflds%spvor))      call ywflds%spvor%sync_host_rdwr()
   if (associated(ywflds%spdiv))      call ywflds%spdiv%sync_host_rdwr()
   if (associated(ywflds%spscalar))   call ywflds%spscalar%sync_host_rdwr()
@@ -265,12 +265,8 @@ subroutine synchost_rdwr_wrapped_fields(ywflds)
   if (associated(ywflds%scalar2))    call ywflds%scalar2%sync_host_rdwr()
   if (associated(ywflds%scalar2_ew)) call ywflds%scalar2_ew%sync_host_rdwr()
   if (associated(ywflds%scalar2_ns)) call ywflds%scalar2_ns%sync_host_rdwr()
-  write(6,*) "SYNCHOST_WRAPPED FIELDS END"
+
 end subroutine synchost_rdwr_wrapped_fields
-
-
-
-
 
 subroutine nullify_wrapped_fields(ywflds)
 

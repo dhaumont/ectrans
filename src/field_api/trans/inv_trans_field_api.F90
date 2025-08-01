@@ -38,7 +38,7 @@ SUBROUTINE INV_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
 !       KFLEVG         - Number of levels
 !       KFLEVL         - Number of local levels
 !       KPROC          - Processor ID
-!       LDACC          - Field data on device
+!       LDACC          - Field and temporary data on the device
 !       FSPGL_PROC     - procedure to be executed in fourier space
 !                        before transposition
 
@@ -129,7 +129,7 @@ LOGICAL                     :: LLSCDERS                               ! INDICATI
 LOGICAL                     :: LLVORGP                                ! INDICATING IF GRID-POINT VORTICITY IS REQ.
 LOGICAL                     :: LLDIVGP                                ! INDICATING IF GRID-POINT DIVERGENCE IS REQ.
 LOGICAL                     :: LLUVDER                                ! INDICATING IF E-W DERIVATIVES OF U AND V ARE REQ.
-REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+REAL(KIND=JPHOOK)           :: ZHOOK_HANDLE
 
 #include "inv_trans.h"
 #include "abor1.intfb.h"
@@ -258,7 +258,6 @@ IF (PRESENT(YDFU)) THEN
     !$ACC UPDATE SELF(ZPSPVOR,ZPSPDIV)
  endif
  
-
   ! Initialize b-set for vector fields data
   C = LG(YLGVU, YDFU, LDACC, .TRUE.)
   DO JFLD=1,IUVG
@@ -324,7 +323,6 @@ IF (PRESENT(YDFSPSCALAR)) THEN
     !$ACC ENTER DATA CREATE(ZPSPSC2,ZPGP2)
   ENDIF
 
-
   ! Copy list of of spectral scalar fields into temporary arrays (1d copy thanks to field_view)
 
   ID = 1
@@ -332,9 +330,9 @@ IF (PRESENT(YDFSPSCALAR)) THEN
     IF (ASSOCIATED(YLSPVSCALAR(JFLD)%P)) THEN
       ZZ1_1=>YLSPVSCALAR(JFLD)%P
       IF (LDACC) THEN
-        !$acc kernels present(ZPSPSC2,ZZ1_1)
+        !$ACC KERNELS PRESENT(ZPSPSC2,ZZ1_1)
         ZPSPSC2(ID,:) = ZZ1_1(:)
-        !$acc end kernels
+        !$ACC END KERNELS
       ELSE
         ZPSPSC2(ID,:) = ZZ1_1(:)
       ENDIF
@@ -430,9 +428,9 @@ IF (IUVG>0) THEN
           ID = JLEV + (JFLD -1) * KFLEVG
           ZZ2_1=>YLGVVOR(ID)%P
           IF (LDACC) THEN
-            !$acc kernels present(ZPGPUV,ZZ2_1)
+            !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1)
              ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
-            !$acc end kernels
+            !$ACC END KERNELS
           ELSE
             ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
           ENDIF
@@ -451,9 +449,9 @@ IF (IUVG>0) THEN
         ID = JLEV + (JFLD -1) * KFLEVG
         ZZ2_1=>YLGVDIV(ID)%P
         IF (LDACC) THEN
-          !$acc kernels present(ZPGPUV,ZZ2_1)
+          !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1)
           ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
-          !$acc end kernels
+          !$ACC END KERNELS
         ELSE
           ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
         ENDIF
@@ -474,10 +472,10 @@ IF (IUVG>0) THEN
       ZZ2_1=>YLGVU(ID)%P
       ZZ2_2=>YLGVV(ID)%P
       IF (LDACC) THEN
-        !$acc kernels present(ZPGPUV,ZZ2_1,ZZ2_2)
+        !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1,ZZ2_2)
         ZZ2_1(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
         ZZ2_2(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
-        !$acc end kernels
+        !$ACC END KERNELS
       ELSE
         ZZ2_1(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
         ZZ2_2(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
@@ -498,18 +496,17 @@ IF (IUVG>0) THEN
         ZZ2_1=>YLGVU_NS(ID)%P
         ZZ2_2=>YLGVV_NS(ID)%P
         IF (LDACC) THEN
-          !$acc kernels present(ZPGPUV,ZZ2_1,ZZ2_2)
+          !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1,ZZ2_2)
           ZZ2_1(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
           ZZ2_2(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
-          !$acc end kernels
+          !$ACC END KERNELS
         ELSE
           ZZ2_1(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
           ZZ2_2(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
         ENDIF
       ENDDO
     ENDDO
-ENDIF
-
+  ENDIF
 ENDIF
 
 IF (IFLDXG > 0) THEN
@@ -518,14 +515,13 @@ IF (IFLDXG > 0) THEN
     DO JFLD=1, IFLDXG
       ZZ2_1=>YLGVSCALAR(JFLD)%P(:,:)
       IF (LDACC) THEN
-        !$acc kernels present(ZPGP2,ZZ2_1)
+        !$ACC KERNELS PRESENT(ZPGP2,ZZ2_1)
         ZZ2_1(:,:) = ZPGP2(:,JFLD,:)
-        !$acc end kernels
+        !$ACC END KERNELS
       ELSE
         ZZ2_1(:,:) = ZPGP2(:,JFLD,:)
       ENDIF
     ENDDO
-
 
   ! copy spectral scalar fields derivatives
 
@@ -533,15 +529,14 @@ IF (IFLDXG > 0) THEN
     C = LG(YLGVSCALAR_NS, YDFSCALAR_NS, LDACC, .FALSE.)
     C = LG(YLGVSCALAR_EW, YDFSCALAR_EW, LDACC, .FALSE.)
 
-
     DO JFLD=1,IFLDXG
         ZZ2_1=>YLGVSCALAR_NS(JFLD)%P
         ZZ2_2=>YLGVSCALAR_EW(JFLD)%P
         IF (LDACC) THEN
-          !$acc kernels present(ZPGP2,ZZ2_1,ZZ2_2)
+          !$ACC KERNELS PRESENT(ZPGP2,ZZ2_1,ZZ2_2)
           ZZ2_1(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
           ZZ2_2(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
-          !$acc end kernels
+          !$ACC END KERNELS
         ELSE
           ZZ2_1(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
           ZZ2_2(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
@@ -550,6 +545,7 @@ IF (IFLDXG > 0) THEN
 
   ENDIF
 ENDIF
+
 ! 5. Final cleanup
 
 ! delete temporary arrays

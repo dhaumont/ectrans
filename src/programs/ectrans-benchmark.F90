@@ -147,7 +147,7 @@ integer(kind=jpim) :: ntrace_stats = 0
 integer(kind=jpim) :: nprnt_stats = 1
 integer(kind=jpim) :: nopt_mem_tr = 0
 
-real(kind=jprb) :: clamp_epsilon
+real(kind=jprb)    :: clamp_epsilon
 character(len=256) :: checksums_filename
 
 ! The multiplier of the machine epsilon used as a tolerance for correctness checking
@@ -575,10 +575,6 @@ call allocator%allocate('zgmvs', zgmvs, [nproma,ndimgmvs,ngpblks])
 zgpuv => zgmv(:,:,1:jend_vder_EW,:)
 zgp3a => zgmv(:,:,jbegin_sc:jend_scder_EW,:)
 zgp2  => zgmvs(:,:,:)
-
-!zgmv(:,:,:,:) = 0
-!zgmvs(:,:,:) = 0 
-
  
 #if USE_FIELD_API
 if (lfield_api) then
@@ -680,10 +676,6 @@ do jstep = 1, iters+iters_warmup
     ztloop = timef()
   endif
 
-  ! clear array to make sure they will be computed and ensure reproducibility between runs
-!  write(*,*) "zgmv", zgmv
-!  write(*,*) "zgmvs", zgmvs
-
   call gstats(3,0)
   ztstep(jstep) = timef()
 
@@ -696,7 +688,7 @@ do jstep = 1, iters+iters_warmup
 
  if (lfield_api) then
 #if USE_FIELD_API
-    CALL inv_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
+    call inv_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
                             & ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
                             & ydfu_ns=ylf%u_ns, ydfv_ns=ylf%v_ns, &
                             & ydfscalar_ns=ylf%scalar_ns, ydfscalar_ew=ylf%scalar_ew, &
@@ -773,9 +765,6 @@ endif
   !=================================================================================================
   ! Do direct transform
   !=================================================================================================
-  ! clear array to make sure they will be computed and ensure reproducibility between runs
-!  write(*,*) "sp3d", sp3d(:,:,:)
-!  write(*,*) "zspsc2", zspsc2(:,:)
 
   ztstep2(jstep) = timef()
 
@@ -783,7 +772,6 @@ endif
 
   if (lfield_api) then
 #if USE_FIELD_API
-!    call synchost_rdwr_wrapped_fields(ywflds)
     call dir_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
                             & ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
                             & kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,&
