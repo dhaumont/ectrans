@@ -38,7 +38,14 @@ END TYPE
 
 CONTAINS
 
+
 FUNCTION GREP_G2S (YDGP, PGTF, KVSET, KTYPE) RESULT (YLSP)
+! input:  
+! YDGP - array of grid point fields pointers
+! PGTF -
+
+! output: 
+! YLSP - array of spectral fields pointers
 
 TYPE (PTRS), ALLOCATABLE :: YLSP (:)
 
@@ -82,6 +89,12 @@ ENDDO
 END FUNCTION
 
 FUNCTION GREP_S2S (YDSP, KTYPE) RESULT (YLSP)
+! input:  
+! YDSP - array of spectral fields
+! PGTF -
+
+! output: 
+! YLSP - array of spectral fields
 
 TYPE (PTRS), ALLOCATABLE :: YLSP (:)
 
@@ -206,6 +219,7 @@ ENDDO
 
 END SUBROUTINE
 
+! Assign IPTR and IPTR_NS in YDSP
 SUBROUTINE RENUMS (YDSP)
 
 TYPE (PTRS) :: YDSP (:)

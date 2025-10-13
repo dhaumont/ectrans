@@ -8,17 +8,18 @@
 ! nor does it submit to any jurisdiction.
 !
 
-MODULE VDTUV_MOD
+MODULE VDTUV1_MOD
 CONTAINS
-SUBROUTINE VDTUV(KM,KFIELD,PEPSNM,PVOR,PDIV,PU,PV)
+SUBROUTINE VDTUV1(KM,PEPSNM,PIA,YDSP_VOR,YDSP_DIV,YDSP_U,YDSP_V)
 
 USE PARKIND1  ,ONLY : JPIM     ,JPRB
 
 USE TPM_DIM         ,ONLY : R
 USE TPM_FIELDS      ,ONLY : F
+USE POINTER_MOD
 
 
-!**** *VDTUV* - Compute U,V in  spectral space
+!**** *VDTUV1* - Compute U,V in  spectral space
 
 !     Purpose.
 !     --------
@@ -27,7 +28,7 @@ USE TPM_FIELDS      ,ONLY : F
 
 !**   Interface.
 !     ----------
-!        CALL VDTUV(...)
+!        CALL VDTUV1(...)
 
 !        Explicit arguments :  KM -zonal wavenumber (input-c)
 !        --------------------  KFIELD - number of fields (input-c)
@@ -67,19 +68,26 @@ USE TPM_FIELDS      ,ONLY : F
 
 !     Modifications.
 !     --------------
-!        Original : 00-02-01 From VDTUV in IFS CY22R1
+!        Original : 00-02-01 From VDTUV1 in IFS CY22R1
 
 !     ------------------------------------------------------------------
 
 IMPLICIT NONE
 
-INTEGER(KIND=JPIM), INTENT(IN) :: KM,KFIELD
+INTEGER(KIND=JPIM), INTENT(IN) :: KM
 REAL(KIND=JPRB), INTENT(IN)    :: PEPSNM(0:R%NTMAX+2)
-REAL(KIND=JPRB), INTENT(IN)    :: PVOR(:,:),PDIV(:,:)
-REAL(KIND=JPRB), INTENT(OUT)   :: PU  (:,:),PV  (:,:)
+REAL (KIND=JPRB), INTENT (INOUT) :: PIA (:,:)
+TYPE (PTRS) :: YDSP_VOR (:)
+TYPE (PTRS) :: YDSP_DIV (:)
+TYPE (PTRS) :: YDSP_U (:)
+TYPE (PTRS) :: YDSP_V (:)
+
 
 !     LOCAL INTEGER SCALARS
 INTEGER(KIND=JPIM) :: II, IJ, IR, J, JN, ISMAX,JI
+INTEGER(KIND=JPIM) :: IR_VOR, IR_DIV, IR_U, IR_V
+INTEGER(KIND=JPIM) :: II_VOR, II_DIV, II_U, II_V
+INTEGER(KIND=JPIM) :: INF
 
 !     LOCAL REAL SCALARS
 REAL(KIND=JPRB) :: ZKM
@@ -104,46 +112,61 @@ DO JN=KM-1,ISMAX+2
 ENDDO
 ZN(0) = F%RN(ISMAX+3)
 
+IF (SIZE (YDSP_VOR) /= SIZE (YDSP_DIV)) STOP 1
+IF (SIZE (YDSP_U) /= SIZE (YDSP_V)) STOP 1
+IF (SIZE (YDSP_VOR) /= SIZE (YDSP_U)) STOP 1
+
+INF = SIZE (YDSP_VOR)
+
 !*       1.1      U AND V (KM=0) .
 
 IF(KM == 0) THEN
-  DO J=1,KFIELD
-    IR = 2*J-1
+  DO J=1,INF
+
+    IR_VOR = 2*YDSP_VOR (J)%IPTR-1
+    IR_DIV = 2*YDSP_DIV (J)%IPTR-1
+    IR_U   = 2*YDSP_U   (J)%IPTR-1
+    IR_V   = 2*YDSP_V   (J)%IPTR-1
+
     DO JI=2,ISMAX+3-KM
-      PU(JI,IR) = +&
-       &ZN(JI+1)*ZEPSNM(JI)*ZLAPIN(JI+1)*PVOR(JI+1,IR)-&
-       &ZN(JI-2)*ZEPSNM(JI-1)*ZLAPIN(JI-1)*PVOR(JI-1,IR)
-      PV(JI,IR) = -&
-       &ZN(JI+1)*ZEPSNM(JI)*ZLAPIN(JI+1)*PDIV(JI+1,IR)+&
-       &ZN(JI-2)*ZEPSNM(JI-1)*ZLAPIN(JI-1)*PDIV(JI-1,IR)
+      PIA(JI,IR_U) = +&
+       &ZN(JI+1)*ZEPSNM(JI)*ZLAPIN(JI+1)*PIA(JI+1,IR_VOR)-&
+       &ZN(JI-2)*ZEPSNM(JI-1)*ZLAPIN(JI-1)*PIA(JI-1,IR_VOR)
+      PIA(JI,IR_V) = -&
+       &ZN(JI+1)*ZEPSNM(JI)*ZLAPIN(JI+1)*PIA(JI+1,IR_DIV)+&
+       &ZN(JI-2)*ZEPSNM(JI-1)*ZLAPIN(JI-1)*PIA(JI-1,IR_DIV)
     ENDDO
   ENDDO
 
 !*       1.2      U AND V (KM!=0) .
 
 ELSE
-  DO J=1,KFIELD
-    IR = 2*J-1
-    II = IR+1
+  DO J=1,INF
+
+    IR_VOR = 2*YDSP_VOR (J)%IPTR-1; II_VOR = IR_VOR + 1
+    IR_DIV = 2*YDSP_DIV (J)%IPTR-1; II_DIV = IR_DIV + 1
+    IR_U   = 2*YDSP_U   (J)%IPTR-1; II_U   = IR_U   + 1
+    IR_V   = 2*YDSP_V   (J)%IPTR-1; II_V   = IR_V   + 1
+
     DO JI=2,ISMAX+3-KM
-      PU(JI,IR) = -ZKM*ZLAPIN(JI)*PDIV(JI,II)+&
-       &ZN(JI+1)*ZEPSNM(JI)*ZLAPIN(JI+1)*PVOR(JI+1,IR)-&
-       &ZN(JI-2)*ZEPSNM(JI-1)*ZLAPIN(JI-1)*PVOR(JI-1,IR)
-      PU(JI,II) = +ZKM*ZLAPIN(JI)*PDIV(JI,IR)+&
-       &ZN(JI+1)*ZEPSNM(JI)*ZLAPIN(JI+1)*PVOR(JI+1,II)-&
-       &ZN(JI-2)*ZEPSNM(JI-1)*ZLAPIN(JI-1)*PVOR(JI-1,II)
-      PV(JI,IR) = -ZKM*ZLAPIN(JI)*PVOR(JI,II)-&
-       &ZN(JI+1)*ZEPSNM(JI)*ZLAPIN(JI+1)*PDIV(JI+1,IR)+&
-       &ZN(JI-2)*ZEPSNM(JI-1)*ZLAPIN(JI-1)*PDIV(JI-1,IR)
-      PV(JI,II) = +ZKM*ZLAPIN(JI)*PVOR(JI,IR)-&
-       &ZN(JI+1)*ZEPSNM(JI)*ZLAPIN(JI+1)*PDIV(JI+1,II)+&
-       &ZN(JI-2)*ZEPSNM(JI-1)*ZLAPIN(JI-1)*PDIV(JI-1,II)
+      PIA(JI,IR_U) = -ZKM*ZLAPIN(JI)*PIA(JI,II_DIV)+&
+       &ZN(JI+1)*ZEPSNM(JI)*ZLAPIN(JI+1)*PIA(JI+1,IR_VOR)-&
+       &ZN(JI-2)*ZEPSNM(JI-1)*ZLAPIN(JI-1)*PIA(JI-1,IR_VOR)
+      PIA(JI,II_U) = +ZKM*ZLAPIN(JI)*PIA(JI,IR_DIV)+&
+       &ZN(JI+1)*ZEPSNM(JI)*ZLAPIN(JI+1)*PIA(JI+1,II_VOR)-&
+       &ZN(JI-2)*ZEPSNM(JI-1)*ZLAPIN(JI-1)*PIA(JI-1,II_VOR)
+      PIA(JI,IR_V) = -ZKM*ZLAPIN(JI)*PIA(JI,II_VOR)-&
+       &ZN(JI+1)*ZEPSNM(JI)*ZLAPIN(JI+1)*PIA(JI+1,IR_DIV)+&
+       &ZN(JI-2)*ZEPSNM(JI-1)*ZLAPIN(JI-1)*PIA(JI-1,IR_DIV)
+      PIA(JI,II_V) = +ZKM*ZLAPIN(JI)*PIA(JI,IR_VOR)-&
+       &ZN(JI+1)*ZEPSNM(JI)*ZLAPIN(JI+1)*PIA(JI+1,II_DIV)+&
+       &ZN(JI-2)*ZEPSNM(JI-1)*ZLAPIN(JI-1)*PIA(JI-1,II_DIV)
     ENDDO
   ENDDO
 ENDIF
 
 !     ------------------------------------------------------------------
 
-END SUBROUTINE VDTUV
-END MODULE VDTUV_MOD
+END SUBROUTINE VDTUV1
+END MODULE VDTUV1_MOD
 

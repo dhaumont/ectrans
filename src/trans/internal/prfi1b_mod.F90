@@ -8,14 +8,15 @@
 ! nor does it submit to any jurisdiction.
 !
 
-MODULE PRFI1B_MOD
+MODULE PRFI1B1_MOD
 CONTAINS
-SUBROUTINE PRFI1B(KM,PIA,PSPEC,KFIELDS,KFLDPTR)
+SUBROUTINE PRFI1B1(KM,PIA,YDSP)
 
 USE PARKIND1  ,ONLY : JPIM     ,JPRB
 
 USE TPM_DIM         ,ONLY : R
 USE TPM_DISTR       ,ONLY : D
+USE POINTER_MOD
 
 
 !**** *PRFI1* - Prepare spectral fields for inverse Legendre transform
@@ -30,7 +31,7 @@ USE TPM_DISTR       ,ONLY : D
 
 !**   Interface.
 !     ----------
-!        *CALL* *PRFI1B(...)*
+!        *CALL* *PRFI1B1(...)*
 
 !        Explicit arguments :  KM     - zonal wavenumber
 !        ------------------    PIA    - spectral components for transform
@@ -57,64 +58,55 @@ USE TPM_DISTR       ,ONLY : D
 
 !     Modifications.
 !     --------------
-!        Original : 00-02-01 From PRFI1B in IFS CY22R1
+!        Original : 00-02-01 From PRFI1B1 in IFS CY22R1
 
 !     ------------------------------------------------------------------
 
 IMPLICIT NONE
 
-INTEGER(KIND=JPIM),INTENT(IN)   :: KM,KFIELDS
-REAL(KIND=JPRB)   ,INTENT(IN)   :: PSPEC(:,:)
+INTEGER(KIND=JPIM),INTENT(IN)   :: KM
 REAL(KIND=JPRB)   ,INTENT(OUT)  :: PIA(:,:)
-INTEGER(KIND=JPIM),INTENT(IN),OPTIONAL :: KFLDPTR(:)
+TYPE (PTRS) :: YDSP (:)
 
 !     LOCAL INTEGER SCALARS
 INTEGER(KIND=JPIM) :: II, INM, IR, J, JFLD, ILCM, IOFF,IFLD
 
+
+LOGICAL :: LLP
 
 !     ------------------------------------------------------------------
 
 !*       1.    EXTRACT FIELDS FROM SPECTRAL ARRAYS.
 !              --------------------------------------------------
 
+LLP = .FALSE.
+
 
 ILCM = R%NSMAX+1-KM
 IOFF = D%NASM0(KM)
 
-IF(PRESENT(KFLDPTR)) THEN
-  DO JFLD=1,KFIELDS
-    IR = 2*(JFLD-1)+1
-    II = IR+1
-    IFLD = KFLDPTR(JFLD)
-    DO J=1,ILCM
-      INM = IOFF+(ILCM-J)*2
-      PIA(J+2,IR) = PSPEC(IFLD,INM  )
-      PIA(J+2,II) = PSPEC(IFLD,INM+1)
-    ENDDO
-  ENDDO
-
-ELSE
-  DO J=1,ILCM
-    INM = IOFF+(ILCM-J)*2
-    !DIR$ IVDEP
-    !OCL NOVREC
-    DO JFLD=1,KFIELDS
+DO J=1,ILCM
+  INM = IOFF+(ILCM-J)*2
+  !DIR$ IVDEP
+  !OCL NOVREC
+  DO JFLD=1,SIZE (YDSP)
+    IF (ASSOCIATED (YDSP (JFLD)%P)) THEN
       IR = 2*(JFLD-1)+1
       II = IR+1
-      PIA(J+2,IR) = PSPEC(JFLD,INM  )
-      PIA(J+2,II) = PSPEC(JFLD,INM+1)
-    ENDDO
+      PIA(J+2,IR) = YDSP (JFLD)%P(INM+0)
+      PIA(J+2,II) = YDSP (JFLD)%P(INM+1)
+    ENDIF
   ENDDO
+ENDDO
 
-ENDIF
-
-DO JFLD=1,2*KFIELDS
+DO JFLD=1,SIZE (PIA, 2)
   PIA(1,JFLD) = 0.0_JPRB
   PIA(2,JFLD) = 0.0_JPRB
   PIA(ILCM+3,JFLD) = 0.0_JPRB
 ENDDO
 
+
 !     ------------------------------------------------------------------
 
-END SUBROUTINE PRFI1B
-END MODULE PRFI1B_MOD
+END SUBROUTINE PRFI1B1
+END MODULE PRFI1B1_MOD

@@ -204,13 +204,13 @@ IF (LHOOK) CALL DR_HOOK('INV_TRANS1_SPLIT',1,ZHOOK_HANDLE)
 CONTAINS
 
 FUNCTION SHIFTG (YDGP)
-
-TYPE (PTRG) :: SHIFTG 
-TYPE (PTRG), ALLOCATABLE :: YDGP (:)
+! Pop and return the first element of YDGP 
+TYPE (PTRG) :: SHIFTG                 !OUTPUT: the first element of YDGP
+TYPE (PTRG), ALLOCATABLE :: YDGP (:)  !INPUT and OUTPUT : list of PTRG that will be shifted
 
 IF (SIZE (YDGP) > 0) THEN
-  SHIFTG = YDGP (1)
-  YDGP = YDGP (2:)
+  SHIFTG = YDGP (1) ! return first
+  YDGP = YDGP (2:)  ! shift
 ELSE
   STOP 1
 ENDIF
