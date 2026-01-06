@@ -9,10 +9,12 @@ use parkind1, only: jpim, jprb, jprd
 implicit none
 
 type wrapped_fields
-  ! The type wrapped_fields is a helper, containing a set of field API objects (field_1rb, field_2rb, etc).
-  ! It is used in the benchmark to mimic IFS, where the field API objects wrapped the PGMV/PGFL arrays, and are used
-  ! to identify the various fields of the model. In a similar way, the fields in this type wrap the PGMV/PGFV arrays of the benchmark,
-  ! in the subroutines wrap_benchmark_fields and wrap_benchmark_fields_zgp
+  ! The type wrapped_fields is a helper, containing a set of field API objects (field_1rb,
+  ! field_2rb, etc).
+  ! It is used in the benchmark to mimic IFS, where the field API objects wrapped the PGMV/PGFL
+  ! arrays, and are used to identify the various fields of the model. In a similar way, the fields
+  ! in this type wrap the PGMV/PGFV arrays of the benchmark, in the subroutines
+  ! wrap_benchmark_fields and wrap_benchmark_fields_zgp
 
   ! Set of field api object to be transformed in the spectral transforms
   class (field_3rb), pointer :: spscalar3      ! spectral scalar fields
@@ -39,19 +41,28 @@ type wrapped_fields
 end type wrapped_fields
 
 type fields_lists
-   ! The type fields_lists contains arrays of field_basic_ptr.
-   ! These arrays are used to communicate the fields to the ectrans field API, under the form of arrays of 1d, 2d, 3d or 4d fields.
-   ! These field_basic_ptr arrays are created in create_fields_lists, in which the Field API objects contained in wrapped_fields
-   ! are converted into arrays of field_basic_ptr.
+  ! The type fields_lists contains arrays of field_basic_ptr.
+  ! These arrays are used to communicate the fields to the ectrans field API, under the form of
+  ! arrays of 1d, 2d, 3d or 4d fields.
+  ! These field_basic_ptr arrays are created in create_fields_lists, in which the Field API objects
+  ! contained in wrapped_fields are converted into arrays of field_basic_ptr.
 
-   ! Set of field_basic_ptr lists that will be used as parameter to inv_trans_field_api and dir_trans_field_api
-  type (field_basic_ptr), allocatable :: u (:), v (:)                ! grid-point u and v fields
-  type (field_basic_ptr), allocatable :: scalar (:)                  ! grid-point scalar fields
-  type (field_basic_ptr), allocatable :: spvor (:), spdiv (:)        ! spectral vorticity and divergence
-  type (field_basic_ptr), allocatable :: vor (:), div (:)            ! grid-point vorticity and diverence
-  type (field_basic_ptr), allocatable :: spscalar (:)                ! spectral scalar fields
-  type (field_basic_ptr), allocatable :: u_ew (:), v_ew (:)            ! grid-point u and derivatives we
-  type (field_basic_ptr), allocatable :: scalar_ns (:), scalar_ew (:)  ! grid space scalar derivatives ns and ew
+  ! Set of field_basic_ptr lists that will be used as parameter to inv_trans_field_api and
+  ! dir_trans_field_api
+  ! grid-point u and v fields
+  type (field_basic_ptr), allocatable :: u(:), v(:)
+  ! grid-point scalar fields
+  type (field_basic_ptr), allocatable :: scalar(:)
+  ! spectral vorticity and divergence
+  type (field_basic_ptr), allocatable :: spvor(:), spdiv(:)
+  ! grid-point vorticity and divergence
+  type (field_basic_ptr), allocatable :: vor(:), div(:)
+  ! spectral scalar fields
+  type (field_basic_ptr), allocatable :: spscalar(:)
+  ! grid-point u and derivatives we
+  type (field_basic_ptr), allocatable :: u_ew(:), v_ew(:)
+  ! grid space scalar derivatives ns and ew
+  type (field_basic_ptr), allocatable :: scalar_ns(:), scalar_ew(:)
   end type fields_lists
 
 contains
@@ -243,7 +254,10 @@ subroutine create_fields_lists(ywflds,ylf, kvsetuv, kvsetsc,kvsetsc2)
   if (associated(ywflds%spscalar)) then
     ylf%spscalar = [make_field(ywflds%spscalar,'spscalar',kvsetsc)]
   else if (associated(ywflds%spscalar3) .and. associated(ywflds%spscalar2) ) then
-    ylf%spscalar = [make_field(ywflds%spscalar3,'spscalar3',kvsetsc), make_field(ywflds%spscalar2,'spscalar2',kvsetsc2)]
+    ylf%spscalar = [ &
+      & make_field(ywflds%spscalar3,'spscalar3',kvsetsc), &
+      & make_field(ywflds%spscalar2,'spscalar2',kvsetsc2) &
+    & ]
   else if (associated(ywflds%spscalar3)) then
     ylf%spscalar = [make_field(ywflds%spscalar3,'spscalar3',kvsetsc)]
   else if (associated(ywflds%spscalar2)) then
@@ -253,7 +267,10 @@ subroutine create_fields_lists(ywflds,ylf, kvsetuv, kvsetsc,kvsetsc2)
   if (associated(ywflds%scalar)) then
     ylf%scalar = [make_field(ywflds%scalar,'scalar', kvsetsc)]
   else if (associated(ywflds%scalar3) .and. associated(ywflds%scalar2) ) then
-    ylf%scalar = [make_field(ywflds%scalar3,'scalar', kvsetsc), make_field(ywflds%scalar2,'scalar2', kvsetsc2)]
+    ylf%scalar = [ &
+      & make_field(ywflds%scalar3,'scalar', kvsetsc), &
+      & make_field(ywflds%scalar2,'scalar2', kvsetsc2)
+    & ]
   else if (associated(ywflds%scalar3)) then
     ylf%scalar = [make_field(ywflds%scalar3,'scalar', kvsetsc)]
   else if (associated(ywflds%scalar2)) then
@@ -263,7 +280,10 @@ subroutine create_fields_lists(ywflds,ylf, kvsetuv, kvsetsc,kvsetsc2)
   if (associated(ywflds%scalar_ns)) then
     ylf%scalar_ns = [make_field(ywflds%scalar_ns,'scalar_ns', kvsetsc)]
   else if (associated(ywflds%scalar3_ns) .and. associated(ywflds%scalar2_ns) ) then
-    ylf%scalar_ns = [make_field(ywflds%scalar3_ns,'scalar3_ns', kvsetsc), make_field(ywflds%scalar2_ns,'scalar2_ns', kvsetsc2)]
+    ylf%scalar_ns = [ &
+      & make_field(ywflds%scalar3_ns,'scalar3_ns', kvsetsc), &
+      & make_field(ywflds%scalar2_ns,'scalar2_ns', kvsetsc2) &
+    & ]
   else if (associated(ywflds%scalar3_ns)) then
     ylf%scalar_ns = [make_field(ywflds%scalar3_ns,'scalar3_ns', kvsetsc)]
   else if (associated(ywflds%scalar2_ns)) then
@@ -273,7 +293,10 @@ subroutine create_fields_lists(ywflds,ylf, kvsetuv, kvsetsc,kvsetsc2)
   if (associated(ywflds%scalar_ew)) then
     ylf%scalar_ew = [make_field(ywflds%scalar_ew,'scalar_ew', kvsetsc)]
   else if (associated(ywflds%scalar3_ew) .and. associated(ywflds%scalar2_ew) ) then
-    ylf%scalar_ew = [make_field(ywflds%scalar3_ew,'scalar3_ew', kvsetsc), make_field(ywflds%scalar2_ew,'scalar2_ew', kvsetsc2)]
+    ylf%scalar_ew = [ &
+      & make_field(ywflds%scalar3_ew,'scalar3_ew', kvsetsc), &
+      & make_field(ywflds%scalar2_ew,'scalar2_ew', kvsetsc2) &
+    & ]
   else if (associated(ywflds%scalar3_ew)) then
     ylf%scalar_ew = [make_field(ywflds%scalar3_ew,'scalar3_ew', kvsetsc)]
   else if (associated(ywflds%scalar2_ew)) then
