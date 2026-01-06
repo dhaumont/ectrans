@@ -63,7 +63,7 @@ type fields_lists
   type (field_basic_ptr), allocatable :: u_ew(:), v_ew(:)
   ! grid space scalar derivatives ns and ew
   type (field_basic_ptr), allocatable :: scalar_ns(:), scalar_ew(:)
-  end type fields_lists
+end type fields_lists
 
 contains
 
