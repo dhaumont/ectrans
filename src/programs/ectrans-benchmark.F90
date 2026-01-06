@@ -101,7 +101,7 @@ real(kind=jprb), pointer :: zgp3a(:,:,:,:)
 real(kind=jprb), pointer :: zgp2(:,:,:)
 
 #ifdef FIELD_API_CLAMP
-real(kind=jprb)    :: clamp_epsilon = 1E-14
+real(kind=jprb) :: clamp_epsilon = 1E-14
 #endif
 
 logical :: lstack = .false. ! Output stack info
@@ -235,7 +235,7 @@ endif
 call get_command_line_arguments(nsmax, cgrid, iters, iters_warmup, nfld, nlev, lvordiv, lscders, &
   &                             luvder, luseflt, nopt_mem_tr, nproma, npromatr, verbosity, &
   &                             ldump_values, lprint_norms, lmeminfo, nprtrv, nprtrw, ncheck, &
-  &                             lpinning,lfield_api, icall_mode, ldump_checksums, cchecksums_path)
+  &                             lpinning, lfield_api, icall_mode, ldump_checksums, cchecksums_path)
 if (cgrid == '') cgrid = cubic_octahedral_gaussian_grid(nsmax)
 call parse_grid(cgrid, ndgl, nloen)
 nflevg = nlev
@@ -555,19 +555,19 @@ endif
 
 #if USE_FIELD_API
 if (lfield_api) then
-    call nullify_wrapped_fields(ywflds)
-    if (icall_mode == 1) then
-        call wrap_benchmark_fields_zgp(ywflds,lvordiv, lscders, luvder, &
-                                     & nflevg, 1 + nflevg * nfld,  &
-                                     & zspvor, zspdiv, zspscalar, zgp)
-        call create_fields_lists(ywflds,ylf,kvsetuv=ivset,kvsetsc=ivsetsc)
-    else
-        call wrap_benchmark_fields(ywflds,lvordiv, lscders, luvder, &
-                                 & 1, 1, nfld, &
-                                 & zspvor, zspdiv, zspsc3a, zspsc2, zgpuv,zgp3a, zgp2)
-        call create_fields_lists(ywflds,ylf,kvsetuv=ivset,kvsetsc2=ivsetsc2, kvsetsc=ivset)
-    endif
+  call nullify_wrapped_fields(ywflds)
+  if (icall_mode == 1) then
+    call wrap_benchmark_fields_zgp(ywflds, lvordiv, lscders, luvder, &
+                                  & nflevg, 1 + nflevg * nfld,  &
+                                  & zspvor, zspdiv, zspscalar, zgp)
+    call create_fields_lists(ywflds,ylf, kvsetuv=ivset, kvsetsc=ivsetsc)
+  else
+    call wrap_benchmark_fields(ywflds, lvordiv, lscders, luvder, &
+                              & 1, 1, nfld, &
+                              & zspvor, zspdiv, zspsc3a, zspsc2, zgpuv, zgp3a, zgp2)
+    call create_fields_lists(ywflds, ylf, kvsetuv=ivset,kvsetsc2=ivsetsc2, kvsetsc=ivset)
   endif
+endif
 #endif
 
 !===================================================================================================
@@ -675,30 +675,30 @@ do jstep = 1, iters+iters_warmup
   ztstep1(jstep) = timef()
   call gstats(4,0)
 
-   if (lfield_api) then
+  if (lfield_api) then
 #if USE_FIELD_API
-      call inv_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
-                            & ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
-                            & ydfu_ew=ylf%u_ew, ydfv_ew=ylf%v_ew, &
-                            & ydfscalar_ns=ylf%scalar_ns, ydfscalar_ew=ylf%scalar_ew, &
-                            & ydfvor=ylf%vor, ydfdiv=ylf%div, &
-                            & kspec=nspec2, kproma=nproma, kgpblks=ngpblks, &
-                            & kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,&
-                            & kproc=myproc, ldacc=llacc)
-      call synchost_rdonly_wrapped_fields(ywflds)
+    call inv_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
+                          & ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
+                          & ydfu_ew=ylf%u_ew, ydfv_ew=ylf%v_ew, &
+                          & ydfscalar_ns=ylf%scalar_ns, ydfscalar_ew=ylf%scalar_ew, &
+                          & ydfvor=ylf%vor, ydfdiv=ylf%div, &
+                          & kspec=nspec2, kproma=nproma, kgpblks=ngpblks, &
+                          & kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,&
+                          & kproc=myproc, ldacc=llacc)
+    call synchost_rdonly_wrapped_fields(ywflds)
 #else
-      call abor1('ectrans_benchmark: No field API support')
+    call abor1('ectrans_benchmark: No field API support')
 #endif
   else if (icall_mode == 1) then
-      call inv_trans(pspvor=zspvor, pspdiv=zspdiv, pspscalar=zspscalar, pgp=zgp, &
-        &            kvsetuv=ivset, kvsetsc=ivsetsc, &
-        &            ldscders=lscders, ldvorgp=lvordiv, lddivgp=lvordiv, lduvder=luvder, &
-        &            kproma=nproma)
+    call inv_trans(pspvor=zspvor, pspdiv=zspdiv, pspscalar=zspscalar, pgp=zgp, &
+      &            kvsetuv=ivset, kvsetsc=ivsetsc, &
+      &            ldscders=lscders, ldvorgp=lvordiv, lddivgp=lvordiv, lduvder=luvder, &
+      &            kproma=nproma)
   else
-      call inv_trans(pspvor=zspvor, pspdiv=zspdiv, pspsc3a=zspsc3a, pspsc2=zspsc2, pgpuv=zgpuv, &
-        &            pgp3a=zgp3a, pgp2=zgp2, &
-        &            kvsetuv=ivset, kvsetsc2=ivsetsc2, kvsetsc3a=ivset, &
-        &            ldscders=lscders, ldvorgp=lvordiv, lddivgp=lvordiv, lduvder=luvder, kproma=nproma)
+    call inv_trans(pspvor=zspvor, pspdiv=zspdiv, pspsc3a=zspsc3a, pspsc2=zspsc2, pgpuv=zgpuv, &
+      &            pgp3a=zgp3a, pgp2=zgp2, &
+      &            kvsetuv=ivset, kvsetsc2=ivsetsc2, kvsetsc3a=ivset, &
+      &            ldscders=lscders, ldvorgp=lvordiv, lddivgp=lvordiv, lduvder=luvder, kproma=nproma)
   endif
 
   if (ldump_checksums) then
@@ -752,32 +752,30 @@ do jstep = 1, iters+iters_warmup
 
   call gstats(5,0)
 
-    if (lfield_api) then
+  if (lfield_api) then
 #if USE_FIELD_API
-      call dir_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
-                            &   ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
-                            &   kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,&
-                            &   kproc=myproc, ldacc=llacc)
-      call synchost_rdonly_wrapped_fields(ywflds)
+    call dir_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
+                          &   ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
+                          &   kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,&
+                          &   kproc=myproc, ldacc=llacc)
+    call synchost_rdonly_wrapped_fields(ywflds)
 #ifdef FIELD_API_CLAMP
-      ! clamp small spectral values to ensure bit reproductibility with field Api interface
-      ! Only activated in dp, with nvhpc and on cpu
-      if (jprb == jprd) then
-        write(nout,*) "clamp using clamp_epsilon = ", clamp_epsilon
-  if (icall_mode == 1) then
-           if (associated(zspsc2)) where (abs(zspsc2) < clamp_epsilon) zspsc2 = 0
-           if (associated(zspsc3a)) where (abs(zspsc3a) < clamp_epsilon) zspsc3a = 0
-        else
-           if (associated(zspscalar)) where (abs(zspscalar) < clamp_epsilon) zspscalar = 0
-        endif
+    ! clamp small spectral values to ensure bit reproductibility with field Api interface
+    ! Only activated in dp, with nvhpc and on cpu
+    if (jprb == jprd) then
+      write(nout,*) "clamp using clamp_epsilon = ", clamp_epsilon
+      if (icall_mode == 1) then
+        if (associated(zspsc2)) where (abs(zspsc2) < clamp_epsilon) zspsc2 = 0
+        if (associated(zspsc3a)) where (abs(zspsc3a) < clamp_epsilon) zspsc3a = 0
+      else
+        if (associated(zspscalar)) where (abs(zspscalar) < clamp_epsilon) zspscalar = 0
       endif
+    endif
 #endif
-
 #else
-      call abor1('ectrans_benchmark: No field API support')
+    call abor1('ectrans_benchmark: No field API support')
 #endif
-
-else if (icall_mode == 1) then
+  else if (icall_mode == 1) then
     call dir_trans(pgp=zgp(:,ipgp_start:ipgp_end,:), pspvor=zspvor, pspdiv=zspdiv, &
       &            pspscalar=zspscalar, kvsetuv=ivset, kvsetsc=ivsetsc, kproma=nproma)
   else
@@ -785,24 +783,22 @@ else if (icall_mode == 1) then
       &            pgp3a=zgp3a(:,:,1:nfld,:), pgp2=zgp2(:,1:1,:), &
       &            pspvor=zspvor, pspdiv=zspdiv, pspsc3a=zspsc3a, pspsc2=zspsc2, &
       &            kvsetuv=ivset, kvsetsc2=ivsetsc2, kvsetsc3a=ivset, kproma=nproma)
+  endif
 
- endif
-
-    if (ldump_checksums) then
-      write (checksums_filename,'(A)') trim(cchecksums_path)//'_dir_trans.checksums'
+  if (ldump_checksums) then
+    write (checksums_filename,'(A)') trim(cchecksums_path)//'_dir_trans.checksums'
 
     if (icall_mode == 1) then
-        call dump_checksums_psp(filename=checksums_filename, noutdump=noutdump,                   &
-                              & jstep=jstep, myproc=myproc,                                       &
-                              & ivset=ivset, ivsetsc=ivsetsc, nspec2g=nspec2g, &
-                              & zspvor=zspvor, zspdiv=zspdiv, zspscalar=zspscalar)
+      call dump_checksums_psp(filename=checksums_filename, noutdump=noutdump,                   &
+                            & jstep=jstep, myproc=myproc,                                       &
+                            & ivset=ivset, ivsetsc=ivsetsc, nspec2g=nspec2g, &
+                            & zspvor=zspvor, zspdiv=zspdiv, zspscalar=zspscalar)
     else
-        call dump_checksums_psp_3a_2(filename=checksums_filename, noutdump=noutdump,                   &
-                                   & jstep=jstep, myproc=myproc,                                       &
-                                   & ivset=ivset, ivsetsc2=ivsetsc2, nspec2g=nspec2g, &
-        &                 zspvor=zspvor, zspdiv=zspdiv, zspsc3a=zspsc3a, zspsc2=zspsc2)
+      call dump_checksums_psp_3a_2(filename=checksums_filename, noutdump=noutdump,                   &
+                                  & jstep=jstep, myproc=myproc,                                       &
+                                  & ivset=ivset, ivsetsc2=ivsetsc2, nspec2g=nspec2g, &
+      &                 zspvor=zspvor, zspdiv=zspdiv, zspsc3a=zspsc3a, zspsc2=zspsc2)
     endif
-
   endif
   call gstats(5,1)
 

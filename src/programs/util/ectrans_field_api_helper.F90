@@ -1,6 +1,6 @@
 module ectrans_field_api_helper
 
-use field_module, only:field_1rb, field_2rb, field_3rb, field_4rb
+use field_module, only: field_1rb, field_2rb, field_3rb, field_4rb
 use field_factory_module
 use parkind1, only: jpim, jprb, jprd
 #include "field_basic_type_ptr.h"
@@ -62,72 +62,72 @@ subroutine wrap_benchmark_fields_zgp(ywflds, lvordiv, lscders, luvders,&
 
   ! Wrap the arrays given as input in field API objects
 
-    type(wrapped_fields), intent(inout) :: ywflds
-    logical, intent(in) :: lvordiv
-    logical, intent(in) :: lscders
-    logical, intent(in) :: luvders
-    real(kind=jprb), intent(in) :: zspvor(:,:)
-    real(kind=jprb), intent(in) :: zspdiv(:,:)
-    real(kind=jprb), intent(in) :: zspscalar(:,:)
-    real(kind=jprb), intent(in) :: zgp (:,:,:)
-    integer, intent(in) :: kuv
-    integer, intent(in) :: k2d
+  type(wrapped_fields), intent(inout) :: ywflds
+  logical, intent(in) :: lvordiv
+  logical, intent(in) :: lscders
+  logical, intent(in) :: luvders
+  real(kind=jprb), intent(in) :: zspvor(:,:)
+  real(kind=jprb), intent(in) :: zspdiv(:,:)
+  real(kind=jprb), intent(in) :: zspscalar(:,:)
+  real(kind=jprb), intent(in) :: zgp (:,:,:)
+  integer, intent(in) :: kuv
+  integer, intent(in) :: k2d
 
-    integer :: ioffset
+  integer :: ioffset
 
-    ! spectral vector fields
-    call field_new(ywflds%spvor,  data=zspvor(:,:))
-    call field_new(ywflds%spdiv,  data=zspdiv(:,:))
+  ! spectral vector fields
+  call field_new(ywflds%spvor,  data=zspvor(:,:))
+  call field_new(ywflds%spdiv,  data=zspdiv(:,:))
 
-    ! spectral scalar fields
-    if (k2d > 0) then
-      call field_new(ywflds%spscalar, data=zspscalar(:,:))
-    endif
-    ioffset = 1
+  ! spectral scalar fields
+  if (k2d > 0) then
+    call field_new(ywflds%spscalar, data=zspscalar(:,:))
+  endif
+  ioffset = 1
 
-    ! grid-point vector fields
+  ! grid-point vector fields
 
-    ! gridpoint vector field vorticitity and divergence
-    if (lvordiv) then
-        call field_new(ywflds%vor, data=zgp(:, ioffset:ioffset+kuv-1, :))
-        ioffset = ioffset + kuv
-        call field_new(ywflds%div, data=zgp(:, ioffset:ioffset+kuv-1, :))
-        ioffset = ioffset + kuv
-    endif
-
-    ! grid-point u and v
-    call field_new(ywflds%u, data=zgp(:, ioffset:ioffset+kuv-1, :))
+  ! gridpoint vector field vorticitity and divergence
+  if (lvordiv) then
+    call field_new(ywflds%vor, data=zgp(:, ioffset:ioffset+kuv-1, :))
     ioffset = ioffset + kuv
-    call field_new(ywflds%v, data=zgp(:, ioffset:ioffset+kuv-1, :))
+    call field_new(ywflds%div, data=zgp(:, ioffset:ioffset+kuv-1, :))
     ioffset = ioffset + kuv
+  endif
 
-    ! grid-point scalar fields
-    if (k2d > 0) then
-      call field_new(ywflds%scalar, data=zgp(:,ioffset:ioffset+k2d-1,:))
+  ! grid-point u and v
+  call field_new(ywflds%u, data=zgp(:, ioffset:ioffset+kuv-1, :))
+  ioffset = ioffset + kuv
+  call field_new(ywflds%v, data=zgp(:, ioffset:ioffset+kuv-1, :))
+  ioffset = ioffset + kuv
+
+  ! grid-point scalar fields
+  if (k2d > 0) then
+    call field_new(ywflds%scalar, data=zgp(:,ioffset:ioffset+k2d-1,:))
+    ioffset = ioffset + k2d
+  endif
+
+  if (k2d > 0) then
+    if (lscders) then
+      call field_new(ywflds%scalar_ns, data=zgp(:,ioffset:ioffset+k2d-1,:))
       ioffset = ioffset + k2d
     endif
+  endif
 
-    if (k2d > 0) then
-      if (lscders) then
-          call field_new(ywflds%scalar_ns, data=zgp(:,ioffset:ioffset+k2d-1,:))
-          ioffset = ioffset + k2d
-      endif
-    endif
+  ! grid-point vector derivatives
+  if (luvders) then
+    call field_new(ywflds%u_ew, data=zgp(:, ioffset:ioffset+kuv-1, :))
+    ioffset = ioffset + kuv
+    call field_new(ywflds%v_ew, data=zgp(:, ioffset:ioffset+kuv-1, :))
+    ioffset = ioffset + kuv
+  endif
 
- ! grid-point vector derivatives
-    if (luvders) then
-      call field_new(ywflds%u_ew, data=zgp(:, ioffset:ioffset+kuv-1, :))
-      ioffset = ioffset + kuv
-      call field_new(ywflds%v_ew, data=zgp(:, ioffset:ioffset+kuv-1, :))
-      ioffset = ioffset + kuv
+  if (k2d > 0) then
+    if (lscders) then
+      call field_new(ywflds%scalar_ew, data=zgp(:,ioffset:ioffset+k2d-1,:))
+      ioffset = ioffset + k2d
     endif
-
-    if (k2d > 0) then
-      if (lscders) then
-          call field_new(ywflds%scalar_ew, data=zgp(:,ioffset:ioffset+k2d-1,:))
-          ioffset = ioffset + k2d
-      endif
-    endif
+  endif
 end subroutine wrap_benchmark_fields_zgp
 
 subroutine wrap_benchmark_fields(ywflds, lvordiv, lscders, luvders,&
@@ -136,86 +136,85 @@ subroutine wrap_benchmark_fields(ywflds, lvordiv, lscders, luvders,&
 
   ! Wrap the arrays given as input in field API objects
 
-    type(wrapped_fields), intent(inout) :: ywflds
-    logical, intent(in) :: lvordiv
-    logical, intent(in) :: lscders
-    logical, intent(in) :: luvders
-    real(kind=jprb), intent(in) :: zspvor(:,:)
-    real(kind=jprb), intent(in) :: zspdiv(:,:)
-    real(kind=jprb), intent(in) :: zspsc3a(:,:,:)
-    real(kind=jprb), intent(in) :: zspsc2(:,:)
-    real(kind=jprb), intent(in) :: zgpuv (:,:,:,:)
-    real(kind=jprb), intent(in) :: zgp3a(:,:,:,:)
-    real(kind=jprb), intent(in) :: zgp2(:,:,:)
-    integer, intent(in) :: kuv
-    integer, intent(in) :: k2d
-    integer, intent(in) :: k3d
+  type(wrapped_fields), intent(inout) :: ywflds
+  logical, intent(in) :: lvordiv
+  logical, intent(in) :: lscders
+  logical, intent(in) :: luvders
+  real(kind=jprb), intent(in) :: zspvor(:,:)
+  real(kind=jprb), intent(in) :: zspdiv(:,:)
+  real(kind=jprb), intent(in) :: zspsc3a(:,:,:)
+  real(kind=jprb), intent(in) :: zspsc2(:,:)
+  real(kind=jprb), intent(in) :: zgpuv (:,:,:,:)
+  real(kind=jprb), intent(in) :: zgp3a(:,:,:,:)
+  real(kind=jprb), intent(in) :: zgp2(:,:,:)
+  integer, intent(in) :: kuv
+  integer, intent(in) :: k2d
+  integer, intent(in) :: k3d
 
-    integer :: ioffset
+  integer :: ioffset
 
   ! spectral vector fields
-    call field_new(ywflds%spvor,      data=zspvor(:,:))
-    call field_new(ywflds%spdiv,      data=zspdiv(:,:))
-    ! spectral scalar fields
-    if (k3d > 0) then
-      call field_new(ywflds%spscalar3, data=zspsc3a(:,:,:))
-    endif
-    ! spectral surfacic scalar fields
-    if (k2d > 0) then
-      call field_new(ywflds%spscalar2, data=zspsc2(:,:))
-    endif
+  call field_new(ywflds%spvor,      data=zspvor(:,:))
+  call field_new(ywflds%spdiv,      data=zspdiv(:,:))
+  ! spectral scalar fields
+  if (k3d > 0) then
+    call field_new(ywflds%spscalar3, data=zspsc3a(:,:,:))
+  endif
+  ! spectral surfacic scalar fields
+  if (k2d > 0) then
+    call field_new(ywflds%spscalar2, data=zspsc2(:,:))
+  endif
 
-    ! grid-point vector fields
+  ! grid-point vector fields
+  ioffset = 1
+  ! gridpoint vector field vorticitity and divergence
+  if (lvordiv) then
+    call field_new(ywflds%vor, data=zgpuv(:,:, ioffset, :))
+    ioffset = ioffset + kuv
+    call field_new(ywflds%div, data=zgpuv(:,:, ioffset, :))
+    ioffset = ioffset + kuv
+  endif
+
+  ! grid-point u and v
+  call field_new(ywflds%u, data=zgpuv(:,:, ioffset, :))
+  ioffset = ioffset + kuv
+  call field_new(ywflds%v, data=zgpuv(:,:, ioffset, :))
+  ioffset = ioffset + kuv
+
+  ! grid-point vector derivatives
+  if (luvders) then
+    call field_new(ywflds%u_ew, data=zgpuv(:,:, ioffset, :))
+    ioffset = ioffset + kuv
+    call field_new(ywflds%v_ew, data=zgpuv(:,:, ioffset, :))
+    ioffset = ioffset + kuv
+  endif
+
+  !grid-point scalar fields
+  if (k3d > 0) then
     ioffset = 1
-    ! gridpoint vector field vorticitity and divergence
-    if (lvordiv) then
-        call field_new(ywflds%vor, data=zgpuv(:,:, ioffset, :))
-        ioffset = ioffset + kuv
-        call field_new(ywflds%div, data=zgpuv(:,:, ioffset, :))
-        ioffset = ioffset + kuv
-    endif
-
-    ! grid-point u and v
-    call field_new(ywflds%u, data=zgpuv(:,:, ioffset, :))
-    ioffset = ioffset + kuv
-    call field_new(ywflds%v, data=zgpuv(:,:, ioffset, :))
-    ioffset = ioffset + kuv
-
-    ! grid-point vector derivatives
-    if (luvders) then
-      call field_new(ywflds%u_ew, data=zgpuv(:,:, ioffset, :))
-      ioffset = ioffset + kuv
-      call field_new(ywflds%v_ew, data=zgpuv(:,:, ioffset, :))
-      ioffset = ioffset + kuv
-    endif
-
-    !grid-point scalar fields
-    if (k3d > 0) then
-      ioffset = 1
-      call field_new(ywflds%scalar3,  data=zgp3a(:,:,ioffset:ioffset+k3d-1,:))
+    call field_new(ywflds%scalar3,  data=zgp3a(:,:,ioffset:ioffset+k3d-1,:))
+    ioffset = ioffset + k3d
+    if (lscders) then
+      ! grid-point surfacic scalar derivatives fields
+      call field_new(ywflds%scalar3_ns,  data=zgp3a(:,:,ioffset:ioffset+k3d-1,:))
       ioffset = ioffset + k3d
-      if (lscders) then
-          ! grid-point surfacic scalar derivatives fields
-          call field_new(ywflds%scalar3_ns,  data=zgp3a(:,:,ioffset:ioffset+k3d-1,:))
-          ioffset = ioffset + k3d
-          call field_new(ywflds%scalar3_ew,  data=zgp3a(:,:,ioffset:ioffset+k3d-1,:))
-          ioffset = ioffset + k3d
-      endif
+      call field_new(ywflds%scalar3_ew,  data=zgp3a(:,:,ioffset:ioffset+k3d-1,:))
+      ioffset = ioffset + k3d
     endif
+  endif
 
-    ! grid-point surfacic scalar fields
-    if (k2d > 0) then!
-      ioffset = 1
-      call field_new(ywflds%scalar2,   data=zgp2(:,ioffset:ioffset + k2d-1,:))
+  ! grid-point surfacic scalar fields
+  if (k2d > 0) then!
+    ioffset = 1
+    call field_new(ywflds%scalar2,   data=zgp2(:,ioffset:ioffset + k2d-1,:))
+    ioffset = ioffset + k2d
+    if (lscders) then
+      call field_new(ywflds%scalar2_ns, data=zgp2(:,ioffset : ioffset + k2d-1,:))
       ioffset = ioffset + k2d
-      if (lscders) then
-        call field_new(ywflds%scalar2_ns, data=zgp2(:,ioffset : ioffset + k2d-1,:))
-        ioffset = ioffset + k2d
-        call field_new(ywflds%scalar2_ew, data=zgp2(:, ioffset : ioffset + k2d-1,:))
-        ioffset = ioffset + k2d
-      endif
+      call field_new(ywflds%scalar2_ew, data=zgp2(:, ioffset : ioffset + k2d-1,:))
+      ioffset = ioffset + k2d
     endif
-
+  endif
 end subroutine wrap_benchmark_fields
 
 subroutine create_fields_lists(ywflds,ylf, kvsetuv, kvsetsc,kvsetsc2)
@@ -368,7 +367,7 @@ end subroutine synchost_rdonly_wrapped_fields
 
 subroutine nullify_wrapped_fields(ywflds)
 
-    ! Nullify all pointers in ywflds
+  ! Nullify all pointers in ywflds
 
   type(wrapped_fields), intent(inout) :: ywflds
 
