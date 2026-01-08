@@ -235,7 +235,7 @@ IF (PRESENT(YDFU)) THEN
   ALLOCATE(IVSETUV(KFLEVG))
 
   ! temporary copies on gpu
-  if ( LDACC ) THEN
+  IF ( LDACC ) THEN
     !$ACC ENTER DATA CREATE(ZPSPVOR,ZPSPDIV,ZPGPUV)
   ENDIF
 
@@ -258,9 +258,9 @@ IF (PRESENT(YDFU)) THEN
       ENDIF
     ENDIF
   ENDDO
-  if (LDACC)  THEN
+  IF (LDACC)  THEN
     !$ACC UPDATE SELF(ZPSPVOR,ZPSPDIV)
-  endif
+  ENDIF
  
   ! Initialize b-set for vector fields data
   C = LG(YLGVU, YDFU, LDACC, .TRUE.)
@@ -325,7 +325,7 @@ IF (PRESENT(YDFSPSCALAR)) THEN
   ALLOCATE(IVSETSC2(IFLDXG))
 
   ! temporary copies on gpu
-  if ( LDACC ) THEN
+  IF ( LDACC ) THEN
     !$ACC ENTER DATA CREATE(ZPSPSC2,ZPGP2)
   ENDIF
 
@@ -346,9 +346,9 @@ IF (PRESENT(YDFSPSCALAR)) THEN
     ENDIF
   ENDDO
 
-  if (LDACC) THEN 
+  IF (LDACC) THEN
     !$ACC UPDATE SELF(ZPSPSC2)
-  endif
+  ENDIF
 
   ! compute ´b-set´ for scalar-fields
   C = LG(YLGVSCALAR,YDFSCALAR, LDACC,.TRUE.)
@@ -555,7 +555,7 @@ ENDIF
 ! 5. Final cleanup
 
 ! delete temporary arrays
-if ( LDACC ) THEN
+IF ( LDACC ) THEN
   IF (ASSOCIATED(ZPSPVOR))  THEN
     !$ACC EXIT DATA DELETE(ZPSPVOR)
   ENDIF
