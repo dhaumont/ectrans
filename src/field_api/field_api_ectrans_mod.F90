@@ -246,8 +246,8 @@ FUNCTION LG(LGV, YLFL,LDACC,LDRDONLY) RESULT(IOFF)
     ! iterate over YLFL LIST
     DO JFLD = 1, SIZE (YLFL)
 
-    ! Phase 1: compute number of GRID_VIEW that will be generated for each field of the list
-    ! Phase 2: call the correct routine to create the GRID_VIEW for each field of the list
+      ! Phase 1: compute number of GRID_VIEW that will be generated for each field of the list
+      ! Phase 2: call the correct routine to create the GRID_VIEW for each field of the list
       SELECT TYPE (YLF => YLFL (JFLD)%PTR)
         CLASS IS (FIELD_1RB)
           ILEN = 1
@@ -368,7 +368,7 @@ SUBROUTINE LS3RB(LS3RBV,YLF,NAME, IVSET, LDACC,LDRDONLY)
   ! Creation of a list of SPEC_VIEW, each of them encapsulating a layer of an input FIELD_3RB field.
   ! Given YLF dimensioned(NLEVS, NSPEC, NFIELDS) as input,
   ! the output list size will contain (NLEVS*NFIELDS) SPEC_VIEW, each of them dimensioned(NSPEC)
-    CLASS (FIELD_3RB), POINTER, INTENT (IN) :: YLF
+  CLASS (FIELD_3RB), POINTER, INTENT (IN) :: YLF
   CHARACTER(LEN=*) :: NAME
   LOGICAL :: LDACC
   INTEGER :: IVSET(:)
@@ -412,58 +412,58 @@ SUBROUTINE LS3RB(LS3RBV,YLF,NAME, IVSET, LDACC,LDRDONLY)
 END SUBROUTINE LS3RB
 
 FUNCTION LS(LSV,YLFL,LDACC,LDRDONLY) RESULT(IOFF)
-! Creation of a list of SPEC_VIEW from a list YLFL of FIELD_BASIC_PTR
+  ! Creation of a list of SPEC_VIEW from a list YLFL of FIELD_BASIC_PTR
   TYPE (FIELD_BASIC_PTR) :: YLFL (:) ! input list of FIELD_BASIC_PTR
   TYPE (SPEC_VIEW) :: LSV (:)        ! output list of SPEC_VIEW
   LOGICAL ::  LDACC                  ! retrieve data on device
   LOGICAL  :: LDRDONLY
   INTEGER(KIND=JPIM) :: IOFF
 
-INTEGER(KIND=JPIM) :: ILEN, JFLD, JPASS
-INTEGER(KIND=JPIM) :: ILBOUNDS (5), IUBOUNDS (5)
+  INTEGER(KIND=JPIM) :: ILEN, JFLD, JPASS
+  INTEGER(KIND=JPIM) :: ILBOUNDS (5), IUBOUNDS (5)
 
-REAL(KIND=JPRB), POINTER :: ZZ1 (:)
-! First pass: determination of the output size list
-! Second pass: allocate and instanciate the SPEC_VIEW types
-DO JPASS = 1,2
+  REAL(KIND=JPRB), POINTER :: ZZ1 (:)
+  ! First pass: determination of the output size list
+  ! Second pass: allocate and instanciate the SPEC_VIEW types
+  DO JPASS = 1,2
 
-  IOFF = 0
-  ILEN = -1
+    IOFF = 0
+    ILEN = -1
 
-  ! iterate over YLFL LIST
-  DO JFLD = 1, SIZE (YLFL)
-   ! Phase 1: compute number of SPEC_VIEW that will be generated for each field of the list
-   ! Phase 2: call the correct routine to create the SPEC_VIEW for each field of the list
-    SELECT TYPE (YLF => YLFL (JFLD)%PTR)
-      CLASS IS (FIELD_1RB)
-        ILEN = 1
-        IF (JPASS == 2) CALL LS1RB(LSV(IOFF+1:IOFF+ILEN),YLF,YLFL(JFLD)%NAME,YLFL(JFLD)%IVSET, LDACC,LDRDONLY)
-      CLASS IS (FIELD_2RB)
-        CALL YLF%GET_DIMS (LBOUNDS=ILBOUNDS, UBOUNDS=IUBOUNDS)
-        ILEN = (IUBOUNDS (1) - ILBOUNDS (1) + 1)
-        IF (JPASS == 2) CALL LS2RB(LSV(IOFF+1:IOFF+ILEN),YLF,YLFL(JFLD)%NAME,YLFL(JFLD)%IVSET, LDACC,LDRDONLY)
-      CLASS IS (FIELD_3RB)
-        CALL YLF%GET_DIMS (LBOUNDS=ILBOUNDS, UBOUNDS=IUBOUNDS)
-         ILEN =  (IUBOUNDS (1) - ILBOUNDS (1) + 1)* (IUBOUNDS (3) - ILBOUNDS (3) + 1)
-       IF (JPASS == 2) CALL LS3RB(LSV(IOFF+1:IOFF+ILEN),YLF ,YLFL(JFLD)%NAME,YLFL(JFLD)%IVSET, LDACC,LDRDONLY)
-      CLASS IS (FIELD_4RB)
+    ! iterate over YLFL LIST
+    DO JFLD = 1, SIZE (YLFL)
+      ! Phase 1: compute number of SPEC_VIEW that will be generated for each field of the list
+      ! Phase 2: call the correct routine to create the SPEC_VIEW for each field of the list
+      SELECT TYPE (YLF => YLFL (JFLD)%PTR)
+        CLASS IS (FIELD_1RB)
+          ILEN = 1
+          IF (JPASS == 2) CALL LS1RB(LSV(IOFF+1:IOFF+ILEN),YLF,YLFL(JFLD)%NAME,YLFL(JFLD)%IVSET, LDACC,LDRDONLY)
+        CLASS IS (FIELD_2RB)
+          CALL YLF%GET_DIMS (LBOUNDS=ILBOUNDS, UBOUNDS=IUBOUNDS)
+          ILEN = (IUBOUNDS (1) - ILBOUNDS (1) + 1)
+          IF (JPASS == 2) CALL LS2RB(LSV(IOFF+1:IOFF+ILEN),YLF,YLFL(JFLD)%NAME,YLFL(JFLD)%IVSET, LDACC,LDRDONLY)
+        CLASS IS (FIELD_3RB)
+          CALL YLF%GET_DIMS (LBOUNDS=ILBOUNDS, UBOUNDS=IUBOUNDS)
+          ILEN =  (IUBOUNDS (1) - ILBOUNDS (1) + 1)* (IUBOUNDS (3) - ILBOUNDS (3) + 1)
+          IF (JPASS == 2) CALL LS3RB(LSV(IOFF+1:IOFF+ILEN),YLF ,YLFL(JFLD)%NAME,YLFL(JFLD)%IVSET, LDACC,LDRDONLY)
+        CLASS IS (FIELD_4RB)
           CALL ABOR1("LS not implemeted for FIELD_4RB")
-      CLASS DEFAULT
-         ! Skip the spectral field as it is not present on this processor
-         ILEN = 1
-    END SELECT
+        CLASS DEFAULT
+          ! Skip the spectral field as it is not present on this processor
+          ILEN = 1
+      END SELECT
 
-    IOFF = IOFF + ILEN
+      IOFF = IOFF + ILEN
+
+    ENDDO
+
+    IF (SIZE(LSV) == 0 .AND.JPASS == 1) THEN
+      RETURN
+    ELSE
+      IF (SIZE(LSV) /= IOFF)  CALL ABOR1("LS FAILURE: LSV has incorrect size")
+    ENDIF
 
   ENDDO
-
-  IF (SIZE(LSV) == 0 .AND.JPASS == 1) THEN
-    RETURN
-  ELSE
-    IF (SIZE(LSV) /= IOFF)  CALL ABOR1("LS FAILURE: LSV has incorrect size")
-  ENDIF
-
-ENDDO
 
 END FUNCTION LS
 
