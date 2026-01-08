@@ -208,7 +208,7 @@ IF (PRESENT(YDFU)) THEN
     IUVDIM = 5
     ALLOCATE(YLGVU_EW(LG_COUNT(YDFU_EW)))
     ALLOCATE(YLGVV_EW(LG_COUNT(YDFV_EW)))
- ENDIF
+  ENDIF
 
   ! Output divergence of vector fields
   IF (PRESENT(YDFDIV)) THEN
@@ -234,33 +234,33 @@ IF (PRESENT(YDFU)) THEN
   ! allocate 'b-set' for vector fields
   ALLOCATE(IVSETUV(KFLEVG))
 
-    ! temporary copies on gpu
+  ! temporary copies on gpu
   if ( LDACC ) THEN
     !$ACC ENTER DATA CREATE(ZPSPVOR,ZPSPDIV,ZPGPUV)
   ENDIF
 
-    C = LS(YLSPVVOR, YDFSPVOR, LDACC, .TRUE.)
-    C = LS(YLSPVDIV, YDFSPDIV, LDACC, .TRUE.)
+  C = LS(YLSPVVOR, YDFSPVOR, LDACC, .TRUE.)
+  C = LS(YLSPVDIV, YDFSPDIV, LDACC, .TRUE.)
 
-    ! Copy list of 2d views of spectral vector fields into temporary arrays
-    DO JFLD=1,IFLDSPVOR
+  ! Copy list of 2d views of spectral vector fields into temporary arrays
+  DO JFLD=1,IFLDSPVOR
     IF (ASSOCIATED(YLSPVVOR(JFLD)%P)) THEN
-        ZZ1_1=>YLSPVVOR(JFLD)%P
-        ZZ1_2=>YLSPVDIV(JFLD)%P
-        IF (LDACC) THEN
-          !$acc kernels present(ZPSPVOR,ZPSPDIV,ZZ1_1,ZZ1_2)
-          ZPSPVOR(JFLD,:) = ZZ1_1(:)
-          ZPSPDIV(JFLD,:) = ZZ1_2(:)
-          !$acc end kernels
-        ELSE
-     	     ZPSPVOR(JFLD,:) = ZZ1_1(:)
-           ZPSPDIV(JFLD,:) = ZZ1_2(:)
-        ENDIF
+      ZZ1_1=>YLSPVVOR(JFLD)%P
+      ZZ1_2=>YLSPVDIV(JFLD)%P
+      IF (LDACC) THEN
+        !$acc kernels present(ZPSPVOR,ZPSPDIV,ZZ1_1,ZZ1_2)
+        ZPSPVOR(JFLD,:) = ZZ1_1(:)
+        ZPSPDIV(JFLD,:) = ZZ1_2(:)
+        !$acc end kernels
+      ELSE
+        ZPSPVOR(JFLD,:) = ZZ1_1(:)
+        ZPSPDIV(JFLD,:) = ZZ1_2(:)
       ENDIF
-    ENDDO
+    ENDIF
+  ENDDO
   if (LDACC)  THEN
     !$ACC UPDATE SELF(ZPSPVOR,ZPSPDIV)
- endif
+  endif
  
   ! Initialize b-set for vector fields data
   C = LG(YLGVU, YDFU, LDACC, .TRUE.)
@@ -313,15 +313,15 @@ IF (PRESENT(YDFSPSCALAR)) THEN
     ISCDIM = ISCDIM + 2
     ALLOCATE(YLGVSCALAR_NS(LG_COUNT(YDFSCALAR_NS)))
     ALLOCATE(YLGVSCALAR_EW(LG_COUNT(YDFSCALAR_EW)))
- ENDIF
+  ENDIF
 
-! Allocate scalar field array in spectral space
+  ! Allocate scalar field array in spectral space
   ALLOCATE(ZPSPSC2(IFLDXL,KSPEC))
 
-! Allocate scalar field array in grid space
+  ! Allocate scalar field array in grid space
   ALLOCATE(ZPGP2(KPROMA,IFLDXG * ISCDIM,KGPBLKS))
 
-! allocate 'b-set' for scalar fields
+  ! allocate 'b-set' for scalar fields
   ALLOCATE(IVSETSC2(IFLDXG))
 
   ! temporary copies on gpu
@@ -345,16 +345,16 @@ IF (PRESENT(YDFSPSCALAR)) THEN
       ID = ID + 1
     ENDIF
   ENDDO
-  
+
   if (LDACC) THEN 
     !$ACC UPDATE SELF(ZPSPSC2)
   endif
 
- ! compute ´b-set´ for scalar-fields
+  ! compute ´b-set´ for scalar-fields
   C = LG(YLGVSCALAR,YDFSCALAR, LDACC,.TRUE.)
-   DO JFLD=1, IFLDXG
+  DO JFLD=1, IFLDXG
     IVSETSC2(JFLD) = YLGVSCALAR(JFLD)%IVSET
-   ENDDO
+  ENDDO
 ELSE
   !No scalar field provided
   IFLDXG = 0
@@ -366,37 +366,37 @@ ENDIF
 
 ! We have to perform separated calls for nvfortran
 IF (ASSOCIATED(ZPGP2) .AND. ASSOCIATED(ZPGPUV)) THEN
-    IF (PRESENT (FSPGL_PROC)) THEN
-        CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
-                     & PSPSC2=ZPSPSC2,PGP2=ZPGP2,KVSETSC2=IVSETSC2, &
-                     & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=KPROMA,FSPGL_PROC=FSPGL_PROC)
-    ELSE
-        CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
-                     & PSPSC2=ZPSPSC2,PGP2=ZPGP2, KVSETSC2=IVSETSC2, &
-                     & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=KPROMA)
-    ENDIF
+  IF (PRESENT (FSPGL_PROC)) THEN
+    CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
+                  & PSPSC2=ZPSPSC2,PGP2=ZPGP2,KVSETSC2=IVSETSC2, &
+                  & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
+                  & KPROMA=KPROMA,FSPGL_PROC=FSPGL_PROC)
+  ELSE
+    CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
+                  & PSPSC2=ZPSPSC2,PGP2=ZPGP2, KVSETSC2=IVSETSC2, &
+                  & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
+                  & KPROMA=KPROMA)
+  ENDIF
 ELSE IF (ASSOCIATED(ZPGP2)) THEN
-    IF (PRESENT (FSPGL_PROC)) THEN
-        CALL INV_TRANS(PSPSC2=ZPSPSC2,PGP2=ZPGP2,KVSETSC2=IVSETSC2, &
-                     & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=KPROMA,FSPGL_PROC=FSPGL_PROC)
-    ELSE
-        CALL INV_TRANS(PSPSC2=ZPSPSC2,PGP2=ZPGP2, KVSETSC2=IVSETSC2, &
-                     & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=KPROMA)
-    ENDIF
+  IF (PRESENT (FSPGL_PROC)) THEN
+    CALL INV_TRANS(PSPSC2=ZPSPSC2,PGP2=ZPGP2,KVSETSC2=IVSETSC2, &
+                  & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
+                  & KPROMA=KPROMA,FSPGL_PROC=FSPGL_PROC)
+  ELSE
+    CALL INV_TRANS(PSPSC2=ZPSPSC2,PGP2=ZPGP2, KVSETSC2=IVSETSC2, &
+                  & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
+                  & KPROMA=KPROMA)
+  ENDIF
 ELSE IF (ASSOCIATED(ZPGPUV)) THEN
-    IF (PRESENT (FSPGL_PROC)) THEN
-        CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
-                     & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=KPROMA,FSPGL_PROC=FSPGL_PROC)
-    ELSE
-        CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
-                     & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=KPROMA)
-    ENDIF
+  IF (PRESENT (FSPGL_PROC)) THEN
+    CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
+                  & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
+                  & KPROMA=KPROMA,FSPGL_PROC=FSPGL_PROC)
+  ELSE
+    CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
+                  & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
+                  & KPROMA=KPROMA)
+  ENDIF
 ENDIF
 
 ! 4. Copy back temporary array data into grid-point fields
@@ -428,20 +428,20 @@ IF (IUVG>0) THEN
   IOFFSET = 0
   ! copy vorticity
   IF (LLVORGP) THEN
-      C = LG(YLGVVOR,YDFVOR, LDACC, .FALSE.)
-      DO JFLD=1,IUVG
-        DO JLEV=1,KFLEVG
-          ID = JLEV + (JFLD -1) * KFLEVG
-          ZZ2_1=>YLGVVOR(ID)%P
-          IF (LDACC) THEN
-            !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1)
-             ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
-            !$ACC END KERNELS
-          ELSE
+    C = LG(YLGVVOR,YDFVOR, LDACC, .FALSE.)
+    DO JFLD=1,IUVG
+      DO JLEV=1,KFLEVG
+        ID = JLEV + (JFLD -1) * KFLEVG
+        ZZ2_1=>YLGVVOR(ID)%P
+        IF (LDACC) THEN
+          !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1)
             ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
-          ENDIF
-        ENDDO
+          !$ACC END KERNELS
+        ELSE
+          ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+        ENDIF
       ENDDO
+    ENDDO
 
     IOFFSET = IOFFSET + 1
   ENDIF
@@ -449,20 +449,20 @@ IF (IUVG>0) THEN
   ! copy divergence
   IF (LLDIVGP) THEN
 
-      C = LG(YLGVDIV,YDFDIV, LDACC, .FALSE.)
-      DO JFLD=1,IUVG
-        DO JLEV=1,KFLEVG
-        ID = JLEV + (JFLD -1) * KFLEVG
-        ZZ2_1=>YLGVDIV(ID)%P
-        IF (LDACC) THEN
-          !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1)
-          ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
-          !$ACC END KERNELS
-        ELSE
-          ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
-        ENDIF
-        ENDDO
+    C = LG(YLGVDIV,YDFDIV, LDACC, .FALSE.)
+    DO JFLD=1,IUVG
+      DO JLEV=1,KFLEVG
+      ID = JLEV + (JFLD -1) * KFLEVG
+      ZZ2_1=>YLGVDIV(ID)%P
+      IF (LDACC) THEN
+        !$ACC KERNELS PRESENT(ZPGPUV,ZZ2_1)
+        ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+        !$ACC END KERNELS
+      ELSE
+        ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
+      ENDIF
       ENDDO
+    ENDDO
 
     IOFFSET = IOFFSET + 1
   ENDIF
@@ -517,17 +517,17 @@ ENDIF
 
 IF (IFLDXG > 0) THEN
   ! copy spectral scalar fields
-    C = LG(YLGVSCALAR,YDFSCALAR, LDACC,.FALSE.)
-    DO JFLD=1, IFLDXG
-      ZZ2_1=>YLGVSCALAR(JFLD)%P(:,:)
-      IF (LDACC) THEN
-        !$ACC KERNELS PRESENT(ZPGP2,ZZ2_1)
-        ZZ2_1(:,:) = ZPGP2(:,JFLD,:)
-        !$ACC END KERNELS
-      ELSE
-        ZZ2_1(:,:) = ZPGP2(:,JFLD,:)
-      ENDIF
-    ENDDO
+  C = LG(YLGVSCALAR,YDFSCALAR, LDACC,.FALSE.)
+  DO JFLD=1, IFLDXG
+    ZZ2_1=>YLGVSCALAR(JFLD)%P(:,:)
+    IF (LDACC) THEN
+      !$ACC KERNELS PRESENT(ZPGP2,ZZ2_1)
+      ZZ2_1(:,:) = ZPGP2(:,JFLD,:)
+      !$ACC END KERNELS
+    ELSE
+      ZZ2_1(:,:) = ZPGP2(:,JFLD,:)
+    ENDIF
+  ENDDO
 
   ! copy spectral scalar fields derivatives
 
@@ -536,18 +536,18 @@ IF (IFLDXG > 0) THEN
     C = LG(YLGVSCALAR_EW, YDFSCALAR_EW, LDACC, .FALSE.)
 
     DO JFLD=1,IFLDXG
-        ZZ2_1=>YLGVSCALAR_NS(JFLD)%P
-        ZZ2_2=>YLGVSCALAR_EW(JFLD)%P
-        IF (LDACC) THEN
-          !$ACC KERNELS PRESENT(ZPGP2,ZZ2_1,ZZ2_2)
-          ZZ2_1(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
-          ZZ2_2(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
-          !$ACC END KERNELS
-        ELSE
-          ZZ2_1(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
-          ZZ2_2(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
-        ENDIF
-      ENDDO
+      ZZ2_1=>YLGVSCALAR_NS(JFLD)%P
+      ZZ2_2=>YLGVSCALAR_EW(JFLD)%P
+      IF (LDACC) THEN
+        !$ACC KERNELS PRESENT(ZPGP2,ZZ2_1,ZZ2_2)
+        ZZ2_1(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
+        ZZ2_2(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
+        !$ACC END KERNELS
+      ELSE
+        ZZ2_1(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
+        ZZ2_2(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
+      ENDIF
+    ENDDO
 
   ENDIF
 ENDIF
@@ -557,19 +557,19 @@ ENDIF
 ! delete temporary arrays
 if ( LDACC ) THEN
   IF (ASSOCIATED(ZPSPVOR))  THEN
-      !$ACC EXIT DATA DELETE(ZPSPVOR)
+    !$ACC EXIT DATA DELETE(ZPSPVOR)
   ENDIF
   IF (ASSOCIATED(ZPSPDIV)) THEN
-   !$ACC EXIT DATA DELETE(ZPSPDIV)
+    !$ACC EXIT DATA DELETE(ZPSPDIV)
   ENDIF
   IF (ASSOCIATED(ZPGPUV)) THEN
-     !$ACC EXIT DATA DELETE(ZPGPUV)
+    !$ACC EXIT DATA DELETE(ZPGPUV)
   ENDIF
   IF (ASSOCIATED(ZPSPSC2)) THEN
-   !$ACC EXIT DATA DELETE(ZPSPSC2)
+    !$ACC EXIT DATA DELETE(ZPSPSC2)
   ENDIF
   IF (ASSOCIATED(ZPGP2)) THEN
-     !$ACC EXIT DATA DELETE(ZPGP2)
+    !$ACC EXIT DATA DELETE(ZPGP2)
   ENDIF
 ENDIF
 
