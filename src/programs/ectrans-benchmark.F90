@@ -679,8 +679,7 @@ do jstep = 1, iters+iters_warmup
                             & ydfscalar_ns=ylf%scalar_ns, ydfscalar_ew=ylf%scalar_ew, &
                             & ydfvor=ylf%vor, ydfdiv=ylf%div, &
                             & kspec=nspec2, kproma=nproma, kgpblks=ngpblks, &
-                            & kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,&
-                            & kproc=myproc)
+                            & kgptot=ngptot, kflevg=nflevg, kflevl=nflevl)
       call synchost_rdonly_wrapped_fields(ywflds)
 #else
       call abor1('ectrans_benchmark: No field API support')
@@ -762,8 +761,7 @@ do jstep = 1, iters+iters_warmup
 #if USE_FIELD_API
       call dir_trans_field_api (ydfspvor=ylf%spvor, ydfspdiv=ylf%spdiv, ydfspscalar=ylf%spscalar, &
                             &   ydfu=ylf%u, ydfv=ylf%v, ydfscalar=ylf%scalar, &
-                            &   kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl,&
-                            &   kproc=myproc)
+                            &   kspec=nspec2, kproma=nproma, kgpblks=ngpblks, kgptot=ngptot, kflevg=nflevg, kflevl=nflevl)
       call synchost_rdonly_wrapped_fields(ywflds)
 #ifdef FIELD_API_CLAMP
       ! clamp small spectral values to ensure bit reproductibility with field Api interface
@@ -1274,6 +1272,7 @@ subroutine print_help(unit)
    & tolerance for correctness checking"
   write(nout, "(a)") "    --no-pinning        Disable memory-pinning (a.k.a. page-locked memory) &
    & to allocate fields for GPU version"
+  write(nout, "(a)") "    --field-api         Use the field api interface of ecTrans"
   write(nout, "(a)") "    --callmode          The call mode for INV_TRANS and DIR_TRANS (1 or 2)"
   write(nout, "(a)") "                        Call mode 1 uses arrays PSPVOR, PSPDIV, PSPSCALAR and&
    & PGP"

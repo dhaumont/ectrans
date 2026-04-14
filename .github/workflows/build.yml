@@ -104,6 +104,11 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+
     - name: Checkout Repository
       uses: actions/checkout@v2
 
@@ -223,10 +228,11 @@ jobs:
         dependencies: |
           ecmwf/ecbuild
           ecmwf-ifs/fiat
+          ecmwf-ifs/field_api@refs/tags/v0.3.9
         dependency_branch: develop
         dependency_cmake_options: |
           ecmwf-ifs/fiat: "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DENABLE_TESTS=OFF -DENABLE_MPI=ON"
-        cmake_options:    "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.cmake_options }} -DENABLE_MPI=ON -DENABLE_FFTW=ON -DENABLE_ETRANS=ON -DENABLE_MKL=OFF"
+        cmake_options:    "-G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.cmake_options }} -DENABLE_MPI=ON -DENABLE_FFTW=ON -DENABLE_ETRANS=ON -DENABLE_MKL=OFF -DENABLE_FIELD_API=ON"
         ctest_options: "${{ matrix.ctest_options }}"
 
     - name: Verify tools

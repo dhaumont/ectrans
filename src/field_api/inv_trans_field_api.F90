@@ -11,7 +11,7 @@
 SUBROUTINE INV_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
                              & YDFU, YDFV, YDFVOR,YDFDIV,YDFSCALAR, &
                              & YDFU_EW, YDFV_EW, YDFSCALAR_NS, YDFSCALAR_EW,&
-                             & KSPEC, KPROMA, KGPBLKS, KGPTOT, KFLEVG, KFLEVL, KPROC,&
+                             & KSPEC, KPROMA, KGPBLKS, KGPTOT, KFLEVG, KFLEVL, KRESOL, &
                              & FSPGL_PROC)
 
 !**** *INV_TRANS_FIELD_API* - Field API interface to inverse spectral transform
@@ -36,7 +36,7 @@ SUBROUTINE INV_TRANS_FIELD_API(YDFSPVOR,YDFSPDIV,YDFSPSCALAR, &
 !       KGPTOT         - Number of total grid points
 !       KFLEVG         - Number of levels
 !       KFLEVL         - Number of local levels
-!       KPROC          - Processor ID
+!       KRESOL           The resolution identifier
 !       FSPGL_PROC     - procedure to be executed in fourier space
 !                        before transposition
 
@@ -76,10 +76,12 @@ INTEGER(KIND=JPIM),   INTENT(IN)            :: KGPBLKS
 INTEGER(KIND=JPIM),   INTENT(IN)            :: KGPTOT
 INTEGER(KIND=JPIM),   INTENT(IN)            :: KFLEVG
 INTEGER(KIND=JPIM),   INTENT(IN)            :: KFLEVL
-INTEGER(KIND=JPIM),   INTENT(IN)            :: KPROC
-PROCEDURE (FSPGL_INTF),           OPTIONAL  :: FSPGL_PROC
+INTEGER(KIND=JPIM),   INTENT(IN), OPTIONAL  :: KRESOL
+PROCEDURE (FSPGL_INTF), POINTER, INTENT(IN), OPTIONAL  :: FSPGL_PROC
 
 ! Local variables
+
+LOGICAL :: LLFSPGL_PROC
 
 ! List of FIELD_VIEW: intermediate representation of fields to facilitate copy to temporary arrays
 
@@ -148,6 +150,13 @@ LLSCDERS  = .FALSE.
 LLVORGP = .FALSE.
 LLDIVGP = .FALSE.
 LLUVDER = .FALSE.
+
+LLFSPGL_PROC = .FALSE.
+IF (PRESENT(FSPGL_PROC)) THEN
+  IF (ASSOCIATED(FSPGL_PROC)) THEN
+     LLFSPGL_PROC = .TRUE.
+  ENDIF
+ENDIF
 
 ! We are still relying on DIR_TRANS, which require to have all the data are on CPU.
 ! So we force using data on the host 
@@ -330,36 +339,36 @@ ENDIF
 
 ! We have to perform separated calls for nvfortran
 IF (ASSOCIATED(ZPGP2) .AND. ASSOCIATED(ZPGPUV)) THEN
-    IF (PRESENT (FSPGL_PROC)) THEN
+    IF (LLFSPGL_PROC) THEN
         CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
                      & PSPSC2=ZPSPSC2,PGP2=ZPGP2,KVSETSC2=IVSETSC2, &
                      & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=KPROMA,FSPGL_PROC=FSPGL_PROC)
+                     & KPROMA=KPROMA, FSPGL_PROC=FSPGL_PROC, KRESOL=KRESOL)
     ELSE
         CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
                      & PSPSC2=ZPSPSC2,PGP2=ZPGP2, KVSETSC2=IVSETSC2, &
                      & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=KPROMA)
+                     & KPROMA=KPROMA, KRESOL=KRESOL)
     ENDIF
 ELSE IF (ASSOCIATED(ZPGP2)) THEN
-    IF (PRESENT (FSPGL_PROC)) THEN
+    IF (LLFSPGL_PROC) THEN
         CALL INV_TRANS(PSPSC2=ZPSPSC2,PGP2=ZPGP2,KVSETSC2=IVSETSC2, &
                      & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=KPROMA,FSPGL_PROC=FSPGL_PROC)
+                     & KPROMA=KPROMA, FSPGL_PROC=FSPGL_PROC, KRESOL=KRESOL)
     ELSE
         CALL INV_TRANS(PSPSC2=ZPSPSC2,PGP2=ZPGP2, KVSETSC2=IVSETSC2, &
                      & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=KPROMA)
+                     & KPROMA=KPROMA, KRESOL=KRESOL)
     ENDIF
 ELSE IF (ASSOCIATED(ZPGPUV)) THEN
-    IF (PRESENT (FSPGL_PROC)) THEN
+    IF (LLFSPGL_PROC) THEN
         CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
                      & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=KPROMA,FSPGL_PROC=FSPGL_PROC)
+                     & KPROMA=KPROMA, FSPGL_PROC=FSPGL_PROC, KRESOL=KRESOL)
     ELSE
         CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
                      & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=KPROMA)
+                     & KPROMA=KPROMA, KRESOL=KRESOL)
     ENDIF
 ENDIF
 
