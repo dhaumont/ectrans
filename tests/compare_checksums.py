@@ -70,8 +70,11 @@ def compare_checksums(folder_path, ntasks, nthreads, excludes=[], log_file=None)
                                 failed_list.append((file_name, other_file_name))
                             log_entries.append((file_name, other_file_name, status))
             if not found:
-                print("No comparison found")
-                return False
+                print(f"{colors.FAILURE} Error: No reference file found for {file_name}{colors.ENDC}")
+                log_entries.append((file_name, "Reference file not found","FAILED"))
+                failed_list.append(("", f"Error: No reference file found for {file_name}"))
+                total_count += 1
+                error_count += 1
     percentage = int(100.0 * (success_count / total_count))
     if error_count > 0:
         print(f"{percentage}% comparisons passed, {colors.FAILURE}{error_count} comparisons failed out of "
