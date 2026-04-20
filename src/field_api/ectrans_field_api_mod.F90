@@ -150,6 +150,8 @@ SUBROUTINE LG2RB(LG2RBV,YLF)
   ! Creation of a list of GRID_VIEW encapsulating the layer of an input FIELD_2RB field
   ! Given YLF dimensioned(NPROMA, NBLKS) as input,
   ! the output list size will contain one element, its view beeing dimensioned(NPROMA, NBLKS)
+  ! Note: grid-point FIELD_VIEW does not carry an IVSET. %IVSET is left as 0
+  ! and must be overwritten by the caller using the paired spectral field's ivset.
   CLASS (FIELD_VIEW), POINTER, INTENT (IN) :: YLF
   TYPE (GRID_VIEW), INTENT(INOUT) :: LG2RBV (:)
   INTEGER(KIND=JPIM), POINTER :: IVSET(:)
@@ -161,7 +163,11 @@ SUBROUTINE LG2RB(LG2RBV,YLF)
   IF (SIZE(LG2RBV) /= 1 ) CALL ABOR1("Error - incorrect size for LG2RBV")
 
   LG2RBV (1)%P => ZZ2(:,:)
-  LG2RBV (1)%IVSET = IVSET(1)
+  IF (SIZE(IVSET) >= 1) THEN
+    LG2RBV (1)%IVSET = IVSET(1)
+  ELSE
+    LG2RBV (1)%IVSET = 0
+  ENDIF
   CALL COPY_NAME(YLF,LG2RBV(1)%NAME)
 END SUBROUTINE LG2RB
 
@@ -185,7 +191,12 @@ SUBROUTINE LG3RB(LG3RBV,YLF)
   JCOUNT = 1
   DO JLEV = LBOUND (ZZ3, 2), UBOUND (ZZ3, 2)
     LG3RBV (JCOUNT)%P => ZZ3 (:, JLEV, :)
-    LG3RBV (JCOUNT)%IVSET = IVSET(JLEV)
+    IF (SIZE(IVSET) >= JLEV) THEN
+      LG3RBV (JCOUNT)%IVSET = IVSET(JLEV)
+    ELSE
+      ! grid-point FIELD_VIEW has no IVSET; caller must overwrite with paired spectral ivset
+      LG3RBV (JCOUNT)%IVSET = 0
+    ENDIF
     CALL COPY_NAME(YLF,LG3RBV(JCOUNT)%NAME)
 
     JCOUNT = JCOUNT + 1
@@ -220,7 +231,12 @@ SUBROUTINE LG4RB(LG4RBV, YLF)
   DO JFLD = LBOUND (ZZ4, 3), UBOUND (ZZ4, 3)
     DO JLEV = LBOUND (ZZ4, 2), UBOUND (ZZ4, 2)
       LG4RBV (JCOUNT)%P => ZZ4(:, JLEV, JFLD, :)
-      LG4RBV (JCOUNT)%IVSET = IVSET(JLEV)
+      IF (SIZE(IVSET) >= JLEV) THEN
+        LG4RBV (JCOUNT)%IVSET = IVSET(JLEV)
+      ELSE
+        ! grid-point FIELD_VIEW has no IVSET; caller must overwrite with paired spectral ivset
+        LG4RBV (JCOUNT)%IVSET = 0
+      ENDIF
       CALL COPY_NAME(YLF,LG4RBV(JCOUNT)%NAME)
       JCOUNT = JCOUNT + 1
     ENDDO
@@ -386,10 +402,12 @@ DO JFLD = 1, SIZE (YLFL)
       ILEN = 1
       IF (LSV_PROVIDED) CALL LS1RB(LSV(IOFF+1:IOFF+ILEN),YLF)
     CASE (2)
-      ILEN = YLF%EXTENTS(2)
+      ! Shape (NLEVS, NSPEC) -> NLEVS SPEC_VIEW of size NSPEC
+      ILEN = YLF%EXTENTS(1)
       IF (LSV_PROVIDED) CALL LS2RB(LSV(IOFF+1:IOFF+ILEN),YLF)
    CASE (3)
-      ILEN = YLF%EXTENTS(2) * YLF%EXTENTS(3)
+      ! Shape (NLEVS, NSPEC, NFIELDS) -> NLEVS*NFIELDS SPEC_VIEW of size NSPEC
+      ILEN = YLF%EXTENTS(1) * YLF%EXTENTS(3)
       IF (LSV_PROVIDED) CALL LS3RB(LSV(IOFF+1:IOFF+ILEN),YLF)
     CASE (4)
         CALL ABOR1("LS not implemeted for FIELD_4RB")
@@ -684,7 +702,7 @@ SUBROUTINE MAKE_FIELD_VIEW_SPEC(YLFV, YLF, FIELD_TYPE, LDACC, LDRDONLY)
   INTEGER :: FIELD_TYPE
   LOGICAL, INTENT(IN) :: LDACC
   LOGICAL, INTENT(IN) :: LDRDONLY
-I ha  
+
   SELECT TYPE (FIELD => YLF%PTR)
     CLASS IS (FIELD_1RB)
       CALL SET_DATA_RDWR_1RB(YLFV, FIELD, LDACC, LDRDONLY)
