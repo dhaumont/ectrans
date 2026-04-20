@@ -13,13 +13,14 @@ import os
 import filecmp
 from glob import glob
 import argparse
+from datetime import datetime
 
 class colors:
     SUCCESS = '\033[94m'
     FAILURE = '\033[91m'
     ENDC = '\033[0m'
 
-def compare_checksums(folder_path, ntasks, nthreads, excludes=[]):
+def compare_checksums(folder_path, ntasks, nthreads, excludes=[], log_file=None):
     if not os.path.isdir(folder_path):
         print(f"Error: '{folder_path}' is not a valid directory.")
         return False
@@ -30,6 +31,7 @@ def compare_checksums(folder_path, ntasks, nthreads, excludes=[]):
     error_count = 0
     total_count = 0
     failed_list = []
+    log_entries = []
 
     # Build list of all mpi0_omp1 checksum files
     reference_files = glob(os.path.join(folder_path, "*mpi0_omp1*.checksums"))
@@ -58,12 +60,15 @@ def compare_checksums(folder_path, ntasks, nthreads, excludes=[]):
                             total_count += 1
                             found = True
                             if (filecmp.cmp(file_name, other_file_name)):
+                                status = "PASSED"
                                 print(f"    {other_file_name} ...{colors.SUCCESS}Passed{colors.ENDC}")
                                 success_count += 1
                             else:
+                                status = "FAILED"
                                 print(f"    {other_file_name} ...***{colors.FAILURE}Failed{colors.ENDC}")
                                 error_count += 1
                                 failed_list.append((file_name, other_file_name))
+                            log_entries.append((file_name, other_file_name, status))
             if not found:
                 print("No comparison found")
                 return False
@@ -79,6 +84,20 @@ def compare_checksums(folder_path, ntasks, nthreads, excludes=[]):
     else:
         print(f"{percentage}% checks passed")
 
+    if log_file:
+        with open(log_file, 'w') as f:
+            f.write(f"Checksum Comparison Log - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Folder: {folder_path}\n")
+            f.write(f"NTasks: {ntasks}\n")
+            f.write(f"NThreads: {nthreads}\n")
+            f.write("=" * 80 + "\n\n")
+            for ref_file, other_file, status in log_entries:
+                f.write(f"{status}: {os.path.basename(ref_file)} <-> {os.path.basename(other_file)}\n")
+            f.write("\n" + "=" * 80 + "\n")
+            f.write(f"Total: {total_count}, Passed: {success_count}, Failed: {error_count}\n")
+            f.write(f"Success rate: {percentage}%\n")
+        print(f"Log written to: {log_file}")
+
     return error_count == 0
 
 if __name__ == "__main__":
@@ -91,6 +110,11 @@ if __name__ == "__main__":
         help="Comma-separated list of patterns to exclude from comparison (e.g., 'gpu,npromatr20')",
         default=""
     )
+    parser.add_argument(
+        "-l", "--log",
+        help="Path to log file to write comparison results",
+        default=None
+    )
     args = parser.parse_args()
 
     folder = args.folder_path
@@ -98,7 +122,7 @@ if __name__ == "__main__":
     nthreads = args.nthreads.split(",")
     excludes = args.excludes.split(",") if args.excludes else []
 
-    if compare_checksums(folder, ntasks, nthreads, excludes=excludes):
+    if compare_checksums(folder, ntasks, nthreads, excludes=excludes, log_file=args.log):
         exit(0)
     else:
         exit(1)
