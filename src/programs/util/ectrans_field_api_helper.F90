@@ -100,8 +100,8 @@ subroutine wrap_benchmark_fields_zgp(ywflds, lvordiv, lscders, luvders,&
 
     ! gridpoint vector field vorticitity and divergence
     if (lvordiv) then
-        call field_new(ywflds%vor, data=zgp(:, ioffset:ioffset+kuv-1, :))
-        ioffset = ioffset + kuv
+!        call field_new(ywflds%vor, data=zgp(:, ioffset:ioffset+kuv-1, :))
+ !       ioffset = ioffset + kuv
         call field_new(ywflds%div, data=zgp(:, ioffset:ioffset+kuv-1, :))
         ioffset = ioffset + kuv
     endif
@@ -180,8 +180,8 @@ subroutine wrap_benchmark_fields(ywflds, lvordiv, lscders, luvders,&
     ioffset = 1
     ! gridpoint vector field vorticitity and divergence
     if (lvordiv) then
-        call field_new(ywflds%vor, data=zgpuv(:,:, ioffset, :))
-        ioffset = ioffset + kuv
+      !        call field_new(ywflds%vor, data=zgpuv(:,:, ioffset, :))
+       ! ioffset = ioffset + kuv
         call field_new(ywflds%div, data=zgpuv(:,:, ioffset, :))
         ioffset = ioffset + kuv
     endif
