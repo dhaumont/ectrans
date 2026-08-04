@@ -55,6 +55,7 @@ USE ECTRANS_FIELD_VIEW_INTERNAL_UTIL_MOD, ONLY : SPEC_VIEW, GRID_VIEW, LS_COUNT,
                                                & GET_NPROMA, GET_NFLD, GET_NSPEC2, GET_NBLK
 USE TPM_DISTR, ONLY : DISTR_RESOL
 USE PARKIND1, ONLY : JPRB, JPIM
+USE INV_TRANS_VIEW_CTL_MOD, ONLY: INV_TRANS_VIEW_CTL
 
 IMPLICIT NONE
 
@@ -89,10 +90,6 @@ TYPE(GRID_VIEW), ALLOCATABLE :: YLGVU_EW(:),YLGVV_EW(:)
 TYPE(GRID_VIEW), ALLOCATABLE :: YLGVSCALAR_NS(:), YLGVSCALAR_EW(:)
 
 ! Temporary arrays for inv_trans
-REAL(KIND=JPRB), POINTER :: ZPSPVOR(:,:),ZPSPDIV(:,:)  ! spectral vector fields (in)
-REAL(KIND=JPRB), POINTER :: ZPSPSC2(:,:)               ! spectral scalar fields (in)
-REAL(KIND=JPRB), POINTER :: ZPGPUV(:,:,:,:)            ! grid vector fields (out)
-REAL(KIND=JPRB), POINTER :: ZPGP2(:,:,:)               ! grid scalar fields (out)
 
 REAL(KIND=JPRB), POINTER :: ZZ1_1(:)
 REAL(KIND=JPRB), POINTER :: ZZ1_2(:)
@@ -128,7 +125,7 @@ INTEGER(KIND=JPIM) :: NPROMA, NBLK, NFIELD_TOTAL_UV, NFIELD_TOTAL_SCALAR, NSPEC2
 
 REAL(KIND=JPHOOK)           :: ZHOOK_HANDLE
 
-#include "inv_trans.h"
+
 #include "abor1.intfb.h"
 
 !     ------------------------------------------------------------------
@@ -223,13 +220,6 @@ IF (SIZE(YDGPU) > 0) THEN
     ALLOCATE(YLGVVOR(LG_COUNT(YDGPVOR)))
   ENDIF
 
-  ! allocate temporary vector field arrays in spectral space
-  ALLOCATE(ZPSPVOR(IFLDSPVOR,NSPEC2))
-  ALLOCATE(ZPSPDIV(IFLDSPVOR,NSPEC2))
-
-  ! allocate temporary vector field array in grid space
-  ALLOCATE(ZPGPUV(NPROMA,NFLEVG, IUVG * IUVDIM,NBLK))
-
   ! For LG we need the ivset of each grid point field,
   ! so we extract a matching list from the spectral fields.
   ALLOCATE(IVSETUV_LIST(SIZE(YDSPVOR)))
@@ -239,17 +229,7 @@ IF (SIZE(YDGPU) > 0) THEN
 
   C = LS(YDSPVOR, YLSPVVOR)
   C = LS(YDSPDIV, YLSPVDIV)
-
-  ! Copy list of 2d views of spectral vector fields into temporary arrays
-  DO JFLD=1,IFLDSPVOR
-    IF (ASSOCIATED(YLSPVVOR(JFLD)%P)) THEN
-        ZZ1_1=>YLSPVVOR(JFLD)%P
-        ZZ1_2=>YLSPVDIV(JFLD)%P
-        ZPSPVOR(JFLD,:) = ZZ1_1(:)
-        ZPSPDIV(JFLD,:) = ZZ1_2(:)
-    ENDIF
-  ENDDO
-
+  
   ! Initialize b-set for vector fields data
   C = LG(YDGPU, YLGVU, IVSETUV_LIST)
   ALLOCATE(IVSETUV(NFLEVG))
@@ -264,10 +244,7 @@ IF (SIZE(YDGPU) > 0) THEN
   ENDDO
 ELSE
   ! No vector field provided
-  IUVG = 0
-  ZPGPUV=>NULL()
-  ZPSPVOR=>NULL()
-  ZPSPDIV=>NULL()
+  IUVG = 0  
 ENDIF
 
 ! 2. scalar fields transformation
@@ -302,13 +279,7 @@ IF (SIZE(YDSPSCALAR) > 0) THEN
     ALLOCATE(YLGVSCALAR_EW(LG_COUNT(YDGPSCALAR_EW)))
  ENDIF
 
-! Allocate scalar field array in spectral space
-  ALLOCATE(ZPSPSC2(IFLDXL,NSPEC2))
-
-! Allocate scalar field array in grid space
-  ALLOCATE(ZPGP2(NPROMA,IFLDXG * ISCDIM,NBLK))
-
-! For LG we need the ivset of each grid point field,
+! ! For LG we need the ivset of each grid point field,
 ! so we extract a matching list from the spectral fields
   ALLOCATE(IVSETSC_LIST(SIZE(YDGPSCALAR)))
   IFLD = 1
@@ -316,17 +287,7 @@ IF (SIZE(YDSPSCALAR) > 0) THEN
     CALL FIELD_VIEW_GET_IVSET_PTR(YDSPSCALAR(JFLD), IVSETSC_LIST(IFLD)%PTR)
     IFLD = IFLD + 1
   END DO
-
-  ! Copy list of of spectral scalar fields into temporary arrays (1d copy thanks to field_view)
-  ID = 1
-  DO JFLD = 1,IFLDSPSC
-    IF (ASSOCIATED(YLSPVSCALAR(JFLD)%P)) THEN
-      ZZ1_1=>YLSPVSCALAR(JFLD)%P
-      ZPSPSC2(ID,:) = ZZ1_1(:)
-      ID = ID + 1
-    ENDIF
-  ENDDO
-
+  
  ! compute ´b-set´ for scalar-fields
   C = LG(YDGPSCALAR, YLGVSCALAR, IVSETSC_LIST)
   ALLOCATE(IVSETSC2(IFLDXG))
@@ -336,156 +297,20 @@ IF (SIZE(YDSPSCALAR) > 0) THEN
 ELSE
   !No scalar field provided
   IFLDXG = 0
-  ZPGP2=>NULL()
-  ZPSPSC2=>NULL()
 ENDIF
 
 ! 3. CALL INV_TRANS  using the regular interface and the temporary arrays
+! Perform transform
 
-! We have to perform separated calls for nvfortran
-IF (ASSOCIATED(ZPGP2) .AND. ASSOCIATED(ZPGPUV)) THEN
-    IF (LLFSPGL_PROC) THEN
-        CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
-                     & PSPSC2=ZPSPSC2,PGP2=ZPGP2,KVSETSC2=IVSETSC2, &
-                     & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=NPROMA, FSPGL_PROC=FSPGL_PROC, KRESOL=KRESOL)
-    ELSE
-        CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
-                     & PSPSC2=ZPSPSC2,PGP2=ZPGP2, KVSETSC2=IVSETSC2, &
-                     & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=NPROMA, KRESOL=KRESOL)
-    ENDIF
-ELSE IF (ASSOCIATED(ZPGP2)) THEN
-    IF (LLFSPGL_PROC) THEN
-        CALL INV_TRANS(PSPSC2=ZPSPSC2,PGP2=ZPGP2,KVSETSC2=IVSETSC2, &
-                     & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=NPROMA, FSPGL_PROC=FSPGL_PROC, KRESOL=KRESOL)
-    ELSE
-        CALL INV_TRANS(PSPSC2=ZPSPSC2,PGP2=ZPGP2, KVSETSC2=IVSETSC2, &
-                     & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=NPROMA, KRESOL=KRESOL)
-    ENDIF
-ELSE IF (ASSOCIATED(ZPGPUV)) THEN
-    IF (LLFSPGL_PROC) THEN
-        CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
-                     & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=NPROMA, FSPGL_PROC=FSPGL_PROC, KRESOL=KRESOL)
-    ELSE
-        CALL INV_TRANS(PSPVOR=ZPSPVOR,PSPDIV=ZPSPDIV,PGPUV=ZPGPUV,KVSETUV=IVSETUV, &
-                     & LDSCDERS=LLSCDERS, LDVORGP=LLVORGP, LDDIVGP=LLDIVGP, LDUVDER=LLUVDER,  &
-                     & KPROMA=NPROMA, KRESOL=KRESOL)
-    ENDIF
-ENDIF
-
-! Get NGPTOT from TPM_DISTR module's DIST_RESOL(KRESOL)
-NGPTOT = DISTR_RESOL(KRESOL)%NGPTOT
-
-! 4. Copy back temporary array data into grid-point fields
-
-! remove garbage at the end of arrays
-IEND = NGPTOT - NPROMA * (NBLK - 1)
-
-IF (IUVG>0) ZPGPUV (IEND+1:, :, :, NBLK) = 0
-IF (IFLDXG>0)  ZPGP2 (IEND+1:, :, NBLK) = 0
-
-! copy vector fields
-
-IF (IUVG>0) THEN
-
-  IOFFSET = 0
-  ! copy vorticity
-  IF (LLVORGP) THEN
-      C = LG(YDGPVOR, YLGVVOR, IVSETUV_LIST)
-      DO JFLD=1,IUVG
-        DO JLEV=1,NFLEVG
-          ID = JLEV + (JFLD -1) * NFLEVG
-          ZZ2_1=>YLGVVOR(ID)%P
-          ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
-        ENDDO
-      ENDDO
-
-    IOFFSET = IOFFSET + 1
-  ENDIF
-
-  ! copy divergence
-  IF (LLDIVGP) THEN
-      C = LG(YDGPDIV, YLGVDIV, IVSETUV_LIST)
-      DO JFLD=1,IUVG
-        DO JLEV=1,NFLEVG
-          ID = JLEV + (JFLD -1) * NFLEVG
-          ZZ2_1=>YLGVDIV(ID)%P
-          ZZ2_1(:,:) = ZPGPUV(:, JLEV,JFLD+IOFFSET*IUVG,:)
-          ENDDO
-      ENDDO
-
-    IOFFSET = IOFFSET + 1
-  ENDIF
-
-  ! copy u and v
-  C = LG(YDGPU, YLGVU, IVSETUV_LIST)
-  C = LG(YDGPV, YLGVV, IVSETUV_LIST)
-
-
-  DO JFLD=1,IUVG
-    DO JLEV=1,NFLEVG
-      ID = JLEV + (JFLD -1) * NFLEVG
-      ZZ2_1=>YLGVU(ID)%P
-      ZZ2_2=>YLGVV(ID)%P
-      ZZ2_1(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
-      ZZ2_2(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
-   ENDDO
-  ENDDO
-
-  IOFFSET = IOFFSET + 2
-
-  ! copy u and v derivatives
-  IF (LLUVDER) THEN
-    C = LG(YDGPU_EW, YLGVU_EW, IVSETUV_LIST)
-    C = LG(YDGPV_EW, YLGVV_EW, IVSETUV_LIST)
-
-    DO JFLD=1,IUVG
-      DO JLEV=1,NFLEVG
-        ID = JLEV + (JFLD -1) * NFLEVG
-        ZZ2_1=>YLGVU_EW(ID)%P
-        ZZ2_2=>YLGVV_EW(ID)%P
-        ZZ2_1(:,:) =  ZPGPUV(:,JLEV,JFLD+IOFFSET*IUVG,:)
-        ZZ2_2(:,:) =  ZPGPUV(:,JLEV,JFLD+(IOFFSET+1)*IUVG,:)
-      ENDDO
-    ENDDO
-  ENDIF
-ENDIF
-
-IF (IFLDXG > 0) THEN
-  ! copy spectral scalar fields
-    C = LG(YDGPSCALAR, YLGVSCALAR, IVSETSC_LIST)
-    DO JFLD=1, IFLDXG
-      ZZ2_1=>YLGVSCALAR(JFLD)%P(:,:)
-      ZZ2_1(:,:) = ZPGP2(:,JFLD,:)
-    ENDDO
-
-  ! copy spectral scalar fields derivatives
-
-  IF (LLSCDERS) THEN
-    C = LG(YDGPSCALAR_NS, YLGVSCALAR_NS, IVSETSC_LIST)
-    C = LG(YDGPSCALAR_EW, YLGVSCALAR_EW, IVSETSC_LIST)
-
-    DO JFLD=1,IFLDXG
-        ZZ2_1=>YLGVSCALAR_NS(JFLD)%P
-        ZZ2_2=>YLGVSCALAR_EW(JFLD)%P
-        ZZ2_1(:,:) = ZPGP2(:, JFLD+IFLDXG,:)
-        ZZ2_2(:,:) = ZPGP2(:, JFLD+(2*IFLDXG),:)
-      ENDDO
-
-  ENDIF
-ENDIF
+CALL INV_TRANS_VIEW_CTL(YLGVU,YLGVV,&
+  & YLGVVOR,YLGVDIV,&
+  & YLGVSCALAR,&
+  & YLGVU_EW,YLGVV_EW,&
+  & YLGVSCALAR_NS, YLGVSCALAR_EW,&
+  & LLFSPGL_PROC)
 
 ! 5. Final cleanup
 
-IF (ASSOCIATED(ZPSPVOR)) DEALLOCATE(ZPSPVOR)
-IF (ASSOCIATED(ZPSPDIV)) DEALLOCATE(ZPSPDIV)
-IF (ASSOCIATED(ZPSPSC2)) DEALLOCATE(ZPSPSC2)
-IF (ASSOCIATED(ZPGPUV))  DEALLOCATE(ZPGPUV)
-IF (ASSOCIATED(ZPGP2))   DEALLOCATE(ZPGP2)
 IF (ALLOCATED(IVSETUV))  DEALLOCATE(IVSETUV)
 IF (ALLOCATED(IVSETSC2)) DEALLOCATE(IVSETSC2)
 IF (ALLOCATED(IVSETUV_LIST))  DEALLOCATE(IVSETUV_LIST)
