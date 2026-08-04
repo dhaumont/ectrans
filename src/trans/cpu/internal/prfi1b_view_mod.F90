@@ -77,7 +77,6 @@ INTEGER(KIND=JPIM) :: II, INM, IR, J, JFLD, ILCM, IOFF,IFLD
 !*       1.    EXTRACT FIELDS FROM SPECTRAL ARRAYS.
 !              --------------------------------------------------
 
-
 ILCM = R%NSMAX+1-KM
 IOFF = D%NASM0(KM)
 

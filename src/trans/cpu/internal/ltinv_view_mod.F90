@@ -33,7 +33,7 @@ USE ASRE1B_MOD      ,ONLY : ASRE1B
 USE FSPGL_INT_MOD   ,ONLY : FSPGL_INT
 USE ABORT_TRANS_MOD ,ONLY : ABORT_TRANS
 USE CDMAP_MOD       ,ONLY : CDMAP
-
+USE ECTRANS_FIELD_VIEW_INTERNAL_UTIL_MOD, ONLY: SPEC_VIEW, GRID_VIEW
 
 !**** *LTINV_VIEW* - Inverse Legendre transform
 !
@@ -85,12 +85,6 @@ USE CDMAP_MOD       ,ONLY : CDMAP
 !     ------------------------------------------------------------------
 
 IMPLICIT NONE
-
-TYPE SPEC_VIEW
-  ! Spectral field view
-  REAL(KIND=JPRB),POINTER  :: P(:) => NULL()
-  CHARACTER(LEN=:),POINTER :: NAME => NULL()
-END TYPE
 
 INTEGER(KIND=JPIM), INTENT(IN) :: KM
 INTEGER(KIND=JPIM), INTENT(IN) :: KMLOC
