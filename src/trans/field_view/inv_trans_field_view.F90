@@ -75,8 +75,6 @@ PROCEDURE (FSPGL_INTF), POINTER, OPTIONAL, INTENT(IN)  :: FSPGL_PROC
 
 ! Local variables
 
-LOGICAL :: LLFSPGL_PROC
-
 ! List of FIELD_VIEW: intermediate representation of fields to facilitate copy to temporary arrays
 
 TYPE(SPEC_VIEW), ALLOCATABLE :: YLSPVVOR(:), YLSPVDIV(:)
@@ -95,19 +93,12 @@ TYPE(IVSET_PTR), ALLOCATABLE :: IVSETUV_LIST(:)
 TYPE(IVSET_PTR), ALLOCATABLE :: IVSETSC_LIST(:)
 
 INTEGER(KIND=JPIM)          :: IFLDSPVOR
-INTEGER(KIND=JPIM)          :: IFLDSPSC
-INTEGER(KIND=JPIM)          :: IUVG
-INTEGER(KIND=JPIM)          :: ISCDIM
-INTEGER(KIND=JPIM)          :: IUVDIM
-INTEGER(KIND=JPIM)          :: ID,IOFFSET,JLEV
-INTEGER(KIND=JPIM)          :: IEND
 INTEGER(KIND=JPIM)          :: JFLD, IFLD                             ! FIELD COUNTERS
 INTEGER(KIND=JPIM)          :: C
 LOGICAL                     :: LLSCDERS                               ! INDICATING IF DERIVATIVES OF SCALAR VARIABLES ARE REQ.
 LOGICAL                     :: LLVORGP                                ! INDICATING IF GRID-POINT VORTICITY IS REQ.
 LOGICAL                     :: LLDIVGP                                ! INDICATING IF GRID-POINT DIVERGENCE IS REQ.
 LOGICAL                     :: LLUVDER                                ! INDICATING IF E-W DERIVATIVES OF U AND V ARE REQ.
-INTEGER(KIND=JPIM)          :: NFLEVG
 INTEGER(KIND=JPIM)          :: NGPTOT
 INTEGER(KIND=JPIM)          :: NPROMA, NBLK
 REAL(KIND=JPHOOK)           :: ZHOOK_HANDLE
@@ -122,28 +113,12 @@ NPROMA              = GET_NPROMA(YDGPU, YDGPV, YDGPSCALAR)
 NBLK                = GET_NBLK(YDGPU, YDGPV, YDGPSCALAR)
 
 IFLDSPVOR= 0
-IFLDSPSC= 0
-IUVG  = 0
-ISCDIM = 0
-IUVDIM = 0
-ID= 0
-IOFFSET= 0
-JLEV= 0
 JFLD= 0
-IEND= 0
-NFLEVG = 0
+
 LLSCDERS  = .FALSE.
 LLVORGP = .FALSE.
 LLDIVGP = .FALSE.
 LLUVDER = .FALSE.
-
-LLFSPGL_PROC = .FALSE.
-IF (PRESENT(FSPGL_PROC)) THEN
-  IF (ASSOCIATED(FSPGL_PROC)) THEN
-     LLFSPGL_PROC = .TRUE.
-  ENDIF
-ENDIF
-
 
 ! 1. Vector fields transformation to grid space
 
@@ -160,70 +135,45 @@ IF (SIZE(YDGPU) > 0) THEN
   IFLDSPVOR = LS_COUNT(YDSPVOR)
   ALLOCATE(YLSPVVOR(IFLDSPVOR))
   ALLOCATE(YLSPVDIV(IFLDSPVOR))
+  C = LS(YDSPVOR, YLSPVVOR)
+  C = LS(YDSPDIV, YLSPVDIV)
+  
   ! Convert list of grid-point vector fields into a list of 2d FIELD_VIEW
   ALLOCATE(YLGVU(LG_COUNT(YDGPU)))
   ALLOCATE(YLGVV(LG_COUNT(YDGPV)))
   IF ((SIZE (YLGVU) /= SIZE (YLGVV)) .OR. (SIZE (YLSPVVOR) /= SIZE (YLSPVDIV))) THEN
     CALL ABOR1("[INV_TRANS_FIELD_API] inconsistent number of field_view for vectors")
   ENDIF
-
-  NFLEVG = SIZE (YLGVU) / SIZE (YDGPU)
-  IUVG = SIZE(YDGPU)
-
-  LLUVDER  = .FALSE.
-  LLVORGP = .FALSE.
-  LLDIVGP = .FALSE.
-  LLSCDERS = .FALSE.
-
-  IUVDIM = 2
-
-  ! Output derivatives of vector fields
-  IF (SIZE(YDGPU_EW) > 0 .AND. SIZE(YDGPV_EW) > 0)    THEN
-    LLUVDER = .TRUE.
-    IUVDIM = 5
-    ALLOCATE(YLGVU_EW(LG_COUNT(YDGPU_EW)))
-    ALLOCATE(YLGVV_EW(LG_COUNT(YDGPV_EW)))
- ENDIF
-
-  ! Output divergence of vector fields
-  IF (SIZE(YDGPDIV)  > 0) THEN
-    LLDIVGP = .TRUE.
-    IUVDIM = 5
-    ALLOCATE(YLGVDIV(LG_COUNT(YDGPDIV)))
-  ENDIF
-
-  ! Output vorticity of vector fields
-  IF (SIZE(YDGPVOR) > 0) THEN
-    LLVORGP = .TRUE.
-    IUVDIM = 6
-    ALLOCATE(YLGVVOR(LG_COUNT(YDGPVOR)))
-  ENDIF
-
+    
   ! For LG we need the ivset of each grid point field,
   ! so we extract a matching list from the spectral fields.
   ALLOCATE(IVSETUV_LIST(SIZE(YDSPVOR)))
   DO JFLD=1,SIZE(YDSPVOR)
     CALL FIELD_VIEW_GET_IVSET_PTR(YDSPVOR(JFLD), IVSETUV_LIST(JFLD)%PTR)
   END DO
-
-  C = LS(YDSPVOR, YLSPVVOR)
-  C = LS(YDSPDIV, YLSPVDIV)
-  
   ! Initialize b-set for vector fields data
   C = LG(YDGPU, YLGVU, IVSETUV_LIST)
   C = LG(YDGPV, YLGVV, IVSETUV_LIST)
 
-  IF (LLVORGP) C = LG(YDGPVOR, YLGVVOR, IVSETUV_LIST)
-  IF (LLDIVGP) C = LG(YDGPDIV, YLGVDIV, IVSETUV_LIST)
-     
-  IF (LLUVDER) THEN
+  ! Output derivatives of vector fields
+  IF (SIZE(YDGPU_EW) > 0 .AND. SIZE(YDGPV_EW) > 0)    THEN    
+    ALLOCATE(YLGVU_EW(LG_COUNT(YDGPU_EW)))
+    ALLOCATE(YLGVV_EW(LG_COUNT(YDGPV_EW)))
     C = LG(YDGPU_EW, YLGVU_EW, IVSETUV_LIST)
     C = LG(YDGPV_EW, YLGVV_EW, IVSETUV_LIST)
+ ENDIF
+
+  ! Output divergence of vector fields
+  IF (SIZE(YDGPDIV)  > 0) THEN  
+    ALLOCATE(YLGVDIV(LG_COUNT(YDGPDIV)))
+    C = LG(YDGPDIV, YLGVDIV, IVSETUV_LIST)
   ENDIF
 
-ELSE
-  ! No vector field provided
-  IUVG = 0  
+  ! Output vorticity of vector fields
+  IF (SIZE(YDGPVOR) > 0) THEN    
+    ALLOCATE(YLGVVOR(LG_COUNT(YDGPVOR)))
+    C = LG(YDGPVOR, YLGVVOR, IVSETUV_LIST)
+  ENDIF
 ENDIF
 
 ! 2. scalar fields transformation
@@ -236,22 +186,8 @@ IF (SIZE(YDSPSCALAR) > 0) THEN
                                                         & for YDSPSCALAR and YDGPSCALAR")
 
   ! Convert list of spectral scalar fields of any domension into a list of 2d fields
-  IFLDSPSC = LS_COUNT(YDSPSCALAR)
-  ALLOCATE(YLSPVSCALAR(IFLDSPSC))
-
-  ALLOCATE(YLGVSCALAR(LG_COUNT(YDGPSCALAR)))
   
-  ! count the number of fields present on the processor
-  C = LS(YDSPSCALAR, YLSPVSCALAR)
-  ISCDIM = 1
-  IF (SIZE(YDGPSCALAR_NS) > 0 .AND. SIZE(YDGPSCALAR_EW) > 0) THEN
-    LLSCDERS = .TRUE.
-    ISCDIM = ISCDIM + 2
-    ALLOCATE(YLGVSCALAR_NS(LG_COUNT(YDGPSCALAR_NS)))
-    ALLOCATE(YLGVSCALAR_EW(LG_COUNT(YDGPSCALAR_EW)))
- ENDIF
-
-! ! For LG we need the ivset of each grid point field,
+                                                        ! For LG we need the ivset of each grid point field,
 ! so we extract a matching list from the spectral fields
   ALLOCATE(IVSETSC_LIST(SIZE(YDGPSCALAR)))
   IFLD = 1
@@ -260,10 +196,15 @@ IF (SIZE(YDSPSCALAR) > 0) THEN
     IFLD = IFLD + 1
   END DO
   
- ! compute ´b-set´ for scalar-fields
+  ALLOCATE(YLGVSCALAR(LG_COUNT(YDGPSCALAR)))  
   C = LG(YDGPSCALAR, YLGVSCALAR, IVSETSC_LIST)
  
-  IF (LLSCDERS) THEN
+  ALLOCATE(YLSPVSCALAR(LS_COUNT(YDSPSCALAR)))
+  C = LS(YDSPSCALAR, YLSPVSCALAR) 
+  
+  IF (SIZE(YDGPSCALAR_NS) > 0 .AND. SIZE(YDGPSCALAR_EW) > 0) THEN
+    ALLOCATE(YLGVSCALAR_NS(LG_COUNT(YDGPSCALAR_NS)))
+    ALLOCATE(YLGVSCALAR_EW(LG_COUNT(YDGPSCALAR_EW)))
     C = LG(YDGPSCALAR_NS, YLGVSCALAR_NS, IVSETSC_LIST)
     C = LG(YDGPSCALAR_EW, YLGVSCALAR_EW, IVSETSC_LIST)
   ENDIF
