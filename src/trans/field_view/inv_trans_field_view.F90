@@ -103,7 +103,6 @@ INTEGER(KIND=JPIM)          :: NGPTOT
 INTEGER(KIND=JPIM)          :: NPROMA, NBLK
 REAL(KIND=JPHOOK)           :: ZHOOK_HANDLE
 
-
 #include "abor1.intfb.h"
 
 !     ------------------------------------------------------------------
@@ -210,8 +209,8 @@ IF (SIZE(YDSPSCALAR) > 0) THEN
   ENDIF
 ENDIF
 
-! 3. CALL INV_TRANS  using the regular interface and the temporary arrays
-! Perform transform
+! 3. CALL INV_TRANS_VIEW_CTL  
+
 IF (.NOT. ALLOCATED(YLSPVVOR))       ALLOCATE(YLSPVVOR(0))
 IF (.NOT. ALLOCATED(YLSPVDIV))       ALLOCATE(YLSPVDIV(0))
 IF (.NOT. ALLOCATED(YLSPVSCALAR))    ALLOCATE(YLSPVSCALAR(0)) 

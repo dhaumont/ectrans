@@ -87,7 +87,6 @@ SUBROUTINE INV_TRANS_VIEW_CTL(KPROMA,KGPBLKS, &
 
 !     ------------------------------------------------------------------
 
-
 USE PARKIND1  ,ONLY : JPIM     ,JPRB
 
 USE TPM_GEN         ,ONLY : NPROMATR
@@ -113,10 +112,8 @@ TYPE(GRID_VIEW) :: YDGVSCALAR(:)
 TYPE(GRID_VIEW) :: YDGVU_EW(:),YDGVV_EW(:)
 TYPE(GRID_VIEW) :: YDGVSCALAR_NS(:), YDGVSCALAR_EW(:)
 
-
 EXTERNAL  FSPGL_PROC
 OPTIONAL  FSPGL_PROC
-
 
 INTEGER(KIND=JPIM) :: IF_UV,IF_UV_G,IF_SCALARS,IF_SCALARS_G,IF_FS,IF_GP,IF_OUT_LT
 INTEGER(KIND=JPIM) :: IF_SCDERS,IF_UV_PAR
@@ -151,7 +148,6 @@ IF(IF_UV > 0 .AND. LUVDER) THEN
   IF_FS = IF_FS+2*IF_UV
 ENDIF
 
-
 !     ------------------------------------------------------------------
 
 ! Perform transform
@@ -159,8 +155,7 @@ ENDIF
 IF(NPROMATR > 0) THEN
   CALL ABOR1('INV_TRANS_VIEW NPROMATR not implemented')
 ELSE
-
-  ! No splitting of fields, transform done in one go
+  
   CALL LTINV_VIEW_CTL(IF_OUT_LT,&
    &YDSPVVOR=YDSPVVOR,YDSPVDIV=YDSPVDIV,YDSPVSCALAR=YDSPVSCALAR,&
    &FSPGL_PROC=FSPGL_PROC)

@@ -137,7 +137,6 @@ ENDIF
   
 !*       1.    DIVIDE U V AND N-S DERIVATIVES BY A*COS(THETA)
 !              ----------------------------------------------
-
   
 !*       1.1      U AND V.
 
