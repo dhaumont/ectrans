@@ -99,7 +99,9 @@ IF (SIZE(YDGPU) > 0) THEN
 
   C = LG(YDGPU, YLGVU, IVSETUV_LIST)
   C = LG(YDGPV, YLGVV, IVSETUV_LIST)  
-  
+
+  C = LS(YDSPVOR, YLSPVVOR)
+  C = LS(YDSPDIV, YLSPVDIV)
 ENDIF
 
 ! 2. scalar fields transformation
@@ -128,7 +130,7 @@ IF (SIZE(YDSPSCALAR) > 0 ) THEN
 
   ! Copy list of scalar fields into temporary arrays (2d copy thanks to field_view)
   C = LG(YDGPSCALAR, YLGVSCALAR, IVSETSC_LIST)
-
+  C = LS(YDSPSCALAR, YLSPVSCALAR)
 ENDIF
 IF (.NOT. ALLOCATED(YLSPVVOR))       ALLOCATE(YLSPVVOR(0))
 IF (.NOT. ALLOCATED(YLSPVDIV))       ALLOCATE(YLSPVDIV(0))
