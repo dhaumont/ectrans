@@ -1,6 +1,6 @@
 ! (C) Copyright 2000- ECMWF.
 ! (C) Copyright 2000- Meteo-France.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -96,7 +96,7 @@ ENDIF
 
 KI = 1
 DO I=1,SIZE(YDGP)
-  IVSET(KI) = YDGP(I)%IVSET 
+  IVSET(KI) = YDGP(I)%IVSET
   KI = KI + 1
 ENDDO
 

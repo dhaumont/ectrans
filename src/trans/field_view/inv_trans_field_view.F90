@@ -45,7 +45,7 @@ SUBROUTINE INV_TRANS_FIELD_VIEW(KRESOL, &
 !       YDGPSCALAR_EW(:) - List of grid-point scalar fields derivatives E-W
 !       YDGPU_EW(:)      - List of grid-point vector fields derivatives E-W (u)
 !       YDGPV_EW(:)      - List of grid-point vector fields derivatives E-W (v)
-             
+
 USE ISO_FORTRAN_ENV, ONLY : INT32
 USE ECTRANS_FIELD_VIEW_MOD, ONLY: FIELD_VIEW
 
@@ -136,14 +136,14 @@ IF (SIZE(YDGPU) > 0) THEN
   ALLOCATE(YLSPVDIV(IFLDSPVOR))
   C = LS(YDSPVOR, YLSPVVOR)
   C = LS(YDSPDIV, YLSPVDIV)
-  
+
   ! Convert list of grid-point vector fields into a list of 2d FIELD_VIEW
   ALLOCATE(YLGVU(LG_COUNT(YDGPU)))
   ALLOCATE(YLGVV(LG_COUNT(YDGPV)))
   IF ((SIZE (YLGVU) /= SIZE (YLGVV)) .OR. (SIZE (YLSPVVOR) /= SIZE (YLSPVDIV))) THEN
     CALL ABOR1("[INV_TRANS_FIELD_API] inconsistent number of field_view for vectors")
   ENDIF
-    
+
   ! For LG we need the ivset of each grid point field,
   ! so we extract a matching list from the spectral fields.
   ALLOCATE(IVSETUV_LIST(SIZE(YDSPVOR)))
@@ -155,7 +155,7 @@ IF (SIZE(YDGPU) > 0) THEN
   C = LG(YDGPV, YLGVV, IVSETUV_LIST)
 
   ! Output derivatives of vector fields
-  IF (SIZE(YDGPU_EW) > 0 .AND. SIZE(YDGPV_EW) > 0)    THEN    
+  IF (SIZE(YDGPU_EW) > 0 .AND. SIZE(YDGPV_EW) > 0)    THEN
     ALLOCATE(YLGVU_EW(LG_COUNT(YDGPU_EW)))
     ALLOCATE(YLGVV_EW(LG_COUNT(YDGPV_EW)))
     C = LG(YDGPU_EW, YLGVU_EW, IVSETUV_LIST)
@@ -163,13 +163,13 @@ IF (SIZE(YDGPU) > 0) THEN
  ENDIF
 
   ! Output divergence of vector fields
-  IF (SIZE(YDGPDIV)  > 0) THEN  
+  IF (SIZE(YDGPDIV)  > 0) THEN
     ALLOCATE(YLGVDIV(LG_COUNT(YDGPDIV)))
     C = LG(YDGPDIV, YLGVDIV, IVSETUV_LIST)
   ENDIF
 
   ! Output vorticity of vector fields
-  IF (SIZE(YDGPVOR) > 0) THEN    
+  IF (SIZE(YDGPVOR) > 0) THEN
     ALLOCATE(YLGVVOR(LG_COUNT(YDGPVOR)))
     C = LG(YDGPVOR, YLGVVOR, IVSETUV_LIST)
   ENDIF
@@ -185,7 +185,7 @@ IF (SIZE(YDSPSCALAR) > 0) THEN
                                                         & for YDSPSCALAR and YDGPSCALAR")
 
   ! Convert list of spectral scalar fields of any domension into a list of 2d fields
-  
+
                                                         ! For LG we need the ivset of each grid point field,
 ! so we extract a matching list from the spectral fields
   ALLOCATE(IVSETSC_LIST(SIZE(YDGPSCALAR)))
@@ -194,13 +194,13 @@ IF (SIZE(YDSPSCALAR) > 0) THEN
     CALL FIELD_VIEW_GET_IVSET_PTR(YDSPSCALAR(JFLD), IVSETSC_LIST(IFLD)%PTR)
     IFLD = IFLD + 1
   END DO
-  
-  ALLOCATE(YLGVSCALAR(LG_COUNT(YDGPSCALAR)))  
+
+  ALLOCATE(YLGVSCALAR(LG_COUNT(YDGPSCALAR)))
   C = LG(YDGPSCALAR, YLGVSCALAR, IVSETSC_LIST)
- 
+
   ALLOCATE(YLSPVSCALAR(LS_COUNT(YDSPSCALAR)))
-  C = LS(YDSPSCALAR, YLSPVSCALAR) 
-  
+  C = LS(YDSPSCALAR, YLSPVSCALAR)
+
   IF (SIZE(YDGPSCALAR_NS) > 0 .AND. SIZE(YDGPSCALAR_EW) > 0) THEN
     ALLOCATE(YLGVSCALAR_NS(LG_COUNT(YDGPSCALAR_NS)))
     ALLOCATE(YLGVSCALAR_EW(LG_COUNT(YDGPSCALAR_EW)))
@@ -209,11 +209,11 @@ IF (SIZE(YDSPSCALAR) > 0) THEN
   ENDIF
 ENDIF
 
-! 3. CALL INV_TRANS_VIEW_CTL  
+! 3. CALL INV_TRANS_VIEW_CTL
 
 IF (.NOT. ALLOCATED(YLSPVVOR))       ALLOCATE(YLSPVVOR(0))
 IF (.NOT. ALLOCATED(YLSPVDIV))       ALLOCATE(YLSPVDIV(0))
-IF (.NOT. ALLOCATED(YLSPVSCALAR))    ALLOCATE(YLSPVSCALAR(0)) 
+IF (.NOT. ALLOCATED(YLSPVSCALAR))    ALLOCATE(YLSPVSCALAR(0))
 IF (.NOT. ALLOCATED(YLGVU))          ALLOCATE(YLGVU(0))
 IF (.NOT. ALLOCATED(YLGVV))          ALLOCATE(YLGVV(0))
 IF (.NOT. ALLOCATED(YLGVVOR))        ALLOCATE(YLGVVOR(0))
@@ -225,7 +225,7 @@ IF (.NOT. ALLOCATED(YLGVSCALAR_NS))  ALLOCATE(YLGVSCALAR_NS(0))
 IF (.NOT. ALLOCATED(YLGVSCALAR_EW))  ALLOCATE(YLGVSCALAR_EW(0))
 
 CALL INV_TRANS_VIEW_CTL(NPROMA, NBLK, &
-  & YLSPVVOR, YLSPVDIV, YLSPVSCALAR,&  
+  & YLSPVVOR, YLSPVDIV, YLSPVSCALAR,&
   & YLGVU,YLGVV,&
   & YLGVVOR,YLGVDIV,&
   & YLGVSCALAR,&

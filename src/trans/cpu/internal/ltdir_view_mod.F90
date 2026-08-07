@@ -1,6 +1,6 @@
 ! (C) Copyright 1987- ECMWF.
 ! (C) Copyright 1987- Meteo-France.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -25,7 +25,7 @@ USE PREPSNM_MOD     ,ONLY : PREPSNM
 USE PRFI2_MOD       ,ONLY : PRFI2
 USE LDFOU2_MOD      ,ONLY : LDFOU2
 USE LEDIR_MOD       ,ONLY : LEDIR
-USE UVTVD_MOD       ,ONLY : UVTVD      
+USE UVTVD_MOD       ,ONLY : UVTVD
 USE UPDSP_VIEW_MOD       ,ONLY : UPDSP_VIEW
 USE CDMAP_MOD , ONLY : CDMAP
 USE ECTRANS_FIELD_VIEW_INTERNAL_UTIL_MOD, ONLY : SPEC_VIEW
@@ -179,7 +179,7 @@ ENDIF
 !              -----------------------
 
 CALL UPDSP_VIEW(KM,ZOA1,ZOA2,YDSPVVOR, YDSPVDIV, YDSPVSCALAR)
- 
+
 !     ------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('LTDIR_VIEW_MOD',1,ZHOOK_HANDLE)
 

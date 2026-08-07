@@ -1,6 +1,6 @@
 ! (C) Copyright 2000- ECMWF.
 ! (C) Copyright 2000- Meteo-France.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -10,7 +10,7 @@
 
 MODULE LTINV_VIEW_MOD
 CONTAINS
-SUBROUTINE LTINV_VIEW(KM,KMLOC,KF_OUT_LT,KF_UV,KF_SCALARS,KF_SCDERS,KLEI2,KDIM1,& 
+SUBROUTINE LTINV_VIEW(KM,KMLOC,KF_OUT_LT,KF_UV,KF_SCALARS,KF_SCDERS,KLEI2,KDIM1,&
  & YDSPVOR,YDSPDIV,YDSPSCALAR,&
  & FSPGL_PROC)
 
@@ -21,7 +21,7 @@ USE TPM_FIELDS      ,ONLY : F
 USE TPM_DIM         ,ONLY : R
 USE TPM_TRANS       ,ONLY : LDIVGP, LVORGP, NF_SC2, NF_SC3A, NF_SC3B, LATLON
 USE TPM_FLT         ,ONLY : S
-USE TPM_GEOMETRY    ,ONLY : G 
+USE TPM_GEOMETRY    ,ONLY : G
 
 !USE PRLE1_MOD
 USE PREPSNM_MOD     ,ONLY : PREPSNM
@@ -218,7 +218,7 @@ IF( LATLON.AND.S%LDLL ) THEN
         ZALN(JFLD, IGLS) =  ZSOA1(JFLD,JGL)-ZAOA1(JFLD,JGL)
       ENDDO
     ENDDO
-    
+
     IF(KF_UV > 0 .OR. KF_SCDERS > 0) THEN
       IST = 1
       IF(LVORGP) THEN
@@ -234,7 +234,7 @@ IF( LATLON.AND.S%LDLL ) THEN
       INSDS = IST
       INSDE = IST+2*KF_SCDERS-1
       IST = IST+2*KF_SCDERS
-      
+
       IGLS = 2*R%NDGNH - ISL + 1
       IF( KF_UV > 0 ) THEN
         DO JGL=ISL, IGLS
@@ -253,15 +253,15 @@ IF( LATLON.AND.S%LDLL ) THEN
         ENDDO
       ENDIF
     ENDIF
-    
+
     DEALLOCATE(ZAOA1)
     DEALLOCATE(ZSOA1)
-    
+
     ! this routine maps to the output latitudes AND fills the FOUBUF
     CALL CDMAP(KM,KMLOC,ISL,ISLO,ZEPSNM(R%NTMAX+1),-1_JPIM,&
      & R%NDGNH,S%NDGNHD,2*KF_OUT_LT,ZALN,ZALN)
     DEALLOCATE(ZALN)
-    
+
   ENDIF
 
 ELSE
@@ -280,7 +280,7 @@ ELSE
   CALL ASRE1B(KF_OUT_LT,KM,KMLOC,ZAOA1,ZSOA1)
   DEALLOCATE(ZAOA1)
   DEALLOCATE(ZSOA1)
-  
+
 ENDIF
 
 !     ------------------------------------------------------------------

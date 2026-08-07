@@ -1,6 +1,6 @@
 ! (C) Copyright 2000- ECMWF.
 ! (C) Copyright 2000- Meteo-France.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -143,7 +143,7 @@ YLGV = [YDGVVOR,YDGVDIV,YDGVU,YDGVV,YDGVSCALAR, YDGVSCALAR_NS,YDGVSCALAR_EW,YDGV
 
 KI = 1
 DO I=1,SIZE(YLGV)
-  IVSET(KI) = YLGV(I)%IVSET 
+  IVSET(KI) = YLGV(I)%IVSET
   KI = KI + 1
 ENDDO
 
@@ -158,7 +158,7 @@ DO JGL = 1, D%NDGL_FS
 
 !    2.  Fourier space computations
 
-  IF (SIZE (YDGVU) > 0 .OR. SIZE (YDGVSCALAR_NS) > 0 .OR. (LATLON.AND.S%LDLL) ) THEN  
+  IF (SIZE (YDGVU) > 0 .OR. SIZE (YDGVSCALAR_NS) > 0 .OR. (LATLON.AND.S%LDLL) ) THEN
     CALL FSC_VIEW(IGL,&
                  & YLSPUV,YLSPVSCALAR,&
                  & YLSPUV_EW,YLSPVSCALAR_NS,YLSPVSCALAR_EW)
@@ -189,14 +189,14 @@ CONTAINS
 FUNCTION WRAP_G2S(YGP,PZGTF,KII) RESULT(YSP)
   TYPE(GRID_VIEW), INTENT(IN) :: YGP(:)
   TYPE(SPEC_VIEW), ALLOCATABLE :: YSP(:)
-  REAL(KIND=JPRB),TARGET :: PZGTF(:,:)  
+  REAL(KIND=JPRB),TARGET :: PZGTF(:,:)
   INTEGER(KIND=JPIM), INTENT(INOUT) :: KII
   INTEGER(KIND=JPIM) :: II
   ALLOCATE(YSP(SIZE(YGP)))
   DO II=1,SIZE(YGP)
     YSP(II)%P => ZGTF(KII,:)
     KII = KII + 1
-  ENDDO 
+  ENDDO
 END FUNCTION WRAP_G2S
 
 

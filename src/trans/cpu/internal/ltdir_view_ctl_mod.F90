@@ -1,6 +1,6 @@
 ! (C) Copyright 2000- ECMWF.
 ! (C) Copyright 2000- Meteo-France.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -84,7 +84,7 @@ IF(KF_FS>0) THEN
   DO JM=1,D%NUMP
     IM = D%MYMS(JM)
     CALL LTDIR_VIEW(IM,JM,KF_FS,SIZE(YDSPVVOR),SIZE(YDSPVSCALAR),ILED2, &
-                  & YDSPVVOR, YDSPVDIV, YDSPVSCALAR)     
+                  & YDSPVVOR, YDSPVDIV, YDSPVSCALAR)
   ENDDO
 !$OMP END PARALLEL DO
 ENDIF

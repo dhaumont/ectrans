@@ -1,6 +1,6 @@
 ! (C) Copyright 2001- ECMWF.
 ! (C) Copyright 2001- Meteo-France.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -11,7 +11,7 @@
 MODULE DIR_TRANS_VIEW_CTL_MOD
 CONTAINS
 SUBROUTINE DIR_TRANS_VIEW_CTL(KPROMA,KGPBLKS, &
-                            & YDSPVVOR, YDSPVDIV, YDSPVSCALAR, &                              
+                            & YDSPVVOR, YDSPVDIV, YDSPVSCALAR, &
                             & YDGVU,YDGVV,YDGVSCALAR)
 
 !**** *DIR_TRANS_VIEW_CTL* - Control routine for direct spectral transform.
@@ -111,9 +111,9 @@ ELSE
 
   ! :TODO:
   YLGP = [YDGVU, YDGVV,YDGVSCALAR]
-  IF_GP = SIZE(YLGP)  
+  IF_GP = SIZE(YLGP)
   IF_FS = IF_GP
-    
+
   CALL FTDIR_VIEW_CTL(IF_GP,IF_FS, YDGP=YLGP)
 
   CALL LTDIR_VIEW_CTL(IF_FS,YDSPVVOR=YDSPVVOR,YDSPVDIV=YDSPVDIV,YDSPVSCALAR=YDSPVSCALAR)

@@ -1,6 +1,6 @@
 ! (C) Copyright 2001- ECMWF.
 ! (C) Copyright 2001- Meteo-France.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -11,7 +11,7 @@
 MODULE INV_TRANS_VIEW_CTL_MOD
 CONTAINS
 SUBROUTINE INV_TRANS_VIEW_CTL(KPROMA,KGPBLKS, &
-                            & YDSPVVOR, YDSPVDIV, YDSPVSCALAR, &  
+                            & YDSPVVOR, YDSPVDIV, YDSPVSCALAR, &
                             & YDGVU,YDGVV,&
                             & YDGVVOR,YDGVDIV,&
                             & YDGVSCALAR,&
@@ -122,9 +122,9 @@ INTEGER(KIND=JPIM) :: IF_SC2_G,IF_SC3A_G2,IF_SC3A_G3,IF_SC3B_G2,IF_SC3B_G3
 NPROMA = KPROMA
 NGPBLKS = KGPBLKS
 
-IF_UV = SIZE(YDGVU) 
+IF_UV = SIZE(YDGVU)
 IF_SCALARS = SIZE(YDGVSCALAR)
-IF_SCDERS = SIZE(YDGVSCALAR_NS) 
+IF_SCDERS = SIZE(YDGVSCALAR_NS)
 LVORGP = SIZE(YDGVVOR) > 0
 LDIVGP = SIZE(YDGVDIV) > 0
 LUVDER = SIZE(YDGVU_EW) > 0 .OR. SIZE(YDGVV_EW) > 0
@@ -155,7 +155,7 @@ ENDIF
 IF(NPROMATR > 0) THEN
   CALL ABOR1('INV_TRANS_VIEW NPROMATR not implemented')
 ELSE
-  
+
   CALL LTINV_VIEW_CTL(IF_OUT_LT,&
    &YDSPVVOR=YDSPVVOR,YDSPVDIV=YDSPVDIV,YDSPVSCALAR=YDSPVSCALAR,&
    &FSPGL_PROC=FSPGL_PROC)

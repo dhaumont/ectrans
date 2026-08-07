@@ -1,6 +1,6 @@
 ! (C) Copyright 1988- ECMWF.
 ! (C) Copyright 1988- Meteo-France.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -25,7 +25,7 @@ SUBROUTINE UPDSPB_VIEW(KM,POA,YDSPEC)
 !        CALL UPDSPB_VIEW(....)
 
 !        Explicit arguments :  KM - zonal wavenumber
-!        --------------------  POA - work array! 
+!        --------------------  POA - work array!
 !                              PSPEC - spectral array
 
 !        Implicit arguments :  None
@@ -97,9 +97,9 @@ DO JN=ITMAX+2-ISMAX,ITMAX+2-KM
 !DIR$ IVDEP
 !OCL NOVREC
   DO JFLD=1,SIZE(YDSPEC)
-    IR = 2*JFLD-1    
+    IR = 2*JFLD-1
     YDSPEC(JFLD)%P(INM) = POA(JN,IR)
-    IF (KM /= 0) INM1 = POA(JN,IR+1)        
+    IF (KM /= 0) INM1 = POA(JN,IR+1)
     YDSPEC(JFLD)%P(INM+1) = INM1
   ENDDO
 ENDDO

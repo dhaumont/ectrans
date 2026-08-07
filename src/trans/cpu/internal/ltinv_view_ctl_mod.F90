@@ -1,6 +1,6 @@
 ! (C) Copyright 2000- ECMWF.
 ! (C) Copyright 2000- Meteo-France.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -11,7 +11,7 @@
 MODULE LTINV_VIEW_CTL_MOD
 CONTAINS
 SUBROUTINE LTINV_VIEW_CTL(KF_OUT_LT,&
- & YDSPVVOR,YDSPVDIV,YDSPVSCALAR,& 
+ & YDSPVVOR,YDSPVDIV,YDSPVSCALAR,&
  & FSPGL_PROC)
 
 !**** *LTINV_VIEW_CTL* - Control routine for inverse Legandre transform.
@@ -65,7 +65,7 @@ TYPE(SPEC_VIEW), INTENT(IN) :: YDSPVSCALAR(:)
 
 EXTERNAL  FSPGL_PROC
 OPTIONAL  FSPGL_PROC
-  
+
 INTEGER(KIND=JPIM) :: JM,IM,IBLEN,ILEI2,IDIM1
 INTEGER(KIND=JPIM) :: IF_UV,IF_SCALARS,IF_SCDERS
 !     IF_UV        - local number of spectral u-v fields
@@ -128,7 +128,7 @@ IF(KF_OUT_LT > 0) THEN
     DO JM=1,D%NUMP
       IM = D%MYMS(JM)
       CALL LTINV_VIEW(IM,JM,KF_OUT_LT,IF_UV,IF_SCALARS,IF_SCDERS,ILEI2,IDIM1,&
-       & YDSPVVOR,YDSPVDIV,YDSPVSCALAR)       
+       & YDSPVVOR,YDSPVDIV,YDSPVSCALAR)
     ENDDO
     !$OMP END PARALLEL DO
   ENDIF

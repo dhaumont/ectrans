@@ -1,6 +1,6 @@
 ! (C) Copyright 1988- ECMWF.
 ! (C) Copyright 1988- Meteo-France.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 ! In applying this licence, ECMWF does not waive the privileges and immunities
@@ -102,19 +102,19 @@ IF (KF_UV > 0) THEN
   IDIVE = 4*KF_UV
   CALL UPDSPB_VIEW(KM,POA2(:,IVORS:IVORE),YDSPVVOR)
   CALL UPDSPB_VIEW(KM,POA2(:,IDIVS:IDIVE),YDSPVDIV)
-  IF (KM == 0) THEN    
+  IF (KM == 0) THEN
     DO JFLD=1,KF_UV
       YDSPVVOR(JFLD)%P(D%NASM0(0)) = 0.0_JPRB
       YDSPVDIV(JFLD)%P(D%NASM0(0)) = 0.0_JPRB
-    ENDDO    
+    ENDDO
   ENDIF
 ENDIF
 
 !*       1.2   SCALARS
 
-IF (KF_SCALARS > 0) THEN  
+IF (KF_SCALARS > 0) THEN
     IEND = IST+2*KF_SCALARS-1
-    CALL UPDSPB_VIEW(KM,POA1(:,IST:IEND),YDSPVSCALAR)  
+    CALL UPDSPB_VIEW(KM,POA1(:,IST:IEND),YDSPVSCALAR)
 ENDIF
 
 !     ------------------------------------------------------------------
