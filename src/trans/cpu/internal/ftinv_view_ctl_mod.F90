@@ -41,7 +41,6 @@ SUBROUTINE FTINV_VIEW_CTL(KF_GP,KF_FS,KF_OUT_LT,&
 !                   u and v variables
 !        KVSETSC - "B" set in spectral/fourier space for
 !                  scalar variables
-!        KPTRGP - pointer array to fi3elds in gridpoint space
 
 !     Method.
 !     -------

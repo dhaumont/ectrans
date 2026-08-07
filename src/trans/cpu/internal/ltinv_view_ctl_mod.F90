@@ -12,7 +12,7 @@ MODULE LTINV_VIEW_CTL_MOD
 CONTAINS
 SUBROUTINE LTINV_VIEW_CTL(KF_OUT_LT,&
  & YDSPVVOR,YDSPVDIV,YDSPVSCALAR,& 
- & KFLDPTRUV,KFLDPTRSC,FSPGL_PROC)
+ & FSPGL_PROC)
 
 !**** *LTINV_VIEW_CTL* - Control routine for inverse Legandre transform.
 
@@ -27,8 +27,6 @@ SUBROUTINE LTINV_VIEW_CTL(KF_OUT_LT,&
 !     PSPVOR(:,:)  - spectral vorticity (input)
 !     PSPDIV(:,:)  - spectral divergence (input)
 !     PSPSCALAR(:,:) - spectral scalarvalued fields (input)
-!     KFLDPTRUV(:) - field pointer array for vor./div.
-!     KFLDPTRSC(:) - field pointer array for PSPSCALAR
 !     FSPGL_PROC  - external procedure to be executed in fourier space
 !                   before transposition
 
@@ -65,8 +63,6 @@ INTEGER(KIND=JPIM),INTENT(IN) :: KF_OUT_LT
 TYPE(SPEC_VIEW), INTENT(IN) :: YDSPVVOR(:), YDSPVDIV(:)
 TYPE(SPEC_VIEW), INTENT(IN) :: YDSPVSCALAR(:)
 
-INTEGER(KIND=JPIM),OPTIONAL,INTENT(IN) :: KFLDPTRUV(:)
-INTEGER(KIND=JPIM),OPTIONAL,INTENT(IN) :: KFLDPTRSC(:)
 EXTERNAL  FSPGL_PROC
 OPTIONAL  FSPGL_PROC
   
@@ -124,7 +120,7 @@ IF(KF_OUT_LT > 0) THEN
       IM = D%MYMS(JM)
       CALL LTINV_VIEW(IM,JM,KF_OUT_LT,IF_UV,IF_SCALARS,IF_SCDERS,ILEI2,IDIM1,&
        & YDSPVVOR,YDSPVDIV,YDSPVSCALAR,&
-       & KFLDPTRUV,KFLDPTRSC,FSPGL_PROC)
+       &FSPGL_PROC)
     ENDDO
     !$OMP END PARALLEL DO
   ELSE
@@ -132,8 +128,7 @@ IF(KF_OUT_LT > 0) THEN
     DO JM=1,D%NUMP
       IM = D%MYMS(JM)
       CALL LTINV_VIEW(IM,JM,KF_OUT_LT,IF_UV,IF_SCALARS,IF_SCDERS,ILEI2,IDIM1,&
-       & YDSPVVOR,YDSPVDIV,YDSPVSCALAR,&
-       & KFLDPTRUV,KFLDPTRSC)
+       & YDSPVVOR,YDSPVDIV,YDSPVSCALAR)       
     ENDDO
     !$OMP END PARALLEL DO
   ENDIF
