@@ -15,7 +15,7 @@ SUBROUTINE INV_TRANS_FIELD_VIEW(KRESOL, &
                                & YDGPSCALAR_NS, YDGPSCALAR_EW, YDGPU_EW, YDGPV_EW, &
                                & FSPGL_PROC)
 
-!**** *INV_TRANS_FIELD_VIEW* - Field API interface to inverse spectral transform
+!**** *INV_TRANS_FIELD_VIEW* - Field view interface to inverse spectral transform
 
 !     Purpose.
 !     --------
@@ -23,7 +23,7 @@ SUBROUTINE INV_TRANS_FIELD_VIEW(KRESOL, &
 
 !**   Interface.
 !     ----------
-!     CALL INV_TRANS_FIELD_API(...)
+!     CALL INV_TRANS_FIELD_VIEW(...)
 
 !     Explicit arguments :
 !     --------------------
@@ -94,7 +94,6 @@ TYPE(IVSET_PTR), ALLOCATABLE :: IVSETSC_LIST(:)
 
 INTEGER(KIND=JPIM)          :: IFLDSPVOR
 INTEGER(KIND=JPIM)          :: JFLD, IFLD                             ! FIELD COUNTERS
-INTEGER(KIND=JPIM)          :: C
 LOGICAL                     :: LLSCDERS                               ! INDICATING IF DERIVATIVES OF SCALAR VARIABLES ARE REQ.
 LOGICAL                     :: LLVORGP                                ! INDICATING IF GRID-POINT VORTICITY IS REQ.
 LOGICAL                     :: LLDIVGP                                ! INDICATING IF GRID-POINT DIVERGENCE IS REQ.
@@ -126,7 +125,7 @@ LLUVDER = .FALSE.
 IF (SIZE(YDGPU) > 0) THEN
 
   IF ((SIZE(YDGPU)/= SIZE(YDGPV)).OR.(SIZE(YDGPU)/= SIZE(YDSPDIV)).OR.(SIZE(YDGPU)/= SIZE(YDSPVOR))) THEN
-    CALL ABOR1("[INV_TRANS_FIELD_API] The vector arrays have inconsitent sizes: YDGPU, YDGPV, YDSPDIV, YDSPVOR")
+    CALL ABOR1("[INV_TRANS_FIELD_API] The vector arrays have inconsistent sizes: YDGPU, YDGPV, YDSPDIV, YDSPVOR")
   ENDIF
 
   ! Convert list of spectral vector fields into a list of 2d FIELD_VIEW
@@ -134,8 +133,8 @@ IF (SIZE(YDGPU) > 0) THEN
   IFLDSPVOR = LS_COUNT(YDSPVOR)
   ALLOCATE(YLSPVVOR(IFLDSPVOR))
   ALLOCATE(YLSPVDIV(IFLDSPVOR))
-  C = LS(YDSPVOR, YLSPVVOR)
-  C = LS(YDSPDIV, YLSPVDIV)
+  CALL LS(YDSPVOR, YLSPVVOR)
+  CALL LS(YDSPDIV, YLSPVDIV)
 
   ! Convert list of grid-point vector fields into a list of 2d FIELD_VIEW
   ALLOCATE(YLGVU(LG_COUNT(YDGPU)))
@@ -151,27 +150,27 @@ IF (SIZE(YDGPU) > 0) THEN
     CALL FIELD_VIEW_GET_IVSET_PTR(YDSPVOR(JFLD), IVSETUV_LIST(JFLD)%PTR)
   END DO
   ! Initialize b-set for vector fields data
-  C = LG(YDGPU, YLGVU, IVSETUV_LIST)
-  C = LG(YDGPV, YLGVV, IVSETUV_LIST)
+  CALL LG(YDGPU, YLGVU, IVSETUV_LIST)
+  CALL LG(YDGPV, YLGVV, IVSETUV_LIST)
 
   ! Output derivatives of vector fields
   IF (SIZE(YDGPU_EW) > 0 .AND. SIZE(YDGPV_EW) > 0)    THEN
     ALLOCATE(YLGVU_EW(LG_COUNT(YDGPU_EW)))
     ALLOCATE(YLGVV_EW(LG_COUNT(YDGPV_EW)))
-    C = LG(YDGPU_EW, YLGVU_EW, IVSETUV_LIST)
-    C = LG(YDGPV_EW, YLGVV_EW, IVSETUV_LIST)
+    CALL LG(YDGPU_EW, YLGVU_EW, IVSETUV_LIST)
+    CALL LG(YDGPV_EW, YLGVV_EW, IVSETUV_LIST)
  ENDIF
 
   ! Output divergence of vector fields
   IF (SIZE(YDGPDIV)  > 0) THEN
     ALLOCATE(YLGVDIV(LG_COUNT(YDGPDIV)))
-    C = LG(YDGPDIV, YLGVDIV, IVSETUV_LIST)
+    CALL LG(YDGPDIV, YLGVDIV, IVSETUV_LIST)
   ENDIF
 
   ! Output vorticity of vector fields
   IF (SIZE(YDGPVOR) > 0) THEN
     ALLOCATE(YLGVVOR(LG_COUNT(YDGPVOR)))
-    C = LG(YDGPVOR, YLGVVOR, IVSETUV_LIST)
+    CALL LG(YDGPVOR, YLGVVOR, IVSETUV_LIST)
   ENDIF
 ENDIF
 
@@ -186,7 +185,7 @@ IF (SIZE(YDSPSCALAR) > 0) THEN
 
   ! Convert list of spectral scalar fields of any domension into a list of 2d fields
 
-                                                        ! For LG we need the ivset of each grid point field,
+! For LG we need the ivset of each grid point field,
 ! so we extract a matching list from the spectral fields
   ALLOCATE(IVSETSC_LIST(SIZE(YDGPSCALAR)))
   IFLD = 1
@@ -196,16 +195,16 @@ IF (SIZE(YDSPSCALAR) > 0) THEN
   END DO
 
   ALLOCATE(YLGVSCALAR(LG_COUNT(YDGPSCALAR)))
-  C = LG(YDGPSCALAR, YLGVSCALAR, IVSETSC_LIST)
+  CALL LG(YDGPSCALAR, YLGVSCALAR, IVSETSC_LIST)
 
   ALLOCATE(YLSPVSCALAR(LS_COUNT(YDSPSCALAR)))
-  C = LS(YDSPSCALAR, YLSPVSCALAR)
+  CALL LS(YDSPSCALAR, YLSPVSCALAR)
 
   IF (SIZE(YDGPSCALAR_NS) > 0 .AND. SIZE(YDGPSCALAR_EW) > 0) THEN
     ALLOCATE(YLGVSCALAR_NS(LG_COUNT(YDGPSCALAR_NS)))
     ALLOCATE(YLGVSCALAR_EW(LG_COUNT(YDGPSCALAR_EW)))
-    C = LG(YDGPSCALAR_NS, YLGVSCALAR_NS, IVSETSC_LIST)
-    C = LG(YDGPSCALAR_EW, YLGVSCALAR_EW, IVSETSC_LIST)
+    CALL LG(YDGPSCALAR_NS, YLGVSCALAR_NS, IVSETSC_LIST)
+    CALL LG(YDGPSCALAR_EW, YLGVSCALAR_EW, IVSETSC_LIST)
   ENDIF
 ENDIF
 
@@ -254,6 +253,7 @@ IF (ALLOCATED(YLGVSCALAR_NS))  DEALLOCATE(YLGVSCALAR_NS)
 IF (ALLOCATED(YLGVSCALAR_EW))  DEALLOCATE(YLGVSCALAR_EW)
 
 IF (LHOOK) CALL DR_HOOK('INV_TRANS_FIELD_VIEW',1,ZHOOK_HANDLE)
+
 !     ------------------------------------------------------------------
 
 END SUBROUTINE INV_TRANS_FIELD_VIEW
