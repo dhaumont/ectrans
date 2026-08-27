@@ -18,6 +18,7 @@ USE ECTRANS_FIELD_VIEW_MOD, ONLY: FIELD_VIEW
 
 USE YOMHOOK  ,ONLY : LHOOK, DR_HOOK, JPHOOK
 USE PARKIND1 ,ONLY : JPRB, JPIM
+USE ABORT_TRANS_MOD, ONLY : ABORT_TRANS
 USE ECTRANS_FIELD_VIEW_MOD, ONLY: FIELD_VIEW_GET_IVSET_PTR
 USE ECTRANS_FIELD_VIEW_INTERNAL_UTIL_MOD, ONLY: SPEC_VIEW, GRID_VIEW, LS_COUNT, LG_COUNT, LS, LG, IVSET_PTR, &
                                               & GET_NPROMA, GET_NFLD, GET_NSPEC2, GET_NBLK
@@ -54,8 +55,6 @@ INTEGER(KIND=JPIM) :: JFLD      ! Field counter
 
 INTEGER(KIND=JPIM) :: KFLEVG
 
-#include "abor1.intfb.h"
-
 IF (LHOOK) CALL DR_HOOK('DIR_TRANS_FIELD_VIEW',0,ZHOOK_HANDLE)
 
 NPROMA              = GET_NPROMA(YDGPU, YDGPV, YDGPSCALAR)
@@ -68,8 +67,8 @@ NBLK                = GET_NBLK(YDGPU, YDGPV, YDGPSCALAR)
 ! Do we have vector fields?
 IF (SIZE(YDGPU) > 0) THEN
 
-  IF ((SIZE(YDGPU)/= SIZE(YDGPV)).OR.(SIZE(YDGPU)/= SIZE(YDSPDIV)).OR.(SIZE(YDGPU)/= SIZE(YDSPVOR))) THEN
-    CALL ABOR1("[DIR_TRANS_FIELD_VIEW] The vector arrays have inconsistent sizes: YDGPU, YDGPV, YDSPDIV, YDSPVOR")
+  IF ((SIZE(YDGPU) /= SIZE(YDGPV)).OR.(SIZE(YDGPU) /= SIZE(YDSPDIV)).OR.(SIZE(YDGPU)/= SIZE(YDSPVOR))) THEN
+    CALL ABORT_TRANS("[DIR_TRANS_FIELD_VIEW] The vector arrays have inconsistent sizes: YDGPU, YDGPV, YDSPDIV, YDSPVOR")
   ENDIF
 
   ! Convert list of spectral vector fields into a list of 2d FIELD_VIEW
@@ -82,7 +81,7 @@ IF (SIZE(YDGPU) > 0) THEN
   ALLOCATE(YLGVU(LG_COUNT(YDGPU)))
   ALLOCATE(YLGVV(LG_COUNT(YDGPV)))
   IF ((SIZE (YLGVU) /= SIZE (YLGVV)) .OR. (SIZE (YLSPVVOR) /= SIZE (YLSPVDIV))) THEN
-    CALL ABOR1("[DIR_TRANS_FIELD_VIEW] inconsistent number of field_view for vectors")
+    CALL ABORT_TRANS("[DIR_TRANS_FIELD_VIEW] inconsistent number of field_view for vectors")
   ENDIF
   KFLEVG = SIZE (YLGVU) / SIZE (YDGPU)
   IUVG = SIZE(YDGPU)
@@ -107,8 +106,8 @@ ENDIF
 
 ! Do we have scalar fields?
 IF (SIZE(YDSPSCALAR) > 0 ) THEN
-  IF ((SIZE(YDSPSCALAR)/= SIZE(YDGPSCALAR)))  CALL ABOR1("[DIR_TRANS_FIELD_VIEW] Inconsistent size &
-                                                         & for YDSPSCALAR and YDGPSCALAR")
+  IF ((SIZE(YDSPSCALAR)/= SIZE(YDGPSCALAR)))  CALL ABORT_TRANS("[DIR_TRANS_FIELD_VIEW] Inconsistent size &
+                                                               & for YDSPSCALAR and YDGPSCALAR")
 
   ! Convert list of spectral scalar fields of any dimension into a list of 2d fields
   ALLOCATE(YLGVSCALAR(LG_COUNT(YDGPSCALAR)))

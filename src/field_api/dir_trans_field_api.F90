@@ -62,6 +62,9 @@ INTEGER(KIND=JPIM) :: NFIELD_UV, NFIELD_SCALAR
 INTEGER(KIND=JPIM) :: IRESOL
 
 #include "dir_trans_field_view.h"
+#include "abor1.intfb.h"
+! We use ABOR1 and not ABORT_TRANS because ABORT_TRANS is to be private to trans routines,
+! and this interface is conceptually outside trans.
 
 REAL(KIND=JPHOOK)  :: ZHOOK_HANDLE
 
@@ -71,11 +74,22 @@ IF (LHOOK) CALL DR_HOOK('DIR_TRANS_FIELD_API',0,ZHOOK_HANDLE)
 ! -------------------------------------------------------------------------------------------------------------
 ! Convert FIELD_API input fields into FIELD_VIEW, an intermediate representation of fields specific to ectrans
 
+IF (PRESENT(YDFU) .OR. PRESENT(YDFV) .OR. PRESENT(YDFSPVOR) .OR. PRESENT(YDFSPDIV)) THEN
+  IF (.NOT. (PRESENT(YDFU) .AND. PRESENT(YDFV) .AND. PRESENT(YDFSPVOR) .AND. PRESENT(YDFSPDIV))) THEN
+    CALL ABOR1('DIR_TRANS_FIELD_API: YDFU, YDFV, YDFSPVOR AND YDFSPDIV MUST ALL BE PRESENT IF ANY IS PRESENT')
+  ENDIF
+  IF (SIZE(YDFU) /= SIZE(YDFV) .OR. SIZE(YDFU) /= SIZE(YDFSPVOR) .OR. SIZE(YDFU) /= SIZE(YDFSPDIV)) THEN
+    CALL ABOR1('DIR_TRANS_FIELD_API: YDFU, YDFV, YDFSPVOR AND YDFSPDIV MUST HAVE THE SAME SIZE')
+  ENDIF
+ENDIF
+
 NFIELD_UV = 0
 NFIELD_SCALAR = 0
-IF (PRESENT(YDFU) .AND. PRESENT(YDFV)) THEN
+
+IF (PRESENT(YDFU)) THEN
   NFIELD_UV = SIZE(YDFU)
 ENDIF
+
 IF (PRESENT(YDFSCALAR)) THEN
   NFIELD_SCALAR = SIZE(YDFSCALAR)
 ENDIF

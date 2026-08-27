@@ -1,5 +1,5 @@
-! (C) Copyright 2001- ECMWF.
-! (C) Copyright 2001- Meteo-France.
+! (C) Copyright 2026- ECMWF.
+! (C) Copyright 2026- Meteo-France.
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -55,6 +55,7 @@ USE ECTRANS_FIELD_VIEW_INTERNAL_UTIL_MOD, ONLY : SPEC_VIEW, GRID_VIEW, LS_COUNT,
                                                & GET_NPROMA, GET_NFLD, GET_NSPEC2, GET_NBLK
 USE TPM_DISTR, ONLY : DISTR_RESOL
 USE PARKIND1, ONLY : JPRB, JPIM
+USE ABORT_TRANS_MOD, ONLY : ABORT_TRANS
 USE INV_TRANS_VIEW_CTL_MOD, ONLY: INV_TRANS_VIEW_CTL
 
 IMPLICIT NONE
@@ -102,8 +103,6 @@ INTEGER(KIND=JPIM)          :: NGPTOT
 INTEGER(KIND=JPIM)          :: NPROMA, NBLK
 REAL(KIND=JPHOOK)           :: ZHOOK_HANDLE
 
-#include "abor1.intfb.h"
-
 !     ------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('INV_TRANS_FIELD_VIEW',0,ZHOOK_HANDLE)
 
@@ -125,7 +124,7 @@ LLUVDER = .FALSE.
 IF (SIZE(YDGPU) > 0) THEN
 
   IF ((SIZE(YDGPU)/= SIZE(YDGPV)).OR.(SIZE(YDGPU)/= SIZE(YDSPDIV)).OR.(SIZE(YDGPU)/= SIZE(YDSPVOR))) THEN
-    CALL ABOR1("[INV_TRANS_FIELD_VIEW] The vector arrays have inconsistent sizes: YDGPU, YDGPV, YDSPDIV, YDSPVOR")
+    CALL ABORT_TRANS("[INV_TRANS_FIELD_VIEW] The vector arrays have inconsistent sizes: YDGPU, YDGPV, YDSPDIV, YDSPVOR")
   ENDIF
 
   ! Convert list of spectral vector fields into a list of 2d FIELD_VIEW
@@ -140,7 +139,7 @@ IF (SIZE(YDGPU) > 0) THEN
   ALLOCATE(YLGVU(LG_COUNT(YDGPU)))
   ALLOCATE(YLGVV(LG_COUNT(YDGPV)))
   IF ((SIZE (YLGVU) /= SIZE (YLGVV)) .OR. (SIZE (YLSPVVOR) /= SIZE (YLSPVDIV))) THEN
-    CALL ABOR1("[INV_TRANS_FIELD_VIEW] inconsistent number of field_view for vectors")
+    CALL ABORT_TRANS("[INV_TRANS_FIELD_VIEW] inconsistent number of field_view for vectors")
   ENDIF
 
   ! For LG we need the ivset of each grid point field,
@@ -176,14 +175,12 @@ ENDIF
 
 ! 2. scalar fields transformation
 
-! Preliminary checks
-
 IF (SIZE(YDSPSCALAR) > 0) THEN
 
-  IF ((SIZE(YDSPSCALAR)/= SIZE(YDGPSCALAR))) CALL ABOR1("[INV_TRANS_FIELD_VIEW] Inconsistent size &
+  IF ((SIZE(YDSPSCALAR)/= SIZE(YDGPSCALAR))) CALL ABORT_TRANS("[INV_TRANS_FIELD_VIEW] Inconsistent size &
                                                         & for YDSPSCALAR and YDGPSCALAR")
 
-  ! Convert list of spectral scalar fields of any domension into a list of 2d fields
+  ! Convert list of spectral scalar fields of any dimension into a list of 2d fields
 
 ! For LG we need the ivset of each grid point field,
 ! so we extract a matching list from the spectral fields
