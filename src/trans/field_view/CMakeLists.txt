@@ -51,9 +51,13 @@ set (platforms)
 if (HAVE_CPU)
     list(APPEND platforms cpu)
 endif()
-if (HAVE_GPU)
-    list(APPEND platforms gpu)
-endif()
+# Note: There is currently no GPU-specific implementation of field_view. The sources
+# under cpu/internal/ USE modules (e.g. TRGL_MOD, FSPGL_INT_MOD) that only exist in
+# the CPU trans tree, and the sed-based module renaming produces symbols matching the
+# CPU library (suffix _${prec}), not the GPU library (suffix _gpu_${prec}). So we do
+# not build ectrans_field_view_gpu_${prec} until a proper GPU implementation exists.
+# GPU executables that need field_view/field_api functionality should link against
+# the CPU variants (which requires HAVE_CPU to be enabled).
 foreach(platform ${platforms})
   foreach( prec dp sp)
     if( HAVE_${prec})

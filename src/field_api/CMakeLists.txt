@@ -36,9 +36,10 @@ set (platforms)
 if (HAVE_CPU)
     list(APPEND platforms cpu)
 endif()
-if (HAVE_GPU)
-    list(APPEND platforms gpu)
-endif()
+# Note: ectrans_field_api_gpu_${prec} depends on ectrans_field_view_gpu_${prec} which
+# is not built (see src/trans/field_view/CMakeLists.txt). GPU executables should link
+# against the CPU variant ectrans_field_api_${prec} (which requires HAVE_CPU to be
+# enabled) until a proper GPU implementation of field_view exists.
 foreach(platform ${platforms})
   foreach( prec dp sp)
     if( HAVE_${prec})

@@ -59,7 +59,10 @@ foreach( program ectrans-benchmark )
                                   $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
                                   $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
                                   ${util_PRIVATE_LIBRARIES}
-                                  $<${HAVE_FIELD_API}:ectrans_field_api_gpu_${prec}>
+                                  # No GPU variant of ectrans_field_api yet; use the CPU one
+                                  # (see src/trans/field_view/CMakeLists.txt).
+                                  # This requires HAVE_CPU when using HAVE_FIELD_API.
+                                  $<$<AND:$<BOOL:${HAVE_FIELD_API}>,$<BOOL:${HAVE_CPU}>>:ectrans_field_api_${prec}>
                                 DEFINITIONS
                                   VERSION="gpu"
                                   ${util_PRIVATE_DEFINITIONS}
