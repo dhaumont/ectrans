@@ -62,7 +62,7 @@ foreach(platform ${platforms})
       else()
         set (platform_tag "")
       endif()
-      generate_backend_sources( BACKEND ${prec} 
+      generate_backend_sources( BACKEND ${platform_tag}${prec} 
         OUTPUT ectrans_field_view_${platform_tag}${prec}_src
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_${platform_tag}${prec})
       ecbuild_add_library(
