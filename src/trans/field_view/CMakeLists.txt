@@ -10,34 +10,41 @@
 
 function(generate_backend_sources)
   set (options)
-  set (oneValueArgs BACKEND DESTINATION OUTPUT)
+  set (oneValueArgs BACKEND DESTINATION PLATFORM OUTPUT)
   set (multiValueArgs)
 
   cmake_parse_arguments(_PAR "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
   set(backend ${_PAR_BACKEND})
   set(destination ${_PAR_DESTINATION})
+  set(platform ${_PAR_PLATFORM})
+
   file(MAKE_DIRECTORY ${destination}/field_view)
 
-  list( APPEND files         
+  list( APPEND files
         ectrans_field_view_internal_util_mod.F90
         dir_trans_field_view.F90
         inv_trans_field_view.F90
-        cpu/internal/dir_trans_view_ctl_mod.F90
-        cpu/internal/ftdir_view_ctl_mod.F90
-        cpu/internal/inv_trans_view_ctl_mod.F90
-        cpu/internal/ltdir_view_mod.F90
-        cpu/internal/ltinv_view_mod.F90
-        cpu/internal/trgl_view_mod.F90
-        cpu/internal/trltog_view_mod.F90
-        cpu/internal/updsp_view_mod.F90
-        cpu/internal/fsc_view_mod.F90
-        cpu/internal/ftinv_view_ctl_mod.F90
-        cpu/internal/ltdir_view_ctl_mod.F90
-        cpu/internal/ltinv_view_ctl_mod.F90
-        cpu/internal/prfi1b_view_mod.F90 
-        cpu/internal/trgtol_view_mod.F90
-        cpu/internal/updspb_view_mod.F90)
+        ${platform}/internal/dir_trans_view_ctl_mod.F90
+        ${platform}/internal/inv_trans_view_ctl_mod.F90)
+
+  if (${platform} EQUAL "cpu")
+      list( APPEND files
+        ${platform}/internal/ftdir_view_ctl_mod.F90
+        ${platform}/internal/ltdir_view_mod.F90
+        ${platform}/internal/ltinv_view_mod.F90
+        ${platform}/internal/trgl_view_mod.F90
+        ${platform}/internal/trltog_view_mod.F90
+        ${platform}/internal/updsp_view_mod.F90
+        ${platform}/internal/fsc_view_mod.F90
+        ${platform}/internal/ftinv_view_ctl_mod.F90
+        ${platform}/internal/ltdir_view_ctl_mod.F90
+        ${platform}/internal/ltinv_view_ctl_mod.F90
+        ${platform}/internal/prfi1b_view_mod.F90
+        ${platform}/internal/trgtol_view_mod.F90
+        ${platform}/internal/updspb_view_mod.F90)
+    endif()
   set(outfiles)
+
   foreach(file_i ${files})
     set(outfile "${destination}/${file_i}")
     ecbuild_debug("Generate ${outfile}")
@@ -62,7 +69,8 @@ foreach(platform ${platforms})
       else()
         set (platform_tag "")
       endif()
-      generate_backend_sources( BACKEND ${platform_tag}${prec} 
+      generate_backend_sources( BACKEND ${prec}
+        PLATFORM ${platform}
         OUTPUT ectrans_field_view_${platform_tag}${prec}_src
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_${platform_tag}${prec})
       ecbuild_add_library(
@@ -82,7 +90,7 @@ foreach(platform ${platforms})
   endforeach()
 endforeach()
 
-list( APPEND field_view_includes 
+list( APPEND field_view_includes
   include/ectrans/dir_trans_field_view.h
   include/ectrans/inv_trans_field_view.h
 )
