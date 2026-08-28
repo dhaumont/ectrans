@@ -27,7 +27,7 @@ function(generate_backend_sources)
         ${platform}/internal/dir_trans_view_ctl_mod.F90
         ${platform}/internal/inv_trans_view_ctl_mod.F90)
 
-  if (${platform} EQUAL "cpu")
+  if (${platform} STREQUAL "cpu")
       list( APPEND files
         ${platform}/internal/ftdir_view_ctl_mod.F90
         ${platform}/internal/ltdir_view_mod.F90
