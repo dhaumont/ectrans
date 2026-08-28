@@ -18,8 +18,7 @@ function(generate_backend_sources)
   set(destination ${_PAR_DESTINATION})
   file(MAKE_DIRECTORY ${destination}/field_view)
 
-  list( APPEND files 
-        ectrans_field_view_mod.F90
+  list( APPEND files         
         ectrans_field_view_internal_util_mod.F90
         dir_trans_field_view.F90
         inv_trans_field_view.F90
@@ -68,6 +67,7 @@ foreach(platform ${platforms})
           TARGET           ectrans_field_view_${platform_tag}${prec}
           LINKER_LANGUAGE  Fortran
           SOURCES          ${ectrans_field_view_${prec}_src}
+                           ectrans_field_view_mod.F90
           PUBLIC_LIBS      trans_${platform_tag}${prec} fiat parkind_${prec}
           PUBLIC_INCLUDES  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/trans/field_view/include/ectrans>
                            $<INSTALL_INTERFACE:include/ectrans> )
