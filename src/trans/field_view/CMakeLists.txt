@@ -62,11 +62,13 @@ foreach(platform ${platforms})
       else()
         set (platform_tag "")
       endif()
-      generate_backend_sources( BACKEND ${prec} OUTPUT ectrans_field_view_${prec}_src  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_${prec})
+      generate_backend_sources( BACKEND ${prec} 
+        OUTPUT ectrans_field_view_${platform_tag}${prec}_src
+        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_${platform_tag}${prec})
       ecbuild_add_library(
           TARGET           ectrans_field_view_${platform_tag}${prec}
           LINKER_LANGUAGE  Fortran
-          SOURCES          ${ectrans_field_view_${prec}_src}
+          SOURCES          ${ectrans_field_view_${platform_tag}${prec}_src}
                            ectrans_field_view_mod.F90
           PUBLIC_LIBS      trans_${platform_tag}${prec} fiat parkind_${prec}
           PUBLIC_INCLUDES  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/trans/field_view/include/ectrans>
