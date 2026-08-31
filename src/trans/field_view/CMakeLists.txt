@@ -102,6 +102,10 @@ foreach(platform ${platforms})
           TARGET            ectrans_field_view_${platform_tag}${prec}
           MODULE_DIRECTORY  ${CMAKE_BINARY_DIR}/module/ectrans_field_view_${platform_tag}${prec}
           INSTALL_DIRECTORY module/ectrans_field_view_${platform_tag}${prec} )
+          if( HAVE_OMP )
+            ecbuild_debug("target_link_libraries( ectrans_field_view_${platform_tag}${prec} PRIVATE OpenMP::OpenMP_Fortran )")
+            target_link_libraries( ectrans_field_view_${platform_tag}${prec} PRIVATE OpenMP::OpenMP_Fortran )
+          endif()  
     endif()
   endforeach()
 endforeach()
