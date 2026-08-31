@@ -23,7 +23,7 @@ function(generate_backend_sources)
   # The routines dir_trans_field_view, inv_trans_field_view and ectrans_field_view_internal_util_mod
   # are compatible with all plaftorms. They are precision dependent, because they make function calls
   # to dir_trans_view_ctl_mod and inv_trans_view_ctl_mod.
-  # Only implemented for CPU version for the time beeing.
+  # Platform specific code only implemented for CPU version for the time beeing.
 
   if (${platform} STREQUAL "cpu")
       list( APPEND files
@@ -58,7 +58,7 @@ function(generate_backend_sources)
 
   # For GPU, a fallaback based on inv_trans and dir_trans is used to implement
   # inv_trans_field_view and dir_trans_field_view.
-  # As this fallback is precision agnostic, and ectrans_field_view_internal_util_mod
+  # As this fallback is precision agnostic, ectrans_field_view_internal_util_mod
   # is kept precision agnostic as well.
   if (${platform} STREQUAL "gpu")
       list( APPEND outfiles
