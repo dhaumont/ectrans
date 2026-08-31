@@ -20,17 +20,18 @@ function(generate_backend_sources)
 
   file(MAKE_DIRECTORY ${destination}/field_view)
 
-  # dir_trans_field_view.F90 and inv_trans_field_view.F90 should be compatible with all plaftorm.
-  # For now we use a fallaback based on inv_trans and dir_trans for gpu
-  # The fallback is precision independent.
+  # The routines dir_trans_field_view, inv_trans_field_view and ectrans_field_view_internal_util_mod
+  # are compatible with all plaftorms. They are precision dependent, because they they make function calls
+  # to dir_trans_view_ctl_mod and inv_trans_view_ctl_mod.
+  # Only implemented for CPU version for the time beeing.
 
   if (${platform} STREQUAL "cpu")
       list( APPEND files
         ectrans_field_view_internal_util_mod.F90
-        ${platform}/internal/dir_trans_view_ctl_mod.F90
-        ${platform}/internal/inv_trans_view_ctl_mod.F90
         dir_trans_field_view.F90
         inv_trans_field_view.F90
+        ${platform}/internal/dir_trans_view_ctl_mod.F90
+        ${platform}/internal/inv_trans_view_ctl_mod.F90
         ${platform}/internal/ftdir_view_ctl_mod.F90
         ${platform}/internal/ltdir_view_mod.F90
         ${platform}/internal/ltinv_view_mod.F90
@@ -55,6 +56,10 @@ function(generate_backend_sources)
     list(APPEND outfiles ${outfile})
   endforeach(file_i)
 
+  # For GPU, a fallaback based on inv_trans and dir_trans is used to implement
+  # inv_trans_field_view and dir_trans_field_view.
+  # As this fallback is precision agnostic, and ectrans_field_view_internal_util_mod
+  # is kept precision agnostic as well.
   if (${platform} STREQUAL "gpu")
       list( APPEND outfiles
         ectrans_field_view_internal_util_mod.F90
