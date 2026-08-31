@@ -20,16 +20,15 @@ function(generate_backend_sources)
 
   file(MAKE_DIRECTORY ${destination}/field_view)
 
-  list( APPEND files
-        ectrans_field_view_internal_util_mod.F90        
-        ${platform}/internal/dir_trans_view_ctl_mod.F90
-        ${platform}/internal/inv_trans_view_ctl_mod.F90)
-
   # dir_trans_field_view.F90 and inv_trans_field_view.F90 should be compatible with all plaftorm.
   # For now we use a fallaback based on inv_trans and dir_trans for gpu
+  # The fallback is precision independent.
 
   if (${platform} STREQUAL "cpu")
       list( APPEND files
+        ectrans_field_view_internal_util_mod.F90
+        ${platform}/internal/dir_trans_view_ctl_mod.F90
+        ${platform}/internal/inv_trans_view_ctl_mod.F90
         dir_trans_field_view.F90
         inv_trans_field_view.F90
         ${platform}/internal/ftdir_view_ctl_mod.F90
@@ -45,13 +44,9 @@ function(generate_backend_sources)
         ${platform}/internal/prfi1b_view_mod.F90
         ${platform}/internal/trgtol_view_mod.F90
         ${platform}/internal/updspb_view_mod.F90)
-  elseif (${platform} STREQUAL "gpu")
-      list( APPEND files
-        gpu/dir_trans_field_view.F90
-        gpu/inv_trans_field_view.F90)
   endif()
 
-    set(outfiles)
+  set(outfiles)
 
   foreach(file_i ${files})
     set(outfile "${destination}/${file_i}")
@@ -59,6 +54,14 @@ function(generate_backend_sources)
     generate_file(BACKEND ${backend} INPUT ${CMAKE_CURRENT_SOURCE_DIR}/${file_i} OUTPUT ${outfile})
     list(APPEND outfiles ${outfile})
   endforeach(file_i)
+
+  if (${platform} STREQUAL "gpu")
+      list( APPEND outfiles
+        ectrans_field_view_internal_util_mod.F90
+        gpu/dir_trans_field_view.F90
+        gpu/inv_trans_field_view.F90)
+  endif()
+
   set(${_PAR_OUTPUT} ${outfiles} PARENT_SCOPE)
 endfunction(generate_backend_sources)
 
