@@ -21,7 +21,7 @@ function(generate_backend_sources)
   file(MAKE_DIRECTORY ${destination}/field_view)
 
   # The routines dir_trans_field_view, inv_trans_field_view and ectrans_field_view_internal_util_mod
-  # are compatible with all plaftorms. They are precision dependent, because they they make function calls
+  # are compatible with all plaftorms. They are precision dependent, because they make function calls
   # to dir_trans_view_ctl_mod and inv_trans_view_ctl_mod.
   # Only implemented for CPU version for the time beeing.
 
