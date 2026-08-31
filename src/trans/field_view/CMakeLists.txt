@@ -21,14 +21,17 @@ function(generate_backend_sources)
   file(MAKE_DIRECTORY ${destination}/field_view)
 
   list( APPEND files
-        ectrans_field_view_internal_util_mod.F90
-        dir_trans_field_view.F90
-        inv_trans_field_view.F90
+        ectrans_field_view_internal_util_mod.F90        
         ${platform}/internal/dir_trans_view_ctl_mod.F90
         ${platform}/internal/inv_trans_view_ctl_mod.F90)
 
+  # dir_trans_field_view.F90 and inv_trans_field_view.F90 should be compatible with all plaftorm.
+  # For now we use a fallaback based on inv_trans and dir_trans for gpu
+
   if (${platform} STREQUAL "cpu")
       list( APPEND files
+        dir_trans_field_view.F90
+        inv_trans_field_view.F90
         ${platform}/internal/ftdir_view_ctl_mod.F90
         ${platform}/internal/ltdir_view_mod.F90
         ${platform}/internal/ltinv_view_mod.F90
@@ -42,8 +45,13 @@ function(generate_backend_sources)
         ${platform}/internal/prfi1b_view_mod.F90
         ${platform}/internal/trgtol_view_mod.F90
         ${platform}/internal/updspb_view_mod.F90)
-    endif()
-  set(outfiles)
+  elseif (${platform} STREQUAL "gpu")
+      list( APPEND files
+        gpu/dir_trans_field_view.F90
+        gpu/inv_trans_field_view.F90)
+  endif()
+
+    set(outfiles)
 
   foreach(file_i ${files})
     set(outfile "${destination}/${file_i}")
