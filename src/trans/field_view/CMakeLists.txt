@@ -20,31 +20,28 @@ function(generate_backend_sources)
 
   file(MAKE_DIRECTORY ${destination}/field_view)
 
-  # The routines dir_trans_field_view, inv_trans_field_view and ectrans_field_view_internal_util_mod
-  # are compatible with all plaftorms. They are precision dependent, because they make function calls
-  # to dir_trans_view_ctl_mod and inv_trans_view_ctl_mod.
-  # Platform specific code only implemented for CPU version for the time beeing.
-
-  if (${platform} STREQUAL "cpu")
-      list( APPEND files
+  list( APPEND files
         ectrans_field_view_internal_util_mod.F90
         dir_trans_field_view.F90
         inv_trans_field_view.F90
         ${platform}/internal/dir_trans_view_ctl_mod.F90
         ${platform}/internal/inv_trans_view_ctl_mod.F90
-        ${platform}/internal/ftdir_view_ctl_mod.F90
         ${platform}/internal/ltdir_view_mod.F90
         ${platform}/internal/ltinv_view_mod.F90
-        ${platform}/internal/trgl_view_mod.F90
         ${platform}/internal/trltog_view_mod.F90
+        ${platform}/internal/trgtol_view_mod.F90
         ${platform}/internal/updsp_view_mod.F90
+        ${platform}/internal/updspb_view_mod.F90)
+
+  if (${platform} STREQUAL "cpu")
+      list( APPEND files
+        ${platform}/internal/trgl_view_mod.F90
         ${platform}/internal/fsc_view_mod.F90
+        ${platform}/internal/prfi1b_view_mod.F90
+        ${platform}/internal/ftdir_view_ctl_mod.F90
         ${platform}/internal/ftinv_view_ctl_mod.F90
         ${platform}/internal/ltdir_view_ctl_mod.F90
-        ${platform}/internal/ltinv_view_ctl_mod.F90
-        ${platform}/internal/prfi1b_view_mod.F90
-        ${platform}/internal/trgtol_view_mod.F90
-        ${platform}/internal/updspb_view_mod.F90)
+        ${platform}/internal/ltinv_view_ctl_mod.F90)
   endif()
 
   set(outfiles)
@@ -55,17 +52,6 @@ function(generate_backend_sources)
     generate_file(BACKEND ${backend} INPUT ${CMAKE_CURRENT_SOURCE_DIR}/${file_i} OUTPUT ${outfile})
     list(APPEND outfiles ${outfile})
   endforeach(file_i)
-
-  # For GPU, a fallaback based on inv_trans and dir_trans is used to implement
-  # inv_trans_field_view and dir_trans_field_view.
-  # As this fallback is precision agnostic, ectrans_field_view_internal_util_mod
-  # is kept precision agnostic as well.
-  if (${platform} STREQUAL "gpu")
-      list( APPEND outfiles
-        ectrans_field_view_internal_util_mod.F90
-        gpu/dir_trans_field_view.F90
-        gpu/inv_trans_field_view.F90)
-  endif()
 
   set(${_PAR_OUTPUT} ${outfiles} PARENT_SCOPE)
 endfunction(generate_backend_sources)
