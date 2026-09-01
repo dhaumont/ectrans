@@ -298,5 +298,5 @@ CONTAINS
     !     ------------------------------------------------------------------
 
     IF (LHOOK) CALL DR_HOOK('LTDIR_VIEW_MOD',1,ZHOOK_HANDLE)
-  END SUBROUTINE LTDIR
+  END SUBROUTINE LTDIR_VIEW
 END MODULE LTDIR_VIEW_MOD
