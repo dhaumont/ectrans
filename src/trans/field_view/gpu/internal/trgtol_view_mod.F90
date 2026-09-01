@@ -390,12 +390,13 @@ CONTAINS
 
     IF (ACC_POINTERS_CNT > 0) CALL EXT_ACC_CREATE(ACC_POINTERS(1:ACC_POINTERS_CNT), &
 #ifdef ACCGPU
-         & STREAM=1_ACC_HANDLE_KIND)
+         & STREAM=1_ACC_HANDLE_KIND &
 #endif
 #ifdef OMPGPU
-         & STREAM=1)
+         & STREAM=1 &
 #endif
-
+    &)
+    
 #ifdef ACCGPU
     !$ACC WAIT(1)
 #endif
@@ -859,12 +860,12 @@ CONTAINS
 
     IF (ACC_POINTERS_CNT > 0) CALL EXT_ACC_DELETE(ACC_POINTERS(1:ACC_POINTERS_CNT), &
 #ifdef ACCGPU
-         & STREAM=1_ACC_HANDLE_KIND)
+         & STREAM=1_ACC_HANDLE_KIND &
 #endif
 #ifdef OMPGPU
-         & STREAM=1)
+         & STREAM=1 &
 #endif
-
+    &)
     ! Free this now
     DEALLOCATE(IFLDA)
 
