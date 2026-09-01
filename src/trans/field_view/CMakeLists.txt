@@ -71,7 +71,7 @@ foreach(platform ${platforms})
       else()
         set (platform_tag "")
       endif()
-      generate_backend_sources( BACKEND ${prec}
+      generate_backend_sources( BACKEND ${platform_tag}${prec}
         PLATFORM ${platform}
         OUTPUT ectrans_field_view_${platform_tag}${prec}_src
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_${platform_tag}${prec})
@@ -91,7 +91,7 @@ foreach(platform ${platforms})
           if( HAVE_OMP )
             ecbuild_debug("target_link_libraries( ectrans_field_view_${platform_tag}${prec} PRIVATE OpenMP::OpenMP_Fortran )")
             target_link_libraries( ectrans_field_view_${platform_tag}${prec} PRIVATE OpenMP::OpenMP_Fortran )
-          endif()  
+          endif()
     endif()
   endforeach()
 endforeach()
