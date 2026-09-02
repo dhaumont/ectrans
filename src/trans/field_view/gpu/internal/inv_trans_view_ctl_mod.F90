@@ -32,14 +32,9 @@ CONTAINS
 
     !     Explicit arguments :
     !     --------------------
-    !     KF_UV_G      - global number of spectral u-v fields
-    !     KF_SCALARS_G - global number of scalar spectral fields
-    !     IF_GP        - total number of output gridpoint fields
-    !     KF_FS        - total number of fields in fourier space
+    
     !     KF_OUT_LT    - total number of fields coming out from inverse LT
-    !     KF_UV        - local number of spectral u-v fields
-    !     KF_SCALARS   - local number of scalar spectral fields
-    !     KF_SCDERS    - local number of derivatives of scalar spectral fields
+    !     IF_UV        - local number of spectral u-v fields
     !     PSPVOR(:,:)  - spectral vorticity (input)
     !     PSPDIV(:,:)  - spectral divergence (input)
     !     PSPSCALAR(:,:) - spectral scalarvalued fields (input)
@@ -60,15 +55,15 @@ CONTAINS
     !                  The ordering of the output fields is as follows (all
     !                  parts are optional depending on the input switches):
 
-    !       vorticity     : KF_UV_G fields
-    !       divergence    : KF_UV_G fields
-    !       u             : KF_UV_G fields
-    !       v             : KF_UV_G fields
-    !       scalar fields : KF_SCALARS_G fields
-    !       N-S derivative of scalar fields : KF_SCALARS_G fields
-    !       E-W derivative of u : KF_UV_G fields
-    !       E-W derivative of v : KF_UV_G fields
-    !       E-W derivative of scalar fields : KF_SCALARS_G fields
+    !       vorticity     : IF_UV_G fields
+    !       divergence    : IF_UV_G fields
+    !       u             : IF_UV_G fields
+    !       v             : IF_UV_G fields
+    !       scalar fields : IF_SCALARS_G fields
+    !       N-S derivative of scalar fields : IF_SCALARS_G fields
+    !       E-W derivative of u : IF_UV_G fields
+    !       E-W derivative of v : IF_UV_G fields
+    !       E-W derivative of scalar fields : IF_SCALARS_G fields
 
     !     Method.
     !     -------
@@ -154,6 +149,9 @@ CONTAINS
     YLGP = [YDGVVOR,YDGVDIV,YDGVU,YDGVV,YDGVSCALAR,YDGVSCALAR_NS,YDGVU_EW,YDGVV_EW,YDGVSCALAR_EW]
     IF_GP = SIZE(YLGP)
 
+    IF_UV_G = SIZE(YDGVU)
+    IF_SCALARS_G = SIZE(YDGVSCALAR)
+    IF_SCDERS_G = SIZE(YDGVSCALAR_NS)
     ! Compute Vertical domain decomposition
 
     ! Initialize potentially unset offsets
@@ -164,11 +162,11 @@ CONTAINS
     ! (note in ltinv we will initially start with a slightly different domain decomposition
     ! which always has vorticity and divergence because this is the actual input)
     IFIRST = 0
-    IF (LVORGP) IFIRST = IFIRST + KF_UV ! Vorticity
-    IF (LDIVGP) IFIRST = IFIRST + KF_UV ! Divergence
+    IF (LVORGP) IFIRST = IFIRST + IF_UV ! Vorticity
+    IF (LDIVGP) IFIRST = IFIRST + IF_UV ! Divergence
     KUV_OFFSET = IFIRST
-    IFIRST = IFIRST + KF_UV ! U
-    IFIRST = IFIRST + KF_UV ! V
+    IFIRST = IFIRST + IF_UV ! U
+    IFIRST = IFIRST + IF_UV ! V
     KSCALARS_OFFSET = IFIRST
     IFIRST = IFIRST + KF_SCALARS ! Scalars
     IF (LSCDERS) THEN
@@ -179,7 +177,7 @@ CONTAINS
     IF_LEG = IFIRST
     IF (LUVDER) THEN
       KUV_EWDER_OFFSET = IFIRST
-      IFIRST = IFIRST+2*KF_UV ! U and V derivatives
+      IFIRST = IFIRST+2*IF_UV ! U and V derivatives
     ENDIF
     IF (LSCDERS) THEN
       KSCALARS_EWDER_OFFSET = IFIRST
@@ -190,7 +188,7 @@ CONTAINS
 
     ALLOCATOR = MAKE_BUFFERED_ALLOCATOR()
     IF (KF_FS > 0) THEN
-      HLTINV = PREPARE_LTINV(ALLOCATOR,KF_UV,KF_SCALARS,LVORGP,LDIVGP,LSCDERS)
+      HLTINV = PREPARE_LTINV(ALLOCATOR,IF_UV,KF_SCALARS,LVORGP,LDIVGP,LSCDERS)
       HTRMTOL_PACK = PREPARE_TRMTOL_PACK(ALLOCATOR,IF_LEG)
       HTRMTOL = PREPARE_TRMTOL(ALLOCATOR,IF_LEG)
       HTRMTOL_UNPACK = PREPARE_TRMTOL_UNPACK(ALLOCATOR,IF_FOURIER)
@@ -203,7 +201,7 @@ CONTAINS
     IF (KF_FS > 0) THEN
       ! Legendre transformations
       CALL GSTATS(102,0)
-      CALL LTINV_VIEW(ALLOCATOR,HLTINV,KF_UV,KF_SCALARS,&
+      CALL LTINV_VIEW(ALLOCATOR,HLTINV,IF_UV,KF_SCALARS,&
           & YDSPVVOR, YDSPVDIV, YDSPVSCALAR,&
           & ZOUTS,ZOUTA,ZOUTS0,ZOUTA0)
       CALL GSTATS(102,1)
@@ -217,7 +215,7 @@ CONTAINS
 
       CALL GSTATS(107,0)
       ! compute NS derivatives
-      CALL FSC(PREEL_COMPLEX, IF_FOURIER, KF_UV, KF_SCALARS, KUV_OFFSET, KSCALARS_OFFSET, &
+      CALL FSC(PREEL_COMPLEX, IF_FOURIER, IF_UV, KF_SCALARS, KUV_OFFSET, KSCALARS_OFFSET, &
           & KSCALARS_NSDER_OFFSET, KUV_EWDER_OFFSET, KSCALARS_EWDER_OFFSET)
       !Legendre transformations
       CALL FTINV(ALLOCATOR, HFTINV, PREEL_COMPLEX,PREEL_REAL,IF_FOURIER)
