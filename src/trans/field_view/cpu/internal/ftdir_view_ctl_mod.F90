@@ -94,10 +94,8 @@ ELSE
   ZGTF => ZGTF_HEAP(:,:)
 ENDIF
 
-KI = 1
 DO I=1,SIZE(YDGP)
-  IVSET(KI) = YDGP(I)%IVSET
-  KI = KI + 1
+  IVSET(I) = YDGP(I)%IVSET  
 ENDDO
 
 ! Transposition
