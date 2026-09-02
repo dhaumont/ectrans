@@ -235,7 +235,7 @@ CONTAINS
     !              -----------------------
 
     ! this is on the host, so need to cp from device, Nils
-    CALL UPDSP_VIEW(ZOA1,ZOA2,YDSPVVOR, YDSPVDIV, YDSPVSCALAR)
+    CALL UPDSP_VIEW(POA1,POA2,YDSPVVOR, YDSPVDIV, YDSPVSCALAR)
 
 #ifdef ACCGPU
     !$ACC WAIT(1)
