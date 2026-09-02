@@ -226,8 +226,8 @@ CONTAINS
         IDIVE = 4*KF_UV
 
        ! Compute vorticity and divergence
-       CALL UVTVD(KF_UV,POA1(:,IUS:IUE),POA1(:,IVS:IVE),&
-        & POA2(:,IVORS:IVORE),POA2(:,IDIVS:IDIVE))
+       CALL UVTVD(KF_UV,POA1(:,IUS:IUE,:),POA1(:,IVS:IVE,:),&
+        & POA2(:,IVORS:IVORE,:),POA2(:,IDIVS:IDIVE,:))
     ENDIF
     !     ------------------------------------------------------------------
 
