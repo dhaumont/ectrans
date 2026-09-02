@@ -87,10 +87,6 @@ MODULE UPDSPB_VIEW_MOD
   ! nn is the loop index.
   ASSOCIATE(D_NUMP=>D%NUMP, D_MYMS=>D%MYMS, D_NASM0=>D%NASM0, R_NTMAX=>R%NTMAX)
 
-  IF(PRESENT(KFLDPTR)) THEN
-    CALL ABORT_TRANS('UPDSPB_VIEW: Code path not (yet) supported in GPU version')
-  ENDIF
-  
   !*       1.    UPDATE SPECTRAL FIELDS.
   !              -----------------------
 

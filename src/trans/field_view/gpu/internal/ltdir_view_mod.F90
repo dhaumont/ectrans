@@ -16,7 +16,7 @@ MODULE LTDIR_VIEW_MOD
   IMPLICIT NONE
 
   PRIVATE
-  PUBLIC :: PREPARE_LTDIR, LTDIR_HANDLE, LTDIR
+  PUBLIC :: PREPARE_LTDIR, LTDIR_HANDLE, LTDIR_VIEW
 
   TYPE LTDIR_HANDLE
     TYPE(ALLOCATION_RESERVATION_HANDLE) :: HOUT_AND_POA
@@ -161,7 +161,7 @@ CONTAINS
     INTEGER(KIND=JPIM)  :: IOUT_STRIDES0
     INTEGER(KIND=JPIB)  :: IOUT_SIZE
     INTEGER(KIND=JPIM)  :: IOUT0_STRIDES0, IOUT0_SIZE
-
+    INTEGER(KIND=JPIM) :: IUS, IUE, IVS, IVE, IVORS, IVORE, IDIVS, IDIVE
 
 
     !     ------------------------------------------------------------------
@@ -226,8 +226,8 @@ CONTAINS
         IDIVE = 4*KF_UV
 
        ! Compute vorticity and divergence
-       CALL UVTVD(KF_UV,ZOA1(:,IUS:IUE),ZOA1(:,IVS:IVE),&
-        & ZOA2(:,IVORS:IVORE),ZOA2(:,IDIVS:IDIVE))
+       CALL UVTVD(KF_UV,POA1(:,IUS:IUE),POA1(:,IVS:IVE),&
+        & POA2(:,IVORS:IVORE),POA2(:,IDIVS:IDIVE))
     ENDIF
     !     ------------------------------------------------------------------
 
