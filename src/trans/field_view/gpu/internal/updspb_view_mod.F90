@@ -11,7 +11,7 @@
 
 MODULE UPDSPB_VIEW_MOD
   CONTAINS
-  SUBROUTINE UPDSPB_VIEW(KFIELD,POA,PSPEC,KFLDPTR)
+  SUBROUTINE UPDSPB_VIEW(POA,YDSPEC)
   
   
   !**** *UPDSPB_VIEW* - Update spectral arrays after direct Legendre transform
@@ -25,8 +25,8 @@ MODULE UPDSPB_VIEW_MOD
   !     ----------
   !        CALL UPDSPB_VIEW(....)
   
-  !        Explicit arguments :  KM - zonal wavenumber
-  !        --------------------  KFIELD  - number of fields
+  !        Explicit arguments :  
+  !        --------------------  
   !                              POA - work array
   !                              PSPEC - spectral array
   
@@ -60,20 +60,18 @@ MODULE UPDSPB_VIEW_MOD
   USE TPM_DIM,         ONLY: R
   USE TPM_DISTR,       ONLY: D
   USE ABORT_TRANS_MOD, ONLY: ABORT_TRANS
-
+  USE ECTRANS_FIELD_VIEW_INTERNAL_UTIL_MOD, ONLY : SPEC_VIEW
   !
   
   IMPLICIT NONE
-  
-  INTEGER(KIND=JPIM),INTENT(IN)  :: KFIELD
+    
   REAL(KIND=JPRBT)  ,INTENT(IN)  :: POA(:,:,:)
-  REAL(KIND=JPRB)   ,INTENT(OUT) :: PSPEC(:,:)
-  INTEGER(KIND=JPIM),INTENT(IN),OPTIONAL :: KFLDPTR(:)
-  
+  TYPE(SPEC_VIEW) :: YDSPEC(:)
+
   !     LOCAL INTEGER SCALARS
-  INTEGER(KIND=JPIM)  :: KM,KMLOC
+  INTEGER(KIND=JPIM) :: KM,KMLOC
   INTEGER(KIND=JPIM) :: INM, IR, JFLD, JN, IASM0
-  
+  INTEGER(KIND=JPIM) :: IFIELD
   
   !     ------------------------------------------------------------------
   
@@ -97,20 +95,20 @@ MODULE UPDSPB_VIEW_MOD
   !              -----------------------
 
 #ifdef OMPGPU
-  !$OMP TARGET DATA MAP(PRESENT,ALLOC:PSPEC,POA,R,R_NTMAX,D,D_NUMP,D_MYMS,D_NASM0)
+  !$OMP TARGET DATA MAP(PRESENT,POA,R,R_NTMAX,D,D_NUMP,D_MYMS,D_NASM0)
 #endif
 #ifdef ACCGPU
-  !$ACC DATA PRESENT(PSPEC,POA,R,R_NTMAX,D,D_NUMP,D_MYMS,D_NASM0) ASYNC(1)
+  !$ACC DATA PRESENT(POA,R,R_NTMAX,D,D_NUMP,D_MYMS,D_NASM0) ASYNC(1)
 #endif
 
 ! Directive incomplete -> putting more variables in SHARED() triggers internal compiler error
 ! ftn-7991: INTERNAL COMPILER ERROR:  "Too few arguments on the stack"
 #ifdef OMPGPU
   !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(3) DEFAULT(NONE) PRIVATE(KM,IASM0,INM) &
-  !$OMP& SHARED(D,R,KFIELD,POA,PSPEC) MAP(TO:KFIELD)
+  !$OMP& SHARED(D,R,IFIELD,POA) MAP(TO:IFIELD)
 #endif
 #ifdef ACCGPU
-  !$ACC PARALLEL LOOP COLLAPSE(3) PRIVATE(KM,IASM0,INM) DEFAULT(NONE) COPYIN(KFIELD) &
+  !$ACC PARALLEL LOOP COLLAPSE(3) PRIVATE(KM,IASM0,INM) DEFAULT(NONE) COPYIN(IFIELD) &
 #ifndef _CRAYFTN
   !$ACC& ASYNC(1)
 #else
@@ -119,20 +117,20 @@ MODULE UPDSPB_VIEW_MOD
 #endif
   DO KMLOC=1,D_NUMP
     DO JN=3,R_NTMAX+3
-      DO JFLD=1,KFIELD
+      DO JFLD=1,IFIELD
         KM = D_MYMS(KMLOC)
         IASM0 = D_NASM0(KM)
 
         IF(KM /= 0 .AND. JN <= R_NTMAX+3-KM) THEN
         !(DO JN=3,R_NTMAX+3-KM)
           INM = IASM0+((R_NTMAX+3-JN)-KM)*2
-          PSPEC(JFLD,INM)   = POA(2*JFLD-1,JN,KMLOC)
-          PSPEC(JFLD,INM+1) = POA(2*JFLD  ,JN,KMLOC)
+          YDSPEC(JFLD)%P(INM)   = POA(2*JFLD-1,JN,KMLOC)
+          YDSPEC(JFLD)%P(INM+1) = POA(2*JFLD  ,JN,KMLOC)
         ELSEIF (KM == 0) THEN
           !(DO JN=3,R_NTMAX+3)
           INM = IASM0+(R_NTMAX+3-JN)*2
-          PSPEC(JFLD,INM)   = POA(2*JFLD-1,JN,KMLOC)
-          PSPEC(JFLD,INM+1) = 0.0_JPRBT
+          YDSPEC(JFLD)%P(INM)   = POA(2*JFLD-1,JN,KMLOC)
+          YDSPEC(JFLD)%P(INM+1) = 0.0_JPRBT
         END IF
       ENDDO
     ENDDO
