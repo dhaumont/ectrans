@@ -34,7 +34,7 @@ CONTAINS
     !     --------------------
     !     KF_UV_G      - global number of spectral u-v fields
     !     KF_SCALARS_G - global number of scalar spectral fields
-    !     KF_GP        - total number of output gridpoint fields
+    !     IF_GP        - total number of output gridpoint fields
     !     KF_FS        - total number of fields in fourier space
     !     KF_OUT_LT    - total number of fields coming out from inverse LT
     !     KF_UV        - local number of spectral u-v fields
@@ -130,7 +130,7 @@ CONTAINS
     INTEGER(KIND=JPIM) :: KUV_OFFSET, KSCALARS_OFFSET, KSCALARS_NSDER_OFFSET, &
         & KUV_EWDER_OFFSET, KSCALARS_EWDER_OFFSET
     INTEGER(KIND=JPIM) :: IF_LEG, IF_FOURIER
-
+    INTEGER(KIND=JPIM) :: IF_GP
     INTEGER(KIND=JPIM) :: IFIRST
 
     TYPE(BUFFERED_ALLOCATOR) :: ALLOCATOR
@@ -143,12 +143,14 @@ CONTAINS
     TYPE(GRID_VIEW), ALLOCATABLE :: YLGV(:)
 
     INTEGER(KIND=JPIM) :: I
-    INTEGER(KIND=JPIM) :: IVSET(KF_GP)
+    INTEGER(KIND=JPIM), ALLOCATABLE :: IVSET(:)
     !     ------------------------------------------------------------------
 
     IF (NPROMATR > 0) THEN
       CALL ABORT_TRANS("NPROMATR > 0 not supported for GPU")
     ENDIF
+
+    IF_GP = SIZE(YLGP)
 
     ! Compute Vertical domain decomposition
 
@@ -192,7 +194,7 @@ CONTAINS
       HTRMTOL_UNPACK = PREPARE_TRMTOL_UNPACK(ALLOCATOR,IF_FOURIER)
       HFTINV = PREPARE_FTINV(ALLOCATOR,IF_FOURIER)
     ENDIF
-    HTRLTOG = PREPARE_TRLTOG(ALLOCATOR,IF_FOURIER,KF_GP)
+    HTRLTOG = PREPARE_TRLTOG(ALLOCATOR,IF_FOURIER,IF_GP)
 
     CALL INSTANTIATE_ALLOCATOR(ALLOCATOR, GROWING_ALLOCATION)
 
@@ -224,12 +226,13 @@ CONTAINS
     CALL GSTATS(157,0)
 
     YLGV = [YDGVVOR,YDGVDIV,YDGVU,YDGVV,YDGVSCALAR,YDGVSCALAR_NS,YDGVU_EW,YDGVV_EW,YDGVSCALAR_EW]
-
+    ALLOCATE(IVSET(IF_GP))
     DO I=1,SIZE(YLGV)
       IVSET(I) = YLGV(I)%IVSET
     ENDDO
 
-    CALL TRLTOG_VIEW(ALLOCATOR,HTRLTOG,PREEL_REAL,IF_FOURIER,KF_GP,KF_UV_G,KF_SCALARS_G,IVSET,YLGV)
+    CALL TRLTOG_VIEW(ALLOCATOR,HTRLTOG,PREEL_REAL,IF_FOURIER,IF_GP,SIZE(YDSPVVOR),SIZE(YDSPVSCALAR),IVSET,YLGV)
+    DEALLOCATE(IVSET)
     CALL GSTATS(157,1)
 
   END SUBROUTINE INV_TRANS_VIEW_CTL
