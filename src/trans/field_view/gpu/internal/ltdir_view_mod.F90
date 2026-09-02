@@ -69,7 +69,7 @@ CONTAINS
     USE TPM_GEOMETRY,           ONLY: G
     USE LEDIR_MOD,              ONLY: LEDIR_STRIDES, LEDIR
     USE UVTVD_MOD,              ONLY: UVTVD
-    USE UPDSP_MOD,              ONLY: UPDSP
+    USE UPDSP_VIEW_MOD,         ONLY: UPDSP_VIEW
     USE UPDSPB_MOD,             ONLY: UPDSPB
     USE MPL_MODULE,             ONLY: MPL_BARRIER,MPL_ALL_MS_COMM
     USE TPM_GEN,                ONLY: LSYNC_TRANS
