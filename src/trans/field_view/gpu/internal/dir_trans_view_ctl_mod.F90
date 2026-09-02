@@ -13,8 +13,7 @@ MODULE DIR_TRANS_VIEW_CTL_MOD
 CONTAINS
   SUBROUTINE DIR_TRANS_VIEW_CTL(KPROMA,KGPBLKS, &
                               & YDSPVVOR, YDSPVDIV, YDSPVSCALAR, &
-                              & YDGVU,YDGVV,YDGVSCALAR,&
-                              & LPGP_ON_GPU)
+                              & YDGVU,YDGVV,YDGVSCALAR)
 
     !**** *DIR_TRANS_VIEW_CTL* - Control routine for direct spectral transform.
 
@@ -101,8 +100,7 @@ CONTAINS
 
     TYPE(GRID_VIEW) :: YDGVU(:),YDGVV(:)
     TYPE(GRID_VIEW) :: YDGVSCALAR(:)
-    LOGICAL             :: LPGP_ON_GPU
-
+    
     ! Local variables
 
     !New one    
@@ -159,7 +157,7 @@ CONTAINS
     ! from the PGP arrays to PREEL_REAL
     CALL GSTATS(158,0)
     CALL TRGTOL_VIEW(ALLOCATOR,HTRGTOL,PREEL_REAL,IF_FS,IF_GP,&
-     & KVSET = IVSET, YDGP = YLGP, LPGP_ON_GPU=LPGP_ON_GPU)
+     & KVSET = IVSET, YDGP = YLGP)
      
     CALL GSTATS(158,1)
 
