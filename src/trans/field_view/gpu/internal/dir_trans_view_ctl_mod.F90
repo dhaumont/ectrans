@@ -29,8 +29,7 @@ CONTAINS
     !     Explicit arguments :
     !     --------------------
     !     KPROMA       - global number of spectral u-v fields
-    !     KGPBLKS      - global number of scalar spectral fields
-    !     KF_GP        - total number of output gridpoint fields
+    !     KGPBLKS      - global number of scalar spectral fields    
     !     IF_FS        - total number of fields in fourier space
     !     KF_UV        - local number of spectral u-v fields
     !     KF_SCALARS   - local number of scalar spectral fields
@@ -107,7 +106,7 @@ CONTAINS
     !New one
     INTEGER(KIND=JPIM) :: IF_FS,IF_GP, IF_UV, J
     TYPE(GRID_VIEW),ALLOCATABLE :: YLGP(:)
-    INTEGER(KIND=JPIM) :: IVSET(KF_GP)
+    INTEGER(KIND=JPIM), ALLOCATABLE :: IVSET(:)
 
     REAL(KIND=JPRBT), POINTER :: FOUBUF_IN(:), FOUBUF(:)
     REAL(KIND=JPRBT), POINTER :: PREEL_REAL(:), PREEL_COMPLEX(:)
@@ -127,9 +126,10 @@ CONTAINS
       CALL ABORT_TRANS("NPROMATR > 0 not supported for GPU")
     ENDIF
 
+    IF_GP = SIZE(YLGP)
     ! Prepare everything
     ALLOCATOR = MAKE_BUFFERED_ALLOCATOR()
-    HTRGTOL = PREPARE_TRGTOL(ALLOCATOR,KF_GP,IF_FS)
+    HTRGTOL = PREPARE_TRGTOL(ALLOCATOR,IF_GP,IF_FS)
     IF (IF_FS > 0) THEN
       HFTDIR = PREPARE_FTDIR(ALLOCATOR,IF_FS)
       HTRLTOM_PACK = PREPARE_TRLTOM_PACK(ALLOCATOR, IF_FS)
@@ -140,8 +140,8 @@ CONTAINS
 
     CALL INSTANTIATE_ALLOCATOR(ALLOCATOR, GROWING_ALLOCATION)
 
-    YLGP = [YDGVU, YDGVV,YDGVSCALAR]
-    IF_GP = SIZE(YLGP)
+    YLGP = [YDGVU, YDGVV,YDGVSCALAR]    
+    ALLOCATE(IVSET(IF_GP))
     IF_FS = 0
     DO J = 1, IF_GP
       IF (YLGP(J)%IVSET == MYSETV .OR. YLGP(J)%IVSET == -1) IF_FS = IF_FS + 1
@@ -174,6 +174,8 @@ CONTAINS
       CALL GSTATS(103,1)
 
     ENDIF
+
+    DEALLOCATE(IVSET)
 
   END SUBROUTINE DIR_TRANS_VIEW_CTL
 END MODULE DIR_TRANS_VIEW_CTL_MOD
