@@ -34,8 +34,8 @@ USE ECTRANS_FIELD_VIEW_INTERNAL_UTIL_MOD, ONLY: SPEC_VIEW
 
 !        Explicit arguments :  KM     - zonal wavenumber
 !        ------------------    PIA    - spectral components for transform
-!                              PSPEC  - spectral array
-!                              KFIELDS  - number of fields
+!                              YDSP    - spectral arrays
+
 
 
 !        Implicit arguments :  None.

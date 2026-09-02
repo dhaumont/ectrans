@@ -31,13 +31,13 @@ function(generate_backend_sources)
         ${platform}/internal/trltog_view_mod.F90
         ${platform}/internal/trgtol_view_mod.F90
         ${platform}/internal/updsp_view_mod.F90
-        ${platform}/internal/updspb_view_mod.F90)
+        ${platform}/internal/updspb_view_mod.F90
+        ${platform}/internal/prfi1b_view_mod.F90)
 
   if (${platform} STREQUAL "cpu")
       list( APPEND files
         ${platform}/internal/trgl_view_mod.F90
-        ${platform}/internal/fsc_view_mod.F90
-        ${platform}/internal/prfi1b_view_mod.F90
+        ${platform}/internal/fsc_view_mod.F90        
         ${platform}/internal/ftdir_view_ctl_mod.F90
         ${platform}/internal/ftinv_view_ctl_mod.F90
         ${platform}/internal/ltdir_view_ctl_mod.F90
