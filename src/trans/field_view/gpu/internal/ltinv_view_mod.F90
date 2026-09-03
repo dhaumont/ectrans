@@ -284,27 +284,35 @@ CONTAINS
     IF (.NOT. LVORGP .OR. LDIVGP) THEN
       ! Usually we want to store vorticity first
       PVOR => PIA(IFIRST+1:IFIRST+2*KF_UV,:,:)
+      WRITE(NOUT,*)"LTINV_VIEW: PVOR", IFIRST+1:IFIRST+2*KF_UV
       IFIRST = IFIRST + 2*KF_UV ! Vorticity
 
       PDIV => PIA(IFIRST+1:IFIRST+2*KF_UV,:,:)
+      WRITE(NOUT,*)"LTINV_VIEW: PDIV", IFIRST+1:IFIRST+2*KF_UV
       IFIRST = IFIRST + 2*KF_UV ! Divergence
     ELSE
       ! Except if we want to translate Vorticity but not Divergence, we should have Divergence first
       ! Then we have all buffers that move on in a contiguous buffer
       PDIV => PIA(IFIRST+1:IFIRST+2*KF_UV,:,:)
+      WRITE(NOUT,*)"LTINV_VIEW: PDIV", IFIRST+1:IFIRST+2*KF_UV
       IFIRST = IFIRST + 2*KF_UV ! Divergence
 
       PVOR => PIA(IFIRST+1:IFIRST+2*KF_UV,:,:)
+      WRITE(NOUT,*)"LTINV_VIEW: PVOR", IFIRST+1:IFIRST+2*KF_UV  
       IFIRST = IFIRST + 2*KF_UV ! Vorticity
     ENDIF
     PU => PIA(IFIRST+1:IFIRST+2*KF_UV,:,:)
+    WRITE(NOUT,*)"LTINV_VIEW: PU", IFIRST+1:IFIRST+2*KF_UV
     IFIRST = IFIRST + 2*KF_UV ! U
     PV => PIA(IFIRST+1:IFIRST+2*KF_UV,:,:)
+    WRITE(NOUT,*)"LTINV_VIEW: PV", IFIRST+1:IFIRST+2*KF_UV
     IFIRST = IFIRST + 2*KF_UV ! V
     PSCALARS => PIA(IFIRST+1:IFIRST+2*KF_SCALARS,:,:)
+    WRITE(NOUT,*)"LTINV_VIEW: PSCALARS", IFIRST+1:IFIRST+2*KF_SCALARS
     IFIRST = IFIRST + 2*KF_SCALARS ! Scalars
     IF (LSCDERS) THEN
       PSCALARS_NSDER => PIA(IFIRST+1:IFIRST+2*KF_SCALARS,:,:)
+      WRITE(NOUT,*)"LTINV_VIEW: PSCALARS_NSDER", IFIRST+1:IFIRST+2*KF_SCALARS
       IFIRST = IFIRST + 2*KF_SCALARS ! Scalars NS Derivatives
     ENDIF
 
