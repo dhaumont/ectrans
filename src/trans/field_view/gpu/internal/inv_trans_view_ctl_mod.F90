@@ -156,6 +156,19 @@ CONTAINS
     IF_SCDERS_G = SIZE(YDGVSCALAR_NS)
     ! Compute Vertical domain decomposition
 
+    IF_UV = 0
+    DO J = 1, IF_UV_G
+      IF (YDGVU(J)%IVSET == MYSETV .OR. YDGVU(J)%IVSET == -1) IF_UV = IF_UV + 1
+    ENDDO
+    IF_SCALARS = 0
+    DO J = 1, IF_SCALARS_G
+      IF (YDGVSCALAR(J)%IVSET == MYSETV .OR. YDGVSCALAR(J)%IVSET == -1) IF_SCALARS = IF_SCALARS + 1
+    ENDDO
+    IF_SCDERS = 0
+    DO J = 1, IF_SCDERS_G
+      IF (YDGVSCALAR_NS(J)%IVSET == MYSETV .OR. YDGVSCALAR_NS(J)%IVSET == -1) IF_SCDERS = IF_SCDERS + 1
+    ENDDO
+
     ! Initialize potentially unset offsets
     KSCALARS_NSDER_OFFSET = -1
     KUV_EWDER_OFFSET = -1
