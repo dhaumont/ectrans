@@ -76,7 +76,7 @@ MODULE PRFI1B_VIEW_MOD
   !              --------------------------------------------------
 
   ASSOCIATE(D_NUMP=>D%NUMP, D_MYMS=>D%MYMS, D_NASM0=>D%NASM0, R_NSMAX=>R%NSMAX)
-
+IFIELDS = SIZE(YDSP)
 #ifdef ACCGPU
   !$ACC DATA PRESENT(D,D_NUMP,R,R_NSMAX,D_MYMS,D_NASM0,PIA,PSPEC) ASYNC(1)
 #endif
