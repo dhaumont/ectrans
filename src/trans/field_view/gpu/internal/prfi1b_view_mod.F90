@@ -110,14 +110,17 @@ WRITE(NOUT,*)"PRFI1B: PIA", SHAPE(PIA), "YDSP", SHAPE(YDSP), "IFIELDS:", IFIELDS
         KM = D_MYMS(KMLOC)
 
         IF (JN <= 1) THEN
+            WRITE(NOUT,*)"JN <= 1:", 2*JFLD-1, JN+1, KMLOC
             PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
             PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
         ELSEIF (JN <= R_NSMAX+2-KM) THEN
             IASM0 = D_NASM0(KM)
             INM = IASM0+((R_NSMAX+2-JN)-KM)*2
+            WRITE(NOUT,*)"JN <= R_NSMAX+2-KM:", 2*JFLD-1, JN+1, KMLOC, INM
             PIA(2*JFLD-1,JN+1,KMLOC) = YDSP(JFLD)%P(INM)
             PIA(2*JFLD  ,JN+1,KMLOC) = YDSP(JFLD)%P(INM+1)
         ELSEIF (JN <= R_NSMAX+3-KM) THEN
+              
             PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
             PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
         ENDIF
