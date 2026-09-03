@@ -317,12 +317,8 @@ CONTAINS
       IFLDS = 0
       DO JFLD=1,KF_GP
         IF(KVSET(JFLD) == MYSETV .OR. KVSET(JFLD) == -1) THEN
-          IFLDS = IFLDS+1
-          IF(PRESENT(KPTRGP)) THEN
-            IFLDA(IFLDS,1) = KPTRGP(JFLD)
-          ELSE
-            IFLDA(IFLDS,1) = JFLD
-          ENDIF
+          IFLDS = IFLDS+1          
+          IFLDA(IFLDS,1) = JFLD          
         ENDIF
       ENDDO
     ENDIF
@@ -333,12 +329,8 @@ CONTAINS
       IFLDS = 0
       DO JFLD=1,KF_GP
         IF(KVSET(JFLD) == ISETV .OR. KVSET(JFLD) == -1 ) THEN
-          IFLDS = IFLDS+1
-          IF(PRESENT(KPTRGP)) THEN
-            IFLDA(IFLDS,1+INR)=KPTRGP(JFLD)
-          ELSE
-            IFLDA(IFLDS,1+INR)=JFLD
-          ENDIF
+          IFLDS = IFLDS+1          
+          IFLDA(IFLDS,1+INR)=JFLD          
         ENDIF
       ENDDO
     ENDDO
