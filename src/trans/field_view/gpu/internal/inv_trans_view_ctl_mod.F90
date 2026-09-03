@@ -141,7 +141,7 @@ CONTAINS
     TYPE(FTINV_HANDLE) :: HFTINV
     TYPE(TRLTOG_HANDLE) :: HTRLTOG
     
-    INTEGER(KIND=JPIM) :: I
+    INTEGER(KIND=JPIM) :: I,J
     INTEGER(KIND=JPIM), ALLOCATABLE :: IVSET(:)
     !     ------------------------------------------------------------------
 
