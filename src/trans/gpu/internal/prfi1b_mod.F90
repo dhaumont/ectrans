@@ -118,8 +118,8 @@ MODULE PRFI1B_MOD
         DO JFLD=1,KFIELDS
           KM = D_MYMS(KMLOC)
           WRITE(NOUT,*)"KMLOC, KM, JN, JFLD:", KMLOC, KM, JN, JFLD
-          WRITE(NOUT,*):"R_NSMAX+2-KM", R_NSMAX+2-KM)
-          WRITE(NOUT,*):"R_NSMAX+3-KM", R_NSMAX+3-KM)
+          WRITE(NOUT,*):"R_NSMAX+2-KM", R_NSMAX+2-KM
+          WRITE(NOUT,*):"R_NSMAX+3-KM", R_NSMAX+3-KM
           IF (JN <= 1) THEN
               WRITE(NOUT,*)"JN <= 1:", 2*JFLD-1, JN+1, KMLOC
               PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
