@@ -246,7 +246,6 @@ CONTAINS
       CALL MPL_BARRIER(MPL_ALL_MS_COMM,CDSTRING='')
       CALL GSTATS(430,1)
     ENDIF
-    CALL GSTATS(412,0)
 
     !     ------------------------------------------------------------------
 

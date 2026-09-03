@@ -90,6 +90,8 @@ MODULE UPDSPB_VIEW_MOD
   !*       1.    UPDATE SPECTRAL FIELDS.
   !              -----------------------
 
+ IFIELD = SIZE(YDSPEC)
+
 #ifdef OMPGPU
   !$OMP TARGET DATA MAP(PRESENT,POA,R,R_NTMAX,D,D_NUMP,D_MYMS,D_NASM0)
 #endif
