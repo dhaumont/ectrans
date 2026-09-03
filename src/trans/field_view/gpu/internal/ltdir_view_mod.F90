@@ -247,7 +247,6 @@ CONTAINS
       CALL GSTATS(430,1)
     ENDIF
 
-
     !     ------------------------------------------------------------------
 
     IF (LHOOK) CALL DR_HOOK('LTDIR_VIEW_MOD',1,ZHOOK_HANDLE)
