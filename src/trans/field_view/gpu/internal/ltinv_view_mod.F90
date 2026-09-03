@@ -117,11 +117,11 @@ CONTAINS
     USE ABORT_TRANS_MOD,        ONLY: ABORT_TRANS
     USE TPM_FIELDS_GPU,         ONLY: FG
     USE MPL_MODULE,             ONLY: MPL_BARRIER,MPL_ALL_MS_COMM
-    USE TPM_GEN,                ONLY: LSYNC_TRANS
+    USE TPM_GEN,                ONLY: LSYNC_TRANS, NOUT
     USE TPM_STATS,              ONLY: GSTATS => GSTATS_NVTX
     USE ISO_C_BINDING,          ONLY: C_LOC, C_SIZEOF, C_F_POINTER
     USE ECTRANS_FIELD_VIEW_INTERNAL_UTIL_MOD, ONLY: SPEC_VIEW
-
+    
     !**** *LTINV_VIEW* - Inverse Legendre transform
     !
     !     Purpose.
