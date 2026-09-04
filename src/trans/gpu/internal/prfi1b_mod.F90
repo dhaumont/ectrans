@@ -123,17 +123,20 @@ MODULE PRFI1B_MOD
           WRITE(NOUT,*)"R_NSMAX+2-KM", R_NSMAX+2-KM
           WRITE(NOUT,*)"R_NSMAX+3-KM", R_NSMAX+3-KM
           IF (JN <= 1) THEN
-              WRITE(NOUT,*)"JN <= 1:", 2*JFLD-1, JN+1, KMLOC
+              WRITE(NOUT,*)"LIMIT CASE JN <= 1"
+              WRITE(NOUT,*)"PIA:", 2*JFLD-1, JN+1, 0.0_JPRB
               PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
               PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
           ELSEIF (JN <= R_NSMAX+2-KM) THEN
               IASM0 = D_NASM0(KM)
               INM = IASM0+((R_NSMAX+2-JN)-KM)*2
-              WRITE(NOUT,*)"JN <= R_NSMAX+2-KM:", 2*JFLD-1, JN+1, KMLOC, INM
+               WRITE(NOUT,*)"REGULAR"
+            WRITE(NOUT,*)"PIA:", 2*JFLD-1, JN+1, JFLD, INM
               PIA(2*JFLD-1,JN+1,KMLOC) = PSPEC(JFLD,INM  )
               PIA(2*JFLD  ,JN+1,KMLOC) = PSPEC(JFLD,INM+1)
           ELSEIF (JN <= R_NSMAX+3-KM) THEN
-              WRITE(NOUT,*)"JN <= R_NSMAX+3-KM:", 2*JFLD-1, JN+1, KMLOC
+              WRITE(NOUT,*)"LIMIT CASE JN <= R_NSMAX+3-KM"
+              WRITE(NOUT,*)"PIA:", 2*JFLD-1, JN+1, 0.0_JPRB
               PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
               PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
           ENDIF
