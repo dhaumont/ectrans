@@ -9,15 +9,16 @@
 ! nor does it submit to any jurisdiction.
 !
 
-MODULE PRFI1B_MOD
+MODULE PRFI1B_VIEW_MOD
   CONTAINS
-  SUBROUTINE PRFI1B(PIA,PSPEC,KFIELDS,KFLDPTR)
+  SUBROUTINE PRFI1B_VIEW(PIA,YDSP)
   
   USE PARKIND1,        ONLY: JPIM, JPRB
   USE TPM_DIM,         ONLY: R
   USE TPM_DISTR,       ONLY: D
   USE ABORT_TRANS_MOD, ONLY: ABORT_TRANS
-  
+  USE ECTRANS_FIELD_VIEW_INTERNAL_UTIL_MOD, ONLY: SPEC_VIEW
+
   !**** *PRFI1* - Prepare spectral fields for inverse Legendre transform
   
   !     Purpose.
@@ -30,13 +31,12 @@ MODULE PRFI1B_MOD
   
   !**   Interface.
   !     ----------
-  !        *CALL* *PRFI1B(...)*
+  !        *CALL* *PRFI1B_VIEW(...)*
   
   !        Explicit arguments :  KM     - zonal wavenumber
   !        ------------------    PIA    - spectral components for transform
-  !                              PSPEC  - spectral array
-  !                              KFIELDS  - number of fields
-  
+  !                              YDSP    - spectral arrays
+    
   
   !        Implicit arguments :  None.
   !        --------------------
@@ -57,20 +57,18 @@ MODULE PRFI1B_MOD
   
   !     Modifications.
   !     --------------
-  !        Original : 00-02-01 From PRFI1B in IFS CY22R1
+  !        Original : 00-02-01 From PRFI1B_VIEW in IFS CY22R1
   
   !     ------------------------------------------------------------------
   
   IMPLICIT NONE
-  
-  INTEGER(KIND=JPIM),INTENT(IN)   :: KFIELDS
+    
   INTEGER(KIND=JPIM) :: KM,KMLOC
-  REAL(KIND=JPRB)   ,INTENT(IN)   :: PSPEC(:,:)
+  TYPE(SPEC_VIEW), INTENT(IN) :: YDSP(:)
   REAL(KIND=JPRB)   ,INTENT(INOUT)  :: PIA(:,:,:)
-  INTEGER(KIND=JPIM),INTENT(IN),OPTIONAL :: KFLDPTR(:)
-  
+      
   !     LOCAL INTEGER SCALARS
-  INTEGER(KIND=JPIM) :: INM, IR, JN, JFLD, IASM0
+  INTEGER(KIND=JPIM) :: INM, IR, JN, JFLD, IASM0, IFIELDS
   
   !     ------------------------------------------------------------------
   
@@ -78,57 +76,53 @@ MODULE PRFI1B_MOD
   !              --------------------------------------------------
 
   ASSOCIATE(D_NUMP=>D%NUMP, D_MYMS=>D%MYMS, D_NASM0=>D%NASM0, R_NSMAX=>R%NSMAX)
-
+IFIELDS = SIZE(YDSP)
 #ifdef ACCGPU
-  !$ACC DATA PRESENT(D,D_NUMP,R,R_NSMAX,D_MYMS,D_NASM0,PIA,PSPEC) ASYNC(1)
+  !$ACC DATA PRESENT(D,D_NUMP,R,R_NSMAX,D_MYMS,D_NASM0,PIA) COPYIN(YDSP) ASYNC(1)
 #endif
 #ifdef OMPGPU
-  !$OMP TARGET DATA MAP(PRESENT,ALLOC:D,D_NUMP,R,R_NSMAX,D_MYMS,D_NASM0,PIA,PSPEC)
+  !$OMP TARGET DATA MAP(PRESENT,ALLOC:D,D_NUMP,R,R_NSMAX,D_MYMS,D_NASM0,PIA,YDSP)
 #endif
 
-  IF(PRESENT(KFLDPTR)) THEN
- 
-    CALL ABORT_TRANS("KFLDPTR not implemented for GPU")
-
-  ELSE
-
+  
     !loop over wavenumber
 
 #ifdef OMPGPU
     !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(3) DEFAULT(NONE) &
-    !$OMP& PRIVATE(KM,IASM0,INM) SHARED(KFIELDS,D,R,PIA,PSPEC) MAP(TO:KFIELDS)
+    !$OMP& PRIVATE(KM,IASM0,INM) SHARED(IFIELDS,D,R,PIA,YDSP) MAP(TO:IFIELDS)
 #endif
 #ifdef ACCGPU
     !$ACC PARALLEL LOOP DEFAULT(NONE) COLLAPSE(3) PRIVATE(KM,IASM0,INM) &
-    !$ACC FIRSTPRIVATE(KFIELDS) &
+    !$ACC FIRSTPRIVATE(IFIELDS) &
 #ifndef _CRAYFTN
     !$ACC& ASYNC(1)
 #else
     !$ACC&
 #endif
 #endif
-    DO KMLOC=1,D_NUMP
-      DO JN=0,R_NSMAX+3
-        DO JFLD=1,KFIELDS
-          KM = D_MYMS(KMLOC)
-
-          IF (JN <= 1) THEN
-              PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
-              PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
-          ELSEIF (JN <= R_NSMAX+2-KM) THEN
-              IASM0 = D_NASM0(KM)
-              INM = IASM0+((R_NSMAX+2-JN)-KM)*2
-              PIA(2*JFLD-1,JN+1,KMLOC) = PSPEC(JFLD,INM  )
-              PIA(2*JFLD  ,JN+1,KMLOC) = PSPEC(JFLD,INM+1)
-          ELSEIF (JN <= R_NSMAX+3-KM) THEN
-              PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
-              PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
-          ENDIF
-          ENDDO
+  DO KMLOC=1,D_NUMP
+    DO JN=0,R_NSMAX+3
+      DO JFLD=1,IFIELDS
+        KM = D_MYMS(KMLOC)
+        IF (JN+1 <= UBOUND(PIA,2)) THEN
+            IF (JN <= 1) THEN
+                PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
+                PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
+            ELSEIF (JN <= R_NSMAX+2-KM) THEN
+                IASM0 = D_NASM0(KM)
+                INM = IASM0+((R_NSMAX+2-JN)-KM)*2
+                PIA(2*JFLD-1,JN+1,KMLOC) = YDSP(JFLD)%P(INM)
+                PIA(2*JFLD  ,JN+1,KMLOC) = YDSP(JFLD)%P(INM+1)
+            ELSEIF (JN <= R_NSMAX+3-KM) THEN
+                PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
+                PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
+            ENDIF
+         ENDIF
         ENDDO
-    ENDDO
+      ENDDO
+  ENDDO
 
-  ENDIF
+
 
 #ifdef ACCGPU
   !$ACC END DATA
@@ -141,5 +135,5 @@ MODULE PRFI1B_MOD
 
   !     ------------------------------------------------------------------
 
-  END SUBROUTINE PRFI1B
-END MODULE PRFI1B_MOD
+  END SUBROUTINE PRFI1B_VIEW
+END MODULE PRFI1B_VIEW_MOD
