@@ -129,7 +129,7 @@ DO KMLOC=1,D_NUMP
             WRITE(NOUT,*)"REGULAR"
             WRITE(NOUT,*)"PIA:", 2*JFLD-1, JN+1, JFLD, INM
             FLUSH(NOUT)
-            IF (JN+1 <= SHAPE(PIA,2)) THEN
+            IF (JN+1 <= UBOUND(PIA,2)) THEN
               PIA(2*JFLD-1,JN+1,KMLOC) = YDSP(JFLD)%P(INM)
               PIA(2*JFLD  ,JN+1,KMLOC) = YDSP(JFLD)%P(INM+1)
             ENDIF            
@@ -137,7 +137,7 @@ DO KMLOC=1,D_NUMP
             WRITE(NOUT,*)"LIMIT CASE JN <= R_NSMAX+3-KM"
             WRITE(NOUT,*)"PIA:", 2*JFLD-1, JN+1, 0.0_JPRB
             FLUSH(NOUT)
-            IF (JN+1 <= SHAPE(PIA,2)) THEN
+            IF (JN+1 <= UBOUND(PIA,2)) THEN
                 PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
                 PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
             ENDIF
