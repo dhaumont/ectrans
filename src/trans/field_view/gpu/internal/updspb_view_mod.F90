@@ -72,7 +72,7 @@ MODULE UPDSPB_VIEW_MOD
   INTEGER(KIND=JPIM) :: KM,KMLOC
   INTEGER(KIND=JPIM) :: INM, IR, JFLD, JN, IASM0
   INTEGER(KIND=JPIM) :: IFIELD
-  
+  REAL(KIND=JPRB), POINTER :: ZZ(:)
   !     ------------------------------------------------------------------
   
   !*       0.    NOTE.
@@ -106,7 +106,7 @@ MODULE UPDSPB_VIEW_MOD
   !$OMP& SHARED(D,R,IFIELD,POA,YDSPEC) MAP(TO:IFIELD)
 #endif
 #ifdef ACCGPU
-  !$ACC PARALLEL LOOP COLLAPSE(3) PRIVATE(KM,IASM0,INM) DEFAULT(NONE) COPYIN(IFIELD) &
+  !$ACC PARALLEL LOOP COLLAPSE(3) PRIVATE(KM,IASM0,INM,ZZ) DEFAULT(NONE) COPYIN(IFIELD) &
 #ifndef _CRAYFTN
   !$ACC& ASYNC(1)
 #else
@@ -114,21 +114,23 @@ MODULE UPDSPB_VIEW_MOD
 #endif
 #endif
   DO KMLOC=1,D_NUMP
-    DO JN=3,R_NTMAX+3
-      DO JFLD=1,IFIELD
+     DO JFLD=1,IFIELD
+      DO JN=3,R_NTMAX+3
         KM = D_MYMS(KMLOC)
+        ZZ=>YDSP(JFLD)%P
+   
         IASM0 = D_NASM0(KM)
 
         IF(KM /= 0 .AND. JN <= R_NTMAX+3-KM) THEN
         !(DO JN=3,R_NTMAX+3-KM)
           INM = IASM0+((R_NTMAX+3-JN)-KM)*2
-          YDSPEC(JFLD)%P(INM)   = POA(2*JFLD-1,JN,KMLOC)
-          YDSPEC(JFLD)%P(INM+1) = POA(2*JFLD  ,JN,KMLOC)
+          ZZ(INM)   = POA(2*JFLD-1,JN,KMLOC)
+          ZZ(INM+1) = POA(2*JFLD  ,JN,KMLOC)
         ELSEIF (KM == 0) THEN
           !(DO JN=3,R_NTMAX+3)
           INM = IASM0+(R_NTMAX+3-JN)*2
-          YDSPEC(JFLD)%P(INM)   = POA(2*JFLD-1,JN,KMLOC)
-          YDSPEC(JFLD)%P(INM+1) = 0.0_JPRBT
+          ZZ(INM)   = POA(2*JFLD-1,JN,KMLOC)
+          ZZ(INM+1) = 0.0_JPRBT
         END IF
       ENDDO
     ENDDO

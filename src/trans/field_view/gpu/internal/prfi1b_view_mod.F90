@@ -69,7 +69,7 @@ MODULE PRFI1B_VIEW_MOD
       
   !     LOCAL INTEGER SCALARS
   INTEGER(KIND=JPIM) :: INM, IR, JN, JFLD, IASM0, IFIELDS
-  
+  REAL(KIND=JPRB), POINTER :: ZZ(:)
   !     ------------------------------------------------------------------
   
   !*       1.    EXTRACT FIELDS FROM SPECTRAL ARRAYS.
@@ -92,7 +92,7 @@ IFIELDS = SIZE(YDSP)
     !$OMP& PRIVATE(KM,IASM0,INM) SHARED(IFIELDS,D,R,PIA,YDSP) MAP(TO:IFIELDS)
 #endif
 #ifdef ACCGPU
-    !$ACC PARALLEL LOOP DEFAULT(NONE) COLLAPSE(3) PRIVATE(KM,IASM0,INM) &
+    !$ACC PARALLEL LOOP DEFAULT(NONE) COLLAPSE(3) PRIVATE(KM,IASM0,INM,ZZ) &
     !$ACC FIRSTPRIVATE(IFIELDS) &
 #ifndef _CRAYFTN
     !$ACC& ASYNC(1)
@@ -101,9 +101,10 @@ IFIELDS = SIZE(YDSP)
 #endif
 #endif
   DO KMLOC=1,D_NUMP
-    DO JN=0,R_NSMAX+3
-      DO JFLD=1,IFIELDS
-        KM = D_MYMS(KMLOC)
+    KM = D_MYMS(KMLOC)
+    DO JFLD=1,IFIELDS
+       ZZ=>YDSP(JFLD)%P
+       DO JN=0,R_NSMAX+3
         IF (JN+1 <= UBOUND(PIA,2)) THEN
             IF (JN <= 1) THEN
                 PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
@@ -111,8 +112,8 @@ IFIELDS = SIZE(YDSP)
             ELSEIF (JN <= R_NSMAX+2-KM) THEN
                 IASM0 = D_NASM0(KM)
                 INM = IASM0+((R_NSMAX+2-JN)-KM)*2
-                PIA(2*JFLD-1,JN+1,KMLOC) = YDSP(JFLD)%P(INM)
-                PIA(2*JFLD  ,JN+1,KMLOC) = YDSP(JFLD)%P(INM+1)
+                PIA(2*JFLD-1,JN+1,KMLOC) = ZZ(INM)
+                PIA(2*JFLD  ,JN+1,KMLOC) = ZZ(INM+1)
             ELSEIF (JN <= R_NSMAX+3-KM) THEN
                 PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
                 PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
