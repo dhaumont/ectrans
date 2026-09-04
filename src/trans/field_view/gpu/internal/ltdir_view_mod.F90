@@ -78,7 +78,7 @@ CONTAINS
     USE BUFFERED_ALLOCATOR_MOD, ONLY: BUFFERED_ALLOCATOR, ASSIGN_PTR, GET_ALLOCATION
     USE ISO_C_BINDING,          ONLY: C_F_POINTER, C_LOC, C_SIZEOF
     USE ECTRANS_FIELD_VIEW_INTERNAL_UTIL_MOD, ONLY : SPEC_VIEW
-
+    USE UPDSPB_VIEW_MOD,        ONLY: UPDSPB_VIEW
     !**** *LTDIR* - Control of Direct Legendre transform step
 
     !     Purpose.
@@ -228,8 +228,8 @@ CONTAINS
 
        ! Compute vorticity and divergence
        CALL UVTVD(KF_UV,PU,PV,PVOR,PDIV)
-       CALL UPDSPB_VIEW(KF_UV,PVOR,YDSPVVOR)
-       CALL UPDSPB_VIEW(KF_UV,PDIV,YDSPVDIV)
+       CALL UPDSPB_VIEW(KF_UV,KF_SCALARS, PVOR,YDSPVVOR)
+       CALL UPDSPB_VIEW(KF_UV,KF_SCALARS, PDIV,YDSPVDIV)
 
     ENDIF
     !     ------------------------------------------------------------------
