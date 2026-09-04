@@ -228,8 +228,8 @@ CONTAINS
 
        ! Compute vorticity and divergence
        CALL UVTVD(KF_UV,PU,PV,PVOR,PDIV)
-       CALL UPDSPB_VIEW(KF_UV,KF_SCALARS, PVOR,YDSPVVOR)
-       CALL UPDSPB_VIEW(KF_UV,KF_SCALARS, PDIV,YDSPVDIV)
+       CALL UPDSPB_VIEW(PVOR,YDSPVVOR)
+       CALL UPDSPB_VIEW(PDIV,YDSPVDIV)
 
     ENDIF
     !     ------------------------------------------------------------------
