@@ -339,7 +339,7 @@ CONTAINS
     !$OMP TARGET DATA MAP(TO:IFLDA)
 #endif
 #ifdef ACCGPU
-    !$ACC DATA PRESENT(YDGP) COPYIN(IFLDA) ASYNC(1)
+    !$ACC DATA COPYIN(IFLDA,YDGP) ASYNC(1)
 #endif
 
     ! Copy local contribution
