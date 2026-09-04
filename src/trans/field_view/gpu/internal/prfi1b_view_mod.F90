@@ -107,17 +107,20 @@ IFIELDS = SIZE(YDSP)
     !!ACC&
 #endif
 #endif
+WRITE(NOUT,*)"R_NSMAX+2-KM", R_NSMAX+2-KM
+WRITE(NOUT,*)"R_NSMAX+3-KM", R_NSMAX+3-KM
+
 WRITE(NOUT,*)"START LOOP: ", D_NUMP, R_NSMAX +3, IFIELDS
-  DO KMLOC=1,D_NUMP
+
+DO KMLOC=1,D_NUMP
     DO JN=0,R_NSMAX+3
       DO JFLD=1,IFIELDS
         KM = D_MYMS(KMLOC)
         WRITE(NOUT,*)"KMLOC, KM, JN, JFLD:", KMLOC, KM, JN, JFLD
-        WRITE(NOUT,*)"R_NSMAX+2-KM", R_NSMAX+2-KM
-        WRITE(NOUT,*)"R_NSMAX+3-KM", R_NSMAX+3-KM
         IF (JN <= 1) THEN
             WRITE(NOUT,*)"LIMIT CASE JN <= 1"
             WRITE(NOUT,*)"PIA:", 2*JFLD-1, JN+1, 0.0_JPRB
+            FLUSH(NOUT)
             PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
             PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
         ELSEIF (JN <= R_NSMAX+2-KM) THEN
@@ -125,11 +128,13 @@ WRITE(NOUT,*)"START LOOP: ", D_NUMP, R_NSMAX +3, IFIELDS
             INM = IASM0+((R_NSMAX+2-JN)-KM)*2
             WRITE(NOUT,*)"REGULAR"
             WRITE(NOUT,*)"PIA:", 2*JFLD-1, JN+1, JFLD, INM
+            FLUSH(NOUT)
             PIA(2*JFLD-1,JN+1,KMLOC) = YDSP(JFLD)%P(INM)
             PIA(2*JFLD  ,JN+1,KMLOC) = YDSP(JFLD)%P(INM+1)
         ELSEIF (JN <= R_NSMAX+3-KM) THEN
             WRITE(NOUT,*)"LIMIT CASE JN <= R_NSMAX+3-KM"
             WRITE(NOUT,*)"PIA:", 2*JFLD-1, JN+1, 0.0_JPRB
+            FLUSH(NOUT)
             PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
             PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
         ENDIF
