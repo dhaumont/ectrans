@@ -117,7 +117,7 @@ MODULE UPDSPB_VIEW_MOD
      DO JFLD=1,IFIELD
       DO JN=3,R_NTMAX+3
         KM = D_MYMS(KMLOC)
-        ZZ=>YDSP(JFLD)%P
+        ZZ=>YDSPEC(JFLD)%P
    
         IASM0 = D_NASM0(KM)
 
