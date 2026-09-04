@@ -104,19 +104,20 @@ IFIELDS = SIZE(YDSP)
     DO JN=0,R_NSMAX+3
       DO JFLD=1,IFIELDS
         KM = D_MYMS(KMLOC)
-
-        IF (JN <= 1) THEN
-            PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
-            PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
-        ELSEIF (JN <= R_NSMAX+2-KM) THEN
-            IASM0 = D_NASM0(KM)
-            INM = IASM0+((R_NSMAX+2-JN)-KM)*2
-            PIA(2*JFLD-1,JN+1,KMLOC) = YDSP(JFLD)%P(INM)
-            PIA(2*JFLD  ,JN+1,KMLOC) = YDSP(JFLD)%P(INM+1)
-        ELSEIF (JN <= R_NSMAX+3-KM) THEN
-            PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
-            PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
-        ENDIF
+        IF (JN+1 <= UBOUND(PIA,2)) THEN
+            IF (JN <= 1) THEN
+                PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
+                PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
+            ELSEIF (JN <= R_NSMAX+2-KM) THEN
+                IASM0 = D_NASM0(KM)
+                INM = IASM0+((R_NSMAX+2-JN)-KM)*2
+                PIA(2*JFLD-1,JN+1,KMLOC) = YDSP(JFLD)%P(INM)
+                PIA(2*JFLD  ,JN+1,KMLOC) = YDSP(JFLD)%P(INM+1)
+            ELSEIF (JN <= R_NSMAX+3-KM) THEN
+                PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
+                PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
+            ENDIF
+         ENDIF
         ENDDO
       ENDDO
   ENDDO
