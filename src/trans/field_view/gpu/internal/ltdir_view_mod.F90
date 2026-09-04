@@ -216,18 +216,21 @@ CONTAINS
 
     IF( KF_UV > 0 ) THEN
        ! U and V are in POA1
-        IUS = 1
-        IUE = 2*KF_UV
-        IVS = 2*KF_UV+1
-        IVE = 4*KF_UV
-        IVORS = 1
-        IVORE = 2*KF_UV
-        IDIVS = 2*KF_UV+1
-        IDIVE = 4*KF_UV
+       IFIRST = 0
+       PU => POA1(IFIRST+1:IFIRST+2*KF_UV,:,:)
+       IFIRST = IFIRST + 2*KF_UV
+       PV => POA1(IFIRST+1:IFIRST+2*KF_UV,:,:)
+       ! Compute VOR and DIV ino POA2
+       IFIRST = 0
+       PVOR => POA2(IFIRST+1:IFIRST+2*KF_UV,:,:)
+       IFIRST = IFIRST + 2*KF_UV
+       PDIV => POA2(IFIRST+1:IFIRST+2*KF_UV,:,:)
 
        ! Compute vorticity and divergence
-       CALL UVTVD(KF_UV,POA1(:,IUS:IUE,:),POA1(:,IVS:IVE,:),&
-        & POA2(:,IVORS:IVORE,:),POA2(:,IDIVS:IDIVE,:))
+       CALL UVTVD(KF_UV,PU,PV,PVOR,PDIV)
+       CALL UPDSPB_VIEW(KF_UV,PVOR,YDSPVVOR)
+       CALL UPDSPB_VIEW(KF_UV,PDIV,YDSPVDIV)
+
     ENDIF
     !     ------------------------------------------------------------------
 
@@ -235,7 +238,7 @@ CONTAINS
     !              -----------------------
 
     ! this is on the host, so need to cp from device, Nils
-    CALL UPDSP_VIEW(POA1,POA2,YDSPVVOR, YDSPVDIV, YDSPVSCALAR)
+    CALL UPDSP_VIEW(KF_UV,KF_SCALARS,POA1,YDSPVSCALAR)
 
 #ifdef ACCGPU
     !$ACC WAIT(1)
