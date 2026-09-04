@@ -105,34 +105,28 @@ MODULE UPDSPB_VIEW_MOD
   !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(3) DEFAULT(NONE) PRIVATE(KM,IASM0,INM) &
   !$OMP& SHARED(D,R,IFIELD,POA,YDSPEC) MAP(TO:IFIELD)
 #endif
-#ifdef ACCGPU
-  !$ACC PARALLEL LOOP COLLAPSE(3) PRIVATE(KM,IASM0,INM,ZZ) DEFAULT(NONE) COPYIN(IFIELD) &
-#ifndef _CRAYFTN
-  !$ACC& ASYNC(1)
-#else
-  !$ACC&
-#endif
-#endif
-  DO KMLOC=1,D_NUMP
-     DO JFLD=1,IFIELD
-      DO JN=3,R_NTMAX+3
-        KM = D_MYMS(KMLOC)
-        ZZ=>YDSPEC(JFLD)%P
-   
-        IASM0 = D_NASM0(KM)
 
-        IF(KM /= 0 .AND. JN <= R_NTMAX+3-KM) THEN
-        !(DO JN=3,R_NTMAX+3-KM)
-          INM = IASM0+((R_NTMAX+3-JN)-KM)*2
-          ZZ(INM)   = POA(2*JFLD-1,JN,KMLOC)
-          ZZ(INM+1) = POA(2*JFLD  ,JN,KMLOC)
-        ELSEIF (KM == 0) THEN
-          !(DO JN=3,R_NTMAX+3)
-          INM = IASM0+(R_NTMAX+3-JN)*2
-          ZZ(INM)   = POA(2*JFLD-1,JN,KMLOC)
-          ZZ(INM+1) = 0.0_JPRBT
-        END IF
-      ENDDO
+ !$ACC PARALLEL LOOP  PRIVATE(ZZ) DEFAULT(NONE) COPYIN(IFIELD) ASYNC(1)&
+   DO JFLD=1,IFIELD
+      ZZ=>YDSPEC(JFLD)%P
+      !$ACC PARALLEL LOOP COLLAPSE(2) PRIVATE(KM,IASM0,INM) DEFAULT(NONE) ASYNC(1) &
+      DO KMLOC=1,D_NUMP  
+        DO JN=3,R_NTMAX+3
+          KM = D_MYMS(KMLOC)        
+          IASM0 = D_NASM0(KM)
+
+          IF(KM /= 0 .AND. JN <= R_NTMAX+3-KM) THEN
+          !(DO JN=3,R_NTMAX+3-KM)
+            INM = IASM0+((R_NTMAX+3-JN)-KM)*2
+            ZZ(INM)   = POA(2*JFLD-1,JN,KMLOC)
+            ZZ(INM+1) = POA(2*JFLD  ,JN,KMLOC)
+          ELSEIF (KM == 0) THEN
+            !(DO JN=3,R_NTMAX+3)
+            INM = IASM0+(R_NTMAX+3-JN)*2
+            ZZ(INM)   = POA(2*JFLD-1,JN,KMLOC)
+            ZZ(INM+1) = 0.0_JPRBT
+          END IF
+        ENDDO
     ENDDO
   ENDDO
 
