@@ -239,6 +239,9 @@ CONTAINS
 
     ! this is on the host, so need to cp from device, Nils
     CALL UPDSP_VIEW(KF_UV,KF_SCALARS,POA1,YDSPVSCALAR)
+#ifdef ACCGPU
+    !$ACC WAIT(1)
+#endif
 
     IF (LSYNC_TRANS) THEN
       CALL GSTATS(430,0)
