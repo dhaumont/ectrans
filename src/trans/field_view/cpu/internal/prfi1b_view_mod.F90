@@ -34,8 +34,8 @@ USE ECTRANS_FIELD_VIEW_INTERNAL_UTIL_MOD, ONLY: SPEC_VIEW
 
 !        Explicit arguments :  KM     - zonal wavenumber
 !        ------------------    PIA    - spectral components for transform
-!                              PSPEC  - spectral array
-!                              KFIELDS  - number of fields
+!                              YDSP    - spectral arrays
+
 
 
 !        Implicit arguments :  None.
@@ -69,7 +69,7 @@ REAL(KIND=JPRB)   ,INTENT(OUT)  :: PIA(:,:)
 
 
 !     LOCAL INTEGER SCALARS
-INTEGER(KIND=JPIM) :: II, INM, IR, J, JFLD, ILCM, IOFF,IFLD,KFIELDS
+INTEGER(KIND=JPIM) :: II, INM, IR, J, JFLD, ILCM, IOFF,IFLD,IFIELDS
 
 
 !     ------------------------------------------------------------------
@@ -79,13 +79,13 @@ INTEGER(KIND=JPIM) :: II, INM, IR, J, JFLD, ILCM, IOFF,IFLD,KFIELDS
 
 ILCM = R%NSMAX+1-KM
 IOFF = D%NASM0(KM)
-KFIELDS = SIZE(YDSP)
+IFIELDS = SIZE(YDSP)
 
 DO J=1,ILCM
   INM = IOFF+(ILCM-J)*2
   !DIR$ IVDEP
   !OCL NOVREC
-  DO JFLD=1,KFIELDS
+  DO JFLD=1,IFIELDS
     IR = 2*(JFLD-1)+1
     II = IR+1
     PIA(J+2,IR) = YDSP(JFLD)%P(INM)
@@ -93,7 +93,7 @@ DO J=1,ILCM
   ENDDO
 ENDDO
 
-DO JFLD=1,2*KFIELDS
+DO JFLD=1,2*IFIELDS
   PIA(1,JFLD) = 0.0_JPRB
   PIA(2,JFLD) = 0.0_JPRB
   PIA(ILCM+3:,JFLD) = 0.0_JPRB
