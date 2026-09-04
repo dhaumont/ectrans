@@ -86,6 +86,7 @@ foreach(platform ${platforms})
           PRIVATE_LIBS         ${ECTRANS_GPU_HIP_LIBRARIES}
                                $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
                                $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
+                               $<${USE_RAW_MPI}:MPI::MPI_Fortran>
           PRIVATE_DEFINITIONS  ${GPU_RUNTIME}GPU ${GPU_OFFLOAD}GPU
                                $<${HAVE_CUTLASS}:USE_CUTLASS>
                                $<${HAVE_CUTLASS_3XTF32}:USE_CUTLASS_3XTF32>
@@ -93,6 +94,7 @@ foreach(platform ${platforms})
                                $<${HAVE_GPU_GRAPHS_FFT}:USE_GRAPHS_FFT>
                                $<${HAVE_ROCFFT}:USE_ROCFFT>
                                $<${HAVE_GPU_AWARE_MPI}:USE_GPU_AWARE_MPI>
+                               $<${USE_RAW_MPI}:USE_RAW_MPI>
                              )
       ecbuild_target_fortran_module_directory(
           TARGET            ectrans_field_view_${platform_tag}${prec}
