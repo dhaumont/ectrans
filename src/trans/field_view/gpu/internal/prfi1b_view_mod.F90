@@ -100,11 +100,11 @@ IFIELDS = SIZE(YDSP)
     !$ACC&
 #endif
 #endif
-  DO KMLOC=1,D_NUMP
-    KM = D_MYMS(KMLOC)
-    DO JFLD=1,IFIELDS
-       ZZ=>YDSP(JFLD)%P
+  DO KMLOC=1,D_NUMP  
+    DO JFLD=1,IFIELDS     
        DO JN=0,R_NSMAX+3
+        KM = D_MYMS(KMLOC)
+        ZZ=>YDSP(JFLD)%P
         IF (JN+1 <= UBOUND(PIA,2)) THEN
             IF (JN <= 1) THEN
                 PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
