@@ -20,31 +20,28 @@ function(generate_backend_sources)
 
   file(MAKE_DIRECTORY ${destination}/field_view)
 
-  # The routines dir_trans_field_view, inv_trans_field_view and ectrans_field_view_internal_util_mod
-  # are compatible with all plaftorms. They are precision dependent, because they make function calls
-  # to dir_trans_view_ctl_mod and inv_trans_view_ctl_mod.
-  # Platform specific code only implemented for CPU version for the time beeing.
-
-  if (${platform} STREQUAL "cpu")
-      list( APPEND files
+  list( APPEND files
         ectrans_field_view_internal_util_mod.F90
         dir_trans_field_view.F90
         inv_trans_field_view.F90
         ${platform}/internal/dir_trans_view_ctl_mod.F90
         ${platform}/internal/inv_trans_view_ctl_mod.F90
-        ${platform}/internal/ftdir_view_ctl_mod.F90
         ${platform}/internal/ltdir_view_mod.F90
         ${platform}/internal/ltinv_view_mod.F90
-        ${platform}/internal/trgl_view_mod.F90
         ${platform}/internal/trltog_view_mod.F90
+        ${platform}/internal/trgtol_view_mod.F90
         ${platform}/internal/updsp_view_mod.F90
-        ${platform}/internal/fsc_view_mod.F90
+        ${platform}/internal/updspb_view_mod.F90
+        ${platform}/internal/prfi1b_view_mod.F90)
+
+  if (${platform} STREQUAL "cpu")
+      list( APPEND files
+        ${platform}/internal/trgl_view_mod.F90
+        ${platform}/internal/fsc_view_mod.F90        
+        ${platform}/internal/ftdir_view_ctl_mod.F90
         ${platform}/internal/ftinv_view_ctl_mod.F90
         ${platform}/internal/ltdir_view_ctl_mod.F90
-        ${platform}/internal/ltinv_view_ctl_mod.F90
-        ${platform}/internal/prfi1b_view_mod.F90
-        ${platform}/internal/trgtol_view_mod.F90
-        ${platform}/internal/updspb_view_mod.F90)
+        ${platform}/internal/ltinv_view_ctl_mod.F90)
   endif()
 
   set(outfiles)
@@ -56,19 +53,9 @@ function(generate_backend_sources)
     list(APPEND outfiles ${outfile})
   endforeach(file_i)
 
-  # For GPU, a fallaback based on inv_trans and dir_trans is used to implement
-  # inv_trans_field_view and dir_trans_field_view.
-  # As this fallback is precision agnostic, ectrans_field_view_internal_util_mod
-  # is kept precision agnostic as well.
-  if (${platform} STREQUAL "gpu")
-      list( APPEND outfiles
-        ectrans_field_view_internal_util_mod.F90
-        gpu/dir_trans_field_view.F90
-        gpu/inv_trans_field_view.F90)
-  endif()
-
   set(${_PAR_OUTPUT} ${outfiles} PARENT_SCOPE)
 endfunction(generate_backend_sources)
+
 
 set (platforms)
 if (HAVE_CPU)
@@ -76,6 +63,13 @@ if (HAVE_CPU)
 endif()
 if (HAVE_GPU)
     list(APPEND platforms gpu)
+    # We can't reliably pass GPU buffers directly to MPL routines yet, so for now we should still use raw MPI calls
+    if( HAVE_GPU_AWARE_MPI )
+      set( USE_RAW_MPI 1 )
+    else()
+      set( USE_RAW_MPI 0)
+    endif()
+
 endif()
 foreach(platform ${platforms})
   foreach( prec dp sp)
@@ -85,7 +79,7 @@ foreach(platform ${platforms})
       else()
         set (platform_tag "")
       endif()
-      generate_backend_sources( BACKEND ${prec}
+      generate_backend_sources( BACKEND ${platform_tag}${prec}
         PLATFORM ${platform}
         OUTPUT ectrans_field_view_${platform_tag}${prec}_src
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/ectrans_${platform_tag}${prec})
@@ -96,8 +90,20 @@ foreach(platform ${platforms})
                            ectrans_field_view_mod.F90
           PUBLIC_LIBS      trans_${platform_tag}${prec} fiat parkind_${prec}
           PUBLIC_INCLUDES  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/trans/field_view/include/ectrans>
-                           $<INSTALL_INTERFACE:include/ectrans> )
-
+                           $<INSTALL_INTERFACE:include/ectrans> 
+          PRIVATE_LIBS         ${ECTRANS_GPU_HIP_LIBRARIES}
+                               $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
+                               $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
+                               $<${USE_RAW_MPI}:MPI::MPI_Fortran>
+          PRIVATE_DEFINITIONS  ${GPU_RUNTIME}GPU ${GPU_OFFLOAD}GPU
+                               $<${HAVE_CUTLASS}:USE_CUTLASS>
+                               $<${HAVE_CUTLASS_3XTF32}:USE_CUTLASS_3XTF32>
+                               $<${HAVE_GPU_GRAPHS_GEMM}:USE_GRAPHS_GEMM>
+                               $<${HAVE_GPU_GRAPHS_FFT}:USE_GRAPHS_FFT>
+                               $<${HAVE_ROCFFT}:USE_ROCFFT>
+                               $<${HAVE_GPU_AWARE_MPI}:USE_GPU_AWARE_MPI>
+                               $<${USE_RAW_MPI}:USE_RAW_MPI>
+                             )
       ecbuild_target_fortran_module_directory(
           TARGET            ectrans_field_view_${platform_tag}${prec}
           MODULE_DIRECTORY  ${CMAKE_BINARY_DIR}/module/ectrans_field_view_${platform_tag}${prec}
@@ -105,7 +111,7 @@ foreach(platform ${platforms})
           if( HAVE_OMP )
             ecbuild_debug("target_link_libraries( ectrans_field_view_${platform_tag}${prec} PRIVATE OpenMP::OpenMP_Fortran )")
             target_link_libraries( ectrans_field_view_${platform_tag}${prec} PRIVATE OpenMP::OpenMP_Fortran )
-          endif()  
+          endif()
     endif()
   endforeach()
 endforeach()
