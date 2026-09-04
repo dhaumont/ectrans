@@ -82,8 +82,18 @@ foreach(platform ${platforms})
                            ectrans_field_view_mod.F90
           PUBLIC_LIBS      trans_${platform_tag}${prec} fiat parkind_${prec}
           PUBLIC_INCLUDES  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/trans/field_view/include/ectrans>
-                           $<INSTALL_INTERFACE:include/ectrans> )
-
+                           $<INSTALL_INTERFACE:include/ectrans> 
+          PRIVATE_LIBS         ${ECTRANS_GPU_HIP_LIBRARIES}
+                               $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
+                               $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
+          PRIVATE_DEFINITIONS  ${GPU_RUNTIME}GPU ${GPU_OFFLOAD}GPU
+                               $<${HAVE_CUTLASS}:USE_CUTLASS>
+                               $<${HAVE_CUTLASS_3XTF32}:USE_CUTLASS_3XTF32>
+                               $<${HAVE_GPU_GRAPHS_GEMM}:USE_GRAPHS_GEMM>
+                               $<${HAVE_GPU_GRAPHS_FFT}:USE_GRAPHS_FFT>
+                               $<${HAVE_ROCFFT}:USE_ROCFFT>
+                               $<${HAVE_GPU_AWARE_MPI}:USE_GPU_AWARE_MPI>
+                             )
       ecbuild_target_fortran_module_directory(
           TARGET            ectrans_field_view_${platform_tag}${prec}
           MODULE_DIRECTORY  ${CMAKE_BINARY_DIR}/module/ectrans_field_view_${platform_tag}${prec}
