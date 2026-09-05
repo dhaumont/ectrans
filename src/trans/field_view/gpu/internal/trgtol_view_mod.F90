@@ -424,9 +424,9 @@ CONTAINS
         ENDDO
       
       ENDDO
-    
+         !$OMP END PARALLEL DO
     ENDDO
-      !$OMP END PARALLEL DO
+ 
 #ifdef ACCGPU
     !$ACC WAIT(1)
 #endif
