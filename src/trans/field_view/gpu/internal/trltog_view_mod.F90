@@ -362,7 +362,7 @@ CONTAINS
             JBLK = (IRECV_WSET_OFFSET_V+JL-1)/NPROMA+1         
             IPOS = IIN_TO_SEND_BUFR(IIN_TO_SEND_BUFR_V+JL,1)+ &
                 & (JFLD-1)*IIN_TO_SEND_BUFR(IIN_TO_SEND_BUFR_V+JL,2)+1
-            ZZ(JK,JBLK) = PREEL_REAL(IPOS)
+          !  ZZ(JK,JBLK) = PREEL_REAL(IPOS)
         ENDDO
      
       ENDDO
@@ -578,7 +578,7 @@ CONTAINS
           JK = MOD(IRECV_WSET_OFFSET_V+JL-1,NPROMA)+1
           JBLK = (IRECV_WSET_OFFSET_V+JL-1)/NPROMA+1  
           JI = ICOMBUFR_OFFSET_V+(JFLD-1)*IRECV_WSET_SIZE_V+JL
-          ZZ(JK,JBLK) = ZCOMBUFR(JI)
+       !   ZZ(JK,JBLK) = ZCOMBUFR(JI)
         ENDDO
 
       ENDDO      
