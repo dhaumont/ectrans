@@ -120,13 +120,13 @@ MODULE UPDSPB_VIEW_MOD
           IF(KM /= 0 .AND. JN <= R_NTMAX+3-KM) THEN
           !(DO JN=3,R_NTMAX+3-KM)
             INM = IASM0+((R_NTMAX+3-JN)-KM)*2
-       !     ZZ(INM)   = POA(2*JFLD-1,JN,KMLOC)
-        !    ZZ(INM+1) = POA(2*JFLD  ,JN,KMLOC)
+            ZZ(INM)   = POA(2*JFLD-1,JN,KMLOC)
+            ZZ(INM+1) = POA(2*JFLD  ,JN,KMLOC)
           ELSEIF (KM == 0) THEN
             !(DO JN=3,R_NTMAX+3)
             INM = IASM0+(R_NTMAX+3-JN)*2
-       !     ZZ(INM)   = POA(2*JFLD-1,JN,KMLOC)
-       !     ZZ(INM+1) = 0.0_JPRBT
+            ZZ(INM)   = POA(2*JFLD-1,JN,KMLOC)
+            ZZ(INM+1) = 0.0_JPRBT
           END IF
         ENDDO
     ENDDO
