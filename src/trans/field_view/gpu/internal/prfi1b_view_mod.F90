@@ -119,7 +119,7 @@ IFIELDS = SIZE(YDSP)
       ENDDO
  
   ENDDO
-  !$OMP END PARALLEL DO
+
 
 
 #ifdef ACCGPU
