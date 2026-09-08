@@ -56,20 +56,18 @@ function(generate_backend_sources)
   set(${_PAR_OUTPUT} ${outfiles} PARENT_SCOPE)
 endfunction(generate_backend_sources)
 
-
+if( HAVE_GPU_AWARE_MPI )
+      set( USE_RAW_MPI 1 )
+else()
+  set( USE_RAW_MPI 0)
+endif()
 set (platforms)
 if (HAVE_CPU)
     list(APPEND platforms cpu)
 endif()
 if (HAVE_GPU)
     list(APPEND platforms gpu)
-    # We can't reliably pass GPU buffers directly to MPL routines yet, so for now we should still use raw MPI calls
-    if( HAVE_GPU_AWARE_MPI )
-      set( USE_RAW_MPI 1 )
-    else()
-      set( USE_RAW_MPI 0)
-    endif()
-
+    # We can't reliably pass GPU buffers directly to MPL routines yet, so for now we should still use raw MPI calls    
 endif()
 foreach(platform ${platforms})
   foreach( prec dp sp)
