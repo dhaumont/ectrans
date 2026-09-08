@@ -69,7 +69,11 @@ MODULE PRFI1B_VIEW_MOD
       
   !     LOCAL INTEGER SCALARS
   INTEGER(KIND=JPIM) :: INM, IR, JN, JFLD, IASM0, IFIELDS
-  
+  INTEGER, PARAMETER :: ISIZE=32
+  REAL(KIND=8) :: ZTEMP1(ISIZE+1,ISIZE)
+  REAL(KIND=8) :: ZTEMP2(ISIZE+1,ISIZE)
+
+INTEGER :: JNSEC,JFLDSEC,JNSECEND,JFLDSECEND
   !     ------------------------------------------------------------------
   
   !*       1.    EXTRACT FIELDS FROM SPECTRAL ARRAYS.
@@ -87,42 +91,55 @@ IFIELDS = SIZE(YDSP)
   
     !loop over wavenumber
 
-#ifdef OMPGPU
-    !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(3) DEFAULT(NONE) &
-    !$OMP& PRIVATE(KM,IASM0,INM) SHARED(IFIELDS,D,R,PIA,YDSP) MAP(TO:IFIELDS)
-#endif
-#ifdef ACCGPU
-    !$ACC PARALLEL LOOP DEFAULT(NONE) COLLAPSE(3) PRIVATE(KM,IASM0,INM) &
-    !$ACC FIRSTPRIVATE(IFIELDS) &
-#ifndef _CRAYFTN
-    !$ACC& ASYNC(1)
-#else
-    !$ACC&
-#endif
-#endif
+
+!$ACC PARALLEL PRIVATE(KMLOC,JN,JFLD) PRESENT(YDSP, PIA) CREATE(ZTEMP) DEFAULT(NONE) VECTOR_LENGTH(32) FIRSTPRIVATE(IFIELDS,NSMAX,D_NUMP) PRIVATE(ZTEMP,JNSEC,JFLDSEC,JNSECEND,JFLDSECEND)
+!$ACC CACHE(ZTEMP(ISIZE+1,ISIZE))
+!$ACC LOOP GANG  COLLAPSE(3) 
   DO KMLOC=1,D_NUMP
-    DO JN=0,R_NSMAX+3
-      DO JFLD=1,IFIELDS
+    DO JN=0,R_NSMAX+3, ISIZE
+      DO JFLD=1,IFIELDS, ISIZE
+        JNSECEND=MIN(R_NSMAX+3,NSMAX-JN+1)
+        JFLDSECEND=MIN(ISIZE,IFIELDS-JFLD+1) 
+        
         KM = D_MYMS(KMLOC)
-        IF (JN+1 <= UBOUND(PIA,2)) THEN
-            IF (JN <= 1) THEN
-                PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
-                PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
-            ELSEIF (JN <= R_NSMAX+2-KM) THEN
-                IASM0 = D_NASM0(KM)
-                INM = IASM0+((R_NSMAX+2-JN)-KM)*2
-                PIA(2*JFLD-1,JN+1,KMLOC) = YDSP(JFLD)%P(INM)
-                PIA(2*JFLD  ,JN+1,KMLOC) = YDSP(JFLD)%P(INM+1)
-            ELSEIF (JN <= R_NSMAX+3-KM) THEN
-                PIA(2*JFLD-1,JN+1,KMLOC) = 0.0_JPRB
-                PIA(2*JFLD  ,JN+1,KMLOC) = 0.0_JPRB
-            ENDIF
-         ENDIF
+        
+        !$ACC LOOP VECTOR PRIVATE(JNSEC,JFLDSEC)
+          DO JNSEC=JN,JNSECEND
+            DO JFLDSEC=JFLD,JFLDSECEND            
+              
+              IF (JN > 1 .AND. JN <= R_NSMAX+2-KM) THEN
+                  IASM0 = D_NASM0(KM)
+                  INM = IASM0+((R_NSMAX+2-JNSEC)-KM)*2
+                  ZTEMP1(JNSEC-JN+1,JFLDSEC-JFLD+1)=YDSP(JFLDSEC)%P(INM)
+                  ZTEMP2(JNSEC-JN+1,JFLDSEC-JFLD+1)=YDSP(JFLDSEC)%P(INM+1)                
+              ENDIF
+            ENDDO
+          ENDDO
+          !$ACC LOOP VECTOR PRIVATE(JNSEC,JFLDSEC)
+          DO JFLDSEC=JFLD,JFLDSECEND
+            DO JNSEC=JN,JNSECEND
+
+              IF (JN <= 1) THEN
+                  PIA(2*JFLDSEC-1,JNSEC+1,KMLOC) = 0.0_JPRB
+                  PIA(2*JFLDSEC  ,JNSEC+1,KMLOC) = 0.0_JPRB
+              ELSEIF (JN <= R_NSMAX+2-KM) THEN
+                  IASM0 = D_NASM0(KM)
+                  INM = IASM0+((R_NSMAX+2-JN)-KM)*2
+                  PIA(2*JFLDSEC-1,JNSEC+1,KMLOC)= ZTEMP1(JNSEC-JN+1,JFLDSEC-JFLD+1)
+                  PIA(2*JFLDSEC  ,JNSEC+1,KMLOC)= ZTEMP2(JNSEC-JN+1,JFLDSEC-JFLD+1)
+              ELSEIF (JN <= R_NSMAX+3-KM) THEN
+                  PIA(2*JFLDSEC-1,JNSEC+1,KMLOC) = 0.0_JPRB
+                  PIA(2*JFLDSEC-1,JNSEC+1,KMLOC) = 0.0_JPRB
+              ENDIF    
+            ENDDO
+          ENDDO
+      
+      
         ENDDO
       ENDDO
   ENDDO
 
-
+ !$ACC END PARALLEL
 
 #ifdef ACCGPU
   !$ACC END DATA
