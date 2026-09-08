@@ -99,15 +99,13 @@ IFIELDS = SIZE(YDSP)
     DO JN=0,R_NSMAX+3, ISIZE
       DO JFLD=1,IFIELDS, ISIZE
         JNSECEND=MIN(R_NSMAX+3,R_NSMAX-JN+1)
-        JFLDSECEND=MIN(ISIZE,IFIELDS-JFLD+1) 
-        
+        JFLDSECEND=MIN(ISIZE,IFIELDS-JFLD+1)         
         KM = D_MYMS(KMLOC)
         
         !$ACC LOOP VECTOR PRIVATE(JNSEC,JFLDSEC)
           DO JNSEC=JN,JNSECEND
-            DO JFLDSEC=JFLD,JFLDSECEND            
-              
-              IF (JN > 1 .AND. JN <= R_NSMAX+2-KM) THEN
+            DO JFLDSEC=JFLD,JFLDSECEND              
+              IF (JNSEC > 1 .AND. JNSEC <= R_NSMAX+2-KM) THEN
                   IASM0 = D_NASM0(KM)
                   INM = IASM0+((R_NSMAX+2-JNSEC)-KM)*2
                   ZTEMP1(JNSEC-JN+1,JFLDSEC-JFLD+1)=YDSP(JFLDSEC)%P(INM)
@@ -118,23 +116,18 @@ IFIELDS = SIZE(YDSP)
           !$ACC LOOP VECTOR PRIVATE(JNSEC,JFLDSEC)
           DO JFLDSEC=JFLD,JFLDSECEND
             DO JNSEC=JN,JNSECEND
-
-              IF (JN <= 1) THEN
+              IF (JNSEC) THEN
                   PIA(2*JFLDSEC-1,JNSEC+1,KMLOC) = 0.0_JPRB
                   PIA(2*JFLDSEC  ,JNSEC+1,KMLOC) = 0.0_JPRB
-              ELSEIF (JN <= R_NSMAX+2-KM) THEN
-                  IASM0 = D_NASM0(KM)
-                  INM = IASM0+((R_NSMAX+2-JN)-KM)*2
+              ELSEIF (JNSEC <= R_NSMAX+2-KM) THEN
                   PIA(2*JFLDSEC-1,JNSEC+1,KMLOC)= ZTEMP1(JNSEC-JN+1,JFLDSEC-JFLD+1)
                   PIA(2*JFLDSEC  ,JNSEC+1,KMLOC)= ZTEMP2(JNSEC-JN+1,JFLDSEC-JFLD+1)
-              ELSEIF (JN <= R_NSMAX+3-KM) THEN
+              ELSEIF (JNSEC <= R_NSMAX+3-KM) THEN
                   PIA(2*JFLDSEC-1,JNSEC+1,KMLOC) = 0.0_JPRB
-                  PIA(2*JFLDSEC-1,JNSEC+1,KMLOC) = 0.0_JPRB
+                  PIA(2*JFLDSEC,JNSEC+1,KMLOC) = 0.0_JPRB
               ENDIF    
             ENDDO
           ENDDO
-      
-      
         ENDDO
       ENDDO
   ENDDO
