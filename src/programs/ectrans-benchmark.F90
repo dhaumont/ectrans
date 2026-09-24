@@ -2245,10 +2245,12 @@ subroutine gstats_labels
   call gstats_label(412, '   ', 'H2D'      )
   call gstats_label(413, '   ', 'EXECUTE_DIR_FFT')
   call gstats_label(414, '   ', 'LEDIR - HIP_DGEMM_BATCHED')
+  call gstats_label(420, '   ', 'INV_TRANS')
   call gstats_label(421, '   ', 'MPI')
   call gstats_label(422, '   ', 'D2H')
   call gstats_label(423, '   ', 'EXECUTE_INV_FFT')
   call gstats_label(424, '   ', 'LEINV - HIP_DGEMM_BATCHED')
+  call gstats_label(1644,'   ', 'DIST')
 end subroutine gstats_labels
 
 end program ectrans_benchmark
