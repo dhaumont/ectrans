@@ -23,7 +23,7 @@ program ectrans_benchmark
 use parkind1, only: jpim, jprb, jprd
 use oml_mod ,only : oml_max_threads
 use mpl_module
-use yomgstats, only: jpmaxstat, gstats_lstats => lstats
+use yomgstats, only: jpmaxstat, gstats_lstats => lstats, ncalls, ccdesc
 use yomhook, only : dr_hook_init
 use ectrans_memory, only : allocator
 use ec_checksum_mod, only : fletcher16_hex
@@ -1091,6 +1091,11 @@ endif
 
 if (lstats) then
   call gstats(0,1)
+  ! DEBUG: print state before gstats_print to diagnose stats issue
+  write(0,'(a,i0,a,z16,a,a)') '[MAIN] BEFORE gstats_print: NCALLS(102)=', &
+    & ncalls(102), ' addr(NCALLS(102))=0x', loc(ncalls(102)), ' CCDESC(102)="', trim(ccdesc(102))//'"'
+  write(0,'(a,i0,a,z16,a,a)') '[MAIN] BEFORE gstats_print: NCALLS(4)=  ', &
+    & ncalls(4),   ' addr(NCALLS(4))  =0x', loc(ncalls(4)),   ' CCDESC(4)  ="', trim(ccdesc(4))//'"'
   call gstats_print(nout, zaveave, jpmaxstat)
 endif
 
