@@ -2240,7 +2240,15 @@ subroutine gstats_labels
   call gstats_label(157, '   ', 'FTINV_CTL      - L to G transposition')
   call gstats_label(158, '   ', 'FTDIR_CTL      - G to L transposition')
   call gstats_label(400, '   ', 'GSTATS         - GSTATS itself')
-
+  call gstats_label(410, '   ', 'DIR_TRANS      - Direct transform')
+  call gstats_label(411, '   ', 'MPI')
+  call gstats_label(412, '   ', 'H2D'      )
+  call gstats_label(413, '   ', 'EXECUTE_DIR_FFT')
+  call gstats_label(414, '   ', 'LEDIR - HIP_DGEMM_BATCHED')
+  call gstats_label(421, '   ', 'MPI')
+  call gstats_label(422, '   ', 'D2H')
+  call gstats_label(423, '   ', 'EXECUTE_INV_FFT')
+  call gstats_label(424, '   ', 'LEINV - HIP_DGEMM_BATCHED')
 end subroutine gstats_labels
 
 end program ectrans_benchmark
